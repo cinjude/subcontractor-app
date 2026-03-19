@@ -98,6 +98,7 @@ export const JobsPage = () => {
                             <div className="modal-dialog modal-lg">
                                 <div className="modal-content">
                                     <div className="modal-header">
+
                                         <h5 className="modal-title">
                                             {selectedJob ? 'Edit Job' : 'Create New Job'}
                                         </h5>
@@ -112,16 +113,15 @@ export const JobsPage = () => {
                                     <div className="modal-body">
                                         <JobForm
                                             job={selectedJob}
-                                            onSubmit={handleCreateJob}
+                                            onSubmit={selectedJob ? (data) => handleUpdateJob(selectedJob.id, data) : handleCreateJob}
                                             loading={loading}
+                                            onCancel={handleCloseForm}
                                         />
                                     </div>
                                 </div>
                             </div>
                         </div>
                     )}
-
-
                     <JobList
                         jobs={jobs}
                         loading={loading}
@@ -129,8 +129,6 @@ export const JobsPage = () => {
                         onUpdate={handleUpdateJob}
                         onDelete={handleDeleteJob}
                     />
-
-
                     {!showForm && (
                         <button
                             className="btn btn-primary floating-action-btn"
@@ -138,6 +136,7 @@ export const JobsPage = () => {
                             title="Create New Job"
                         >
                             <i className="bi bi-plus-lg"></i>
+
                         </button>
                     )}
                 </div>

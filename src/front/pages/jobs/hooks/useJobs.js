@@ -43,7 +43,7 @@ export const useJobs = () => {
     const createJob = useCallback(async (jobData) => {
         try {
             setLoading(true);
-            const response = await api.post('/api/jobs', jobData);
+            const response = await api.post('/api/jobs/create', jobData);
             setJobs(prev => [...prev, response.data]);
             return response.data;
         } catch (err) {

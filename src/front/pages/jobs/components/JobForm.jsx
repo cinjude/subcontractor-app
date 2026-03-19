@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { jobCategories, jobPriorities, jobStatuses } from '../utils/jobConstants';
 import './JobForm.css';
 
-export const JobForm = ({ job, onSubmit, loading }) => {
+export const JobForm = ({ job, onSubmit, loading, onCancel }) => {
     const [formData, setFormData] = useState({
         title: job?.title || '',
         description: job?.description || '',
@@ -65,7 +65,6 @@ export const JobForm = ({ job, onSubmit, loading }) => {
             startDate: formData.startDate,
             endDate: formData.endDate || null
         };
-
         onSubmit(submitData);
     };
 
@@ -159,7 +158,7 @@ export const JobForm = ({ job, onSubmit, loading }) => {
                     </div>
 
                     <div className="mb-3">
-                        <label htmlFor="budget" className="form-label">Budget ($) *</label>
+                        <label htmlFor="budget" className="form-label">Budget ($) </label>
                         <input
                             type="number"
                             className={`form-control ${errors.budget ? 'is-invalid' : ''}`}
@@ -170,7 +169,6 @@ export const JobForm = ({ job, onSubmit, loading }) => {
                             placeholder="0.00"
                             step="0.01"
                             min="0"
-                            required
                         />
                         {errors.budget && <div className="invalid-feedback">{errors.budget}</div>}
                     </div>
@@ -255,7 +253,7 @@ export const JobForm = ({ job, onSubmit, loading }) => {
                     <button
                         type="button"
                         className="btn btn-secondary me-2"
-                        onClick={() => {/* TODO: Cancel */ }}
+                        onClick={onCancel}
                     >
                         Cancel
                     </button>

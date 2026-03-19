@@ -12,7 +12,6 @@ from api.models import db, User, UserRole
 from api.routes import api
 from api.admin import setup_admin
 from api.commands import setup_commands
-from api.jobs import register_jobs_routes
 
 from flask_cors import CORS
 from flask_jwt_extended import create_access_token
@@ -55,11 +54,8 @@ setup_admin(app)
 # add the admin
 setup_commands(app)
 
-# Add all endpoints form the API with a "api" prefix
-app.register_blueprint(api, url_prefix='/api')
-
-# Register jobs routes
-register_jobs_routes(app)
+# Register blueprints
+app.register_blueprint(api)
 
 # Handle/serialize errors like a JSON object
 

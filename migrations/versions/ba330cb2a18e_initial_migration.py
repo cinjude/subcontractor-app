@@ -1,8 +1,8 @@
-"""empty message
+"""Initial migration
 
-Revision ID: adaf2718f230
+Revision ID: ba330cb2a18e
 Revises: 
-Create Date: 2026-03-04 04:05:52.805139
+Create Date: 2026-03-18 08:21:04.224273
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'adaf2718f230'
+revision = 'ba330cb2a18e'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -133,13 +133,19 @@ def upgrade():
     sa.Column('customer_id', sa.Integer(), nullable=False),
     sa.Column('service_id', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(length=120), nullable=False),
-    sa.Column('description', sa.String(), nullable=False),
-    sa.Column('status', sa.Enum('pending', 'in_progress', 'completed', 'canceled', name='jobstatus'), nullable=False),
+    sa.Column('description', sa.Text(), nullable=False),
+    sa.Column('status', sa.Enum('PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELED', name='jobstatus'), nullable=False),
+    sa.Column('priority', sa.Enum('LOW', 'MEDIUM', 'HIGH', 'URGENT', name='jobpriority'), nullable=False),
+    sa.Column('location', sa.String(length=255), nullable=True),
+    sa.Column('budget', sa.Numeric(precision=10, scale=2), nullable=True),
     sa.Column('schedule_date', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('estimate_total', sa.Numeric(precision=10, scale=2), nullable=False),
     sa.Column('actual_total', sa.Numeric(precision=10, scale=2), nullable=False),
     sa.Column('start_date', sa.DateTime(timezone=True), nullable=True),
     sa.Column('end_date', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('progress', sa.Integer(), nullable=False),
+    sa.Column('categories', sa.String(length=500), nullable=True),
+    sa.Column('notes', sa.Text(), nullable=True),
     sa.Column('is_deleted', sa.Boolean(), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('create_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -150,6 +156,7 @@ def upgrade():
     )
     with op.batch_alter_table('job', schema=None) as batch_op:
         batch_op.create_index('idx_job_contractor_dates', ['contractor_id', 'schedule_date'], unique=False)
+        batch_op.create_index('idx_job_priority', ['priority'], unique=False)
         batch_op.create_index('idx_job_status', ['status'], unique=False)
 
     op.create_table('portfolioimage',
@@ -201,6 +208,19 @@ def upgrade():
         batch_op.create_index('idx_invoice_contractor_status', ['contractor_id', 'status'], unique=False)
         batch_op.create_index('idx_invoice_dates', ['issue_date', 'due_date'], unique=False)
 
+    op.create_table('job_documents',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('job_id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(length=255), nullable=False),
+    sa.Column('file_path', sa.String(length=500), nullable=False),
+    sa.Column('file_size', sa.Integer(), nullable=False),
+    sa.Column('file_type', sa.String(length=100), nullable=False),
+    sa.Column('uploaded_by', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['job_id'], ['job.id'], ),
+    sa.ForeignKeyConstraint(['uploaded_by'], ['contractor.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('invoiceItem',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('invoice_id', sa.Integer(), nullable=False),
@@ -242,6 +262,7 @@ def downgrade():
 
     op.drop_table('payment')
     op.drop_table('invoiceItem')
+    op.drop_table('job_documents')
     with op.batch_alter_table('invoice', schema=None) as batch_op:
         batch_op.drop_index('idx_invoice_dates')
         batch_op.drop_index('idx_invoice_contractor_status')
@@ -251,6 +272,7 @@ def downgrade():
     op.drop_table('portfolioimage')
     with op.batch_alter_table('job', schema=None) as batch_op:
         batch_op.drop_index('idx_job_status')
+        batch_op.drop_index('idx_job_priority')
         batch_op.drop_index('idx_job_contractor_dates')
 
     op.drop_table('job')

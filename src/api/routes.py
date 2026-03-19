@@ -2,7 +2,8 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 from flask import Flask, request, jsonify, url_for, Blueprint
-from api.models import db, User
+from flask_jwt_extended import jwt_required
+from api.models import db, User, Job, JobStatus, JobPriority, JobDocument
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
 
@@ -20,3 +21,351 @@ def handle_hello():
     }
 
     return jsonify(response_body), 200
+
+
+# Jobs endpoints
+@api.route('/jobs/test', methods=['GET'])
+def test_jobs():
+    """Test endpoint to verify jobs routes are working"""
+    return jsonify({
+        'message': 'Jobs routes are working!',
+        'endpoints': [
+            'GET /api/jobs',
+            'POST /api/jobs',
+            'GET /api/jobs/<id>',
+            'PUT /api/jobs/<id>',
+            'DELETE /api/jobs/<id>',
+            'GET /api/jobs/categories'
+        ]
+    }), 200
+
+@api.route('/jobs', methods=['GET'])
+@jwt_required()
+def get_all_jobs():
+    """Get all jobs with optional filtering"""
+    try:
+        provider_id = 1  # Hardcoded for testing - replace with get_jwt_identity()
+        
+        # Get query parameters
+        status = request.args.get('status', 'all')
+        priority = request.args.get('priority', 'all')
+        search = request.args.get('search', '')
+        
+        # Build query
+        query = Job.query.filter_by(contractor_id=provider_id, is_deleted=False)
+        
+        # Apply filters
+        if status != 'all':
+            try:
+                query = query.filter(Job.status == JobStatus(status))
+            except ValueError:
+                pass
+        
+        if priority != 'all':
+            try:
+                query = query.filter(Job.priority == JobPriority(priority))
+            except ValueError:
+                pass
+        
+        if search:
+            search_term = f"%{search}%"
+            query = query.filter(
+                Job.title.ilike(search_term) |
+                Job.description.ilike(search_term) |
+                Job.location.ilike(search_term)
+            )
+        
+        # Order by created_at desc
+        query = query.order_by(Job.create_at.desc())
+        
+        # Get all jobs (simplified for testing)
+        jobs = query.all()
+        
+        return jsonify({
+            'jobs': [job.to_dict() for job in jobs],
+            'total': len(jobs)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to fetch jobs: {str(e)}'}), 500
+
+@api.route('/jobs/create', methods=['POST'])
+@jwt_required()
+def create_job():
+    """Create a new job"""
+    try:
+        data = request.get_json()
+        
+        # Create simple job for testing
+        job = Job(
+            contractor_id=1,  # Hardcoded for testing
+            customer_id=data.get('customerId', 1),
+            service_id=1,  # Hardcoded for testing
+            title=data.get('title', 'Test Job'),
+            description=data.get('description', 'Test Description'),
+            location=data.get('location', ''),
+            budget=data.get('budget'),
+            status=JobStatus.PENDING,
+            priority=JobPriority.MEDIUM,
+            start_date=data.get('startDate'),
+            end_date=data.get('endDate'),
+            categories=','.join(data.get('categories', [])),
+            notes=data.get('notes', '')
+        )
+        
+        db.session.add(job)
+        db.session.commit()
+        
+        return jsonify(job.to_dict()), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to create job: {str(e)}'}), 500
+
+@api.route('/jobs/<int:job_id>', methods=['GET'])
+@jwt_required()
+def get_job(job_id):
+    """Get a specific job"""
+    try:
+        job = Job.query.filter(
+            Job.id == job_id,
+            Job.is_deleted == False
+        ).first()
+        
+        if not job:
+            return jsonify({'error': 'Job not found'}), 404
+        
+        return jsonify(job.to_dict()), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to fetch job: {str(e)}'}), 500
+
+@api.route('/jobs/<int:job_id>', methods=['PUT'])
+@jwt_required()
+def update_job(job_id):
+    """Update a job"""
+    try:
+        job = Job.query.filter(
+            Job.id == job_id,
+            Job.is_deleted == False
+        ).first()
+        
+        if not job:
+            return jsonify({'error': 'Job not found'}), 404
+        
+        data = request.get_json()
+        
+        # Update job fields
+        if 'title' in data:
+            job.title = data['title']
+        if 'description' in data:
+            job.description = data['description']
+        if 'location' in data:
+            job.location = data['location']
+        if 'budget' in data:
+            job.budget = data['budget']
+        if 'status' in data:
+            try:
+                job.status = JobStatus(data['status'])
+            except ValueError:
+                pass
+        if 'priority' in data:
+            try:
+                job.priority = JobPriority(data['priority'])
+            except ValueError:
+                pass
+        if 'startDate' in data and data['startDate']:
+            job.start_date = data['startDate']
+        if 'endDate' in data and data['endDate']:
+            job.end_date = data['endDate']
+        if 'categories' in data:
+            job.categories = ','.join(data['categories'])
+        if 'notes' in data:
+            job.notes = data['notes']
+        if 'progress' in data:
+            job.progress = data['progress']
+        
+        db.session.commit()
+        
+        return jsonify(job.to_dict()), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to update job: {str(e)}'}), 500
+
+@api.route('/jobs/<int:job_id>', methods=['DELETE'])
+@jwt_required()
+def delete_job(job_id):
+    """Soft delete a job"""
+    try:
+        job = Job.query.filter(Job.id == job_id).first()
+        
+        if not job:
+            return jsonify({'error': 'Job not found'}), 404
+        
+        job.is_deleted = True
+        db.session.commit()
+        
+        return jsonify({'message': 'Job deleted successfully'}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to delete job: {str(e)}'}), 500
+
+@api.route('/jobs/<int:job_id>/status', methods=['PATCH'])
+@jwt_required()
+def update_job_status(job_id):
+    """Update job status"""
+    try:
+        job = Job.query.filter(
+            Job.id == job_id,
+            Job.is_deleted == False
+        ).first()
+        
+        if not job:
+            return jsonify({'error': 'Job not found'}), 404
+        
+        data = request.get_json()
+        new_status = data.get('status')
+        
+        if new_status:
+            try:
+                job.status = JobStatus(new_status)
+                db.session.commit()
+            except ValueError:
+                return jsonify({'error': f'Invalid status: {new_status}'}), 400
+        
+        return jsonify(job.to_dict()), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to update job status: {str(e)}'}), 500
+
+@api.route('/jobs/stats', methods=['GET'])
+@jwt_required()
+def get_job_stats():
+    """Get job statistics"""
+    try:
+        provider_id = 1  # Hardcoded for testing
+        
+        # Get all jobs for this provider
+        all_jobs = Job.query.filter_by(contractor_id=provider_id, is_deleted=False).all()
+        
+        # Calculate stats
+        stats = {
+            'total': len(all_jobs),
+            'pending': len([j for j in all_jobs if j.status == JobStatus.PENDING]),
+            'in_progress': len([j for j in all_jobs if j.status == JobStatus.IN_PROGRESS]),
+            'completed': len([j for j in all_jobs if j.status == JobStatus.COMPLETED]),
+            'canceled': len([j for j in all_jobs if j.status == JobStatus.CANCELED]),
+            'high_priority': len([j for j in all_jobs if j.priority == JobPriority.HIGH]),
+            'urgent': len([j for j in all_jobs if j.priority == JobPriority.URGENT])
+        }
+        
+        return jsonify(stats), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to fetch stats: {str(e)}'}), 500
+
+@api.route('/jobs/categories', methods=['GET'])
+@jwt_required()
+def get_job_categories():
+    """Get available job categories"""
+    try:
+        categories = [
+            {'value': 'residential', 'label': 'Residential'},
+            {'value': 'commercial', 'label': 'Commercial'},
+            {'value': 'industrial', 'label': 'Industrial'},
+            {'value': 'renovation', 'label': 'Renovation'},
+            {'value': 'new_construction', 'label': 'New Construction'},
+            {'value': 'remodeling', 'label': 'Remodeling'},
+            {'value': 'plumbing', 'label': 'Plumbing'},
+            {'value': 'electrical', 'label': 'Electrical'},
+            {'value': 'hvac', 'label': 'HVAC'},
+            {'value': 'roofing', 'label': 'Roofing'},
+            {'value': 'painting', 'label': 'Painting'},
+            {'value': 'flooring', 'label': 'Flooring'},
+            {'value': 'landscaping', 'label': 'Landscaping'},
+            {'value': 'concrete', 'label': 'Concrete'},
+            {'value': 'carpentry', 'label': 'Carpentry'}
+        ]
+        
+        return jsonify(categories), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to fetch categories: {str(e)}'}), 500
+
+# Job Documents endpoints
+@api.route('/jobs/<int:job_id>/documents', methods=['GET'])
+@jwt_required()
+def get_job_documents(job_id):
+    """Get all documents for a job"""
+    try:
+        job = Job.query.filter(
+            Job.id == job_id,
+            Job.is_deleted == False
+        ).first()
+        
+        if not job:
+            return jsonify({'error': 'Job not found'}), 404
+        
+        documents = JobDocument.query.filter_by(job_id=job_id).all()
+        return jsonify([doc.to_dict() for doc in documents]), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to fetch documents: {str(e)}'}), 500
+
+@api.route('/jobs/<int:job_id>/documents', methods=['POST'])
+@jwt_required()
+def upload_job_document(job_id):
+    """Upload a document for a job"""
+    try:
+        job = Job.query.filter(
+            Job.id == job_id,
+            Job.is_deleted == False
+        ).first()
+        
+        if not job:
+            return jsonify({'error': 'Job not found'}), 404
+        
+        # For now, return a mock response (file upload would need actual file handling)
+        data = request.get_json()
+        document = JobDocument(
+            job_id=job_id,
+            name=data.get('name', 'Document'),
+            file_path=data.get('file_path', '/mock/path'),
+            file_size=data.get('file_size', 0),
+            file_type=data.get('file_type', 'application/pdf'),
+            uploaded_by=1  # Hardcoded for testing
+        )
+        
+        db.session.add(document)
+        db.session.commit()
+        
+        return jsonify(document.to_dict()), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to upload document: {str(e)}'}), 500
+
+@api.route('/jobs/<int:job_id>/documents/<int:document_id>', methods=['DELETE'])
+@jwt_required()
+def delete_job_document(job_id, document_id):
+    """Delete a document from a job"""
+    try:
+        document = JobDocument.query.filter_by(
+            id=document_id,
+            job_id=job_id
+        ).first()
+        
+        if not document:
+            return jsonify({'error': 'Document not found'}), 404
+        
+        db.session.delete(document)
+        db.session.commit()
+        
+        return jsonify({'message': 'Document deleted successfully'}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to delete document: {str(e)}'}), 500

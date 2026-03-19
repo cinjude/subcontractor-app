@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime, time
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import String, Boolean, Integer, Enum, DateTime, func, ForeignKey, Float, UniqueConstraint, Date, Numeric
+from sqlalchemy import String, Boolean, Integer, Enum, DateTime, func, ForeignKey, Float, UniqueConstraint, Date, Numeric, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from decimal import Decimal
 
@@ -12,10 +12,16 @@ class UserRole(enum.Enum):
     CUSTOMER = "customer"
 
 class JobStatus(enum.Enum):
-    pending = "pending"
-    in_progress = "in_progress"
-    completed = "completed"
-    canceled = "canceled"
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    CANCELED = "canceled"
+
+class JobPriority(enum.Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    URGENT = "urgent"
 
 
 class PaymentMethod(enum.Enum):
@@ -196,40 +202,99 @@ class ServiceMaterial(db.Model):
 class Job(db.Model):
     __tablename__ = 'job'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    contractor_id: Mapped[int] = mapped_column(
-        ForeignKey('contractor.id'), nullable=False)
-    customer_id: Mapped[int] = mapped_column(
-        ForeignKey('customer.id'), nullable=False)
-    service_id: Mapped[int] = mapped_column(
-        ForeignKey('services.id'), nullable=False)
+    contractor_id: Mapped[int] = mapped_column(ForeignKey('contractor.id'), nullable=False)
+    customer_id: Mapped[int] = mapped_column(ForeignKey('customer.id'), nullable=False)
+    service_id: Mapped[int] = mapped_column(ForeignKey('services.id'), nullable=False)
     title: Mapped[str] = mapped_column(String(120), nullable=False)
-    description: Mapped[str] = mapped_column(String())
-    status: Mapped[JobStatus] = mapped_column(Enum(JobStatus), nullable=False)
-    schedule_date: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now())
+    description: Mapped[str] = mapped_column(Text(), nullable=False)
+    status: Mapped[JobStatus] = mapped_column(Enum(JobStatus), nullable=False, default=JobStatus.PENDING)
+    priority: Mapped[JobPriority] = mapped_column(Enum(JobPriority), nullable=False, default=JobPriority.MEDIUM)
+    location: Mapped[str] = mapped_column(String(255), nullable=True)
+    budget: Mapped[Numeric] = mapped_column(Numeric(10, 2), nullable=True)
+    schedule_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     estimate_total: Mapped[Numeric] = mapped_column(Numeric(10, 2))
     actual_total: Mapped[Numeric] = mapped_column(Numeric(10, 2))
-    start_date: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=True)  # Sin server_default
-    end_date: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=True)
-    is_deleted: Mapped[Boolean] = mapped_column(Boolean())
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), onupdate=func.now())
-    create_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now())
+    start_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    end_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    progress: Mapped[int] = mapped_column(Integer, default=0)  # Progress percentage 0-100
+    categories: Mapped[str] = mapped_column(String(500), nullable=True)  # JSON string or comma-separated
+    notes: Mapped[str] = mapped_column(Text(), nullable=True)
+    is_deleted: Mapped[bool] = mapped_column(Boolean(), default=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), onupdate=func.now())
+    create_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    job_invoice: Mapped[list['Invoice']] = relationship(
-        back_populates='invoice_job', cascade='all, delete-orphan')
-    job_contractor: Mapped['Contractor'] = relationship(
-        back_populates='contractor_job')
-    job_customer: Mapped['Customer'] = relationship(
-        back_populates='customer_job')
-    service: Mapped['Services'] = relationship(
-        back_populates='job')
+    job_invoice: Mapped[list['Invoice']] = relationship(back_populates='invoice_job', cascade='all, delete-orphan')
+    job_contractor: Mapped['Contractor'] = relationship(back_populates='contractor_job')
+    job_customer: Mapped['Customer'] = relationship(back_populates='customer_job')
+    service: Mapped['Services'] = relationship(back_populates='job')
+    documents: Mapped[list['JobDocument']] = relationship(back_populates='job', cascade='all, delete-orphan')
 
-    __table_args__ = (db.Index('idx_job_contractor_dates', 'contractor_id', 'schedule_date'),
-                      db.Index('idx_job_status', 'status'), )
+    __table_args__ = (
+        db.Index('idx_job_contractor_dates', 'contractor_id', 'schedule_date'),
+        db.Index('idx_job_status', 'status'),
+        db.Index('idx_job_priority', 'priority'),
+    )
+
+    def to_dict(self):
+        """Convert job to dictionary for JSON response"""
+        return {
+            'id': self.id,
+            'contractor_id': self.contractor_id,
+            'customer_id': self.customer_id,
+            'service_id': self.service_id,
+            'title': self.title,
+            'description': self.description,
+            'status': self.status.value if self.status else None,
+            'priority': self.priority.value if self.priority else None,
+            'location': self.location,
+            'budget': float(self.budget) if self.budget else None,
+            'schedule_date': self.schedule_date.isoformat() if self.schedule_date else None,
+            'estimate_total': float(self.estimate_total) if self.estimate_total else None,
+            'actual_total': float(self.actual_total) if self.actual_total else None,
+            'start_date': self.start_date.isoformat() if self.start_date else None,
+            'end_date': self.end_date.isoformat() if self.end_date else None,
+            'progress': self.progress,
+            'categories': self.categories.split(',') if self.categories else [],
+            'notes': self.notes,
+            'is_deleted': self.is_deleted,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'create_at': self.create_at.isoformat() if self.create_at else None,
+        }
+
+    def get_duration_days(self):
+        """Get job duration in days"""
+        if self.start_date and self.end_date:
+            return (self.end_date - self.start_date).days
+        return None
+
+
+class JobDocument(db.Model):
+    __tablename__ = 'job_documents'
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    job_id: Mapped[int] = mapped_column(ForeignKey('job.id'), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    file_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    file_size: Mapped[int] = mapped_column(Integer)
+    file_type: Mapped[str] = mapped_column(String(100))
+    uploaded_by: Mapped[int] = mapped_column(ForeignKey('contractor.id'), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    job = relationship('Job', back_populates='documents')
+    uploader = relationship('Contractor')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'job_id': self.job_id,
+            'name': self.name,
+            'file_path': self.file_path,
+            'file_size': self.file_size,
+            'file_type': self.file_type,
+            'uploaded_by': self.uploaded_by,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
 
 
 class Invoice(db.Model):
