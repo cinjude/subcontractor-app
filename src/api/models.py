@@ -212,15 +212,15 @@ class Job(db.Model):
     location: Mapped[str] = mapped_column(String(255), nullable=True)
     budget: Mapped[Numeric] = mapped_column(Numeric(10, 2), nullable=True)
     schedule_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    estimate_total: Mapped[Numeric] = mapped_column(Numeric(10, 2))
-    actual_total: Mapped[Numeric] = mapped_column(Numeric(10, 2))
+    estimate_total: Mapped[Numeric] = mapped_column(Numeric(10, 2), default=0)
+    actual_total: Mapped[Numeric] = mapped_column(Numeric(10, 2), default=0)
     start_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     end_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     progress: Mapped[int] = mapped_column(Integer, default=0)  # Progress percentage 0-100
     categories: Mapped[str] = mapped_column(String(500), nullable=True)  # JSON string or comma-separated
     notes: Mapped[str] = mapped_column(Text(), nullable=True)
     is_deleted: Mapped[bool] = mapped_column(Boolean(), default=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), onupdate=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     create_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     job_invoice: Mapped[list['Invoice']] = relationship(back_populates='invoice_job', cascade='all, delete-orphan')

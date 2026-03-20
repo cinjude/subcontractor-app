@@ -6,6 +6,7 @@ from flask_jwt_extended import jwt_required
 from api.models import db, User, Job, JobStatus, JobPriority, JobDocument
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
+from datetime import datetime
 
 api = Blueprint('api', __name__)
 
@@ -95,6 +96,7 @@ def create_job():
     """Create a new job"""
     try:
         data = request.get_json()
+        print(data)
         
         # Create simple job for testing
         job = Job(
@@ -110,7 +112,14 @@ def create_job():
             start_date=data.get('startDate'),
             end_date=data.get('endDate'),
             categories=','.join(data.get('categories', [])),
-            notes=data.get('notes', '')
+            notes=data.get('notes', ''),
+            estimate_total=data.get('estimateTotal', 0),
+            actual_total=data.get('estimateTotal', 0),
+            progress=0,
+            is_deleted=False,
+            updated_at=datetime.utcnow(),
+            create_at=datetime.utcnow(),
+           
         )
         
         db.session.add(job)
