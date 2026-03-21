@@ -2,8 +2,8 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 from flask import Flask, request, jsonify, url_for, Blueprint
-from flask_jwt_extended import jwt_required
-from api.models import db, User, Job, JobStatus, JobPriority, JobDocument
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from api.models import db, User, Job, JobStatus, JobPriority, JobDocument, Customer, Services
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
 from datetime import datetime
@@ -95,37 +95,56 @@ def get_all_jobs():
 def create_job():
     """Create a new job"""
     try:
+        identity = get_jwt_identity()
+        current_contractor_id = int(identity)
         data = request.get_json()
-        print(data)
+
+        customer_id = data.get('customerId')
+        service_id = data.get('serviceId')
+
+        customer = db.session.get(Customer, customer_id)
+        if not customer:
+            return jsonify({'error': f'Customer with id {customer_id} not found'}), 404
+
+        print(f"ID del Token: {current_contractor_id} (Tipo: {type(current_contractor_id)})")
+        print(f"ID del dueño del Cliente: {customer.contractor_id} (Tipo: {type(customer.contractor_id)})")
+
+        if customer.contractor_id != int(current_contractor_id):
+            return jsonify({'error': f'Unauthorized to create job for customer {customer_id}'}), 403
+        
+        service = db.session.get(Services, service_id)
+        if not service:
+            return jsonify({'error': f'Service with id {service_id} not found'}), 404
         
         # Create simple job for testing
-        job = Job(
-            contractor_id=1,  # Hardcoded for testing
-            customer_id=data.get('customerId', 1),
-            service_id=1,  # Hardcoded for testing
-            title=data.get('title', 'Test Job'),
-            description=data.get('description', 'Test Description'),
+        new_job = Job(
+            contractor_id=current_contractor_id,
+            customer_id=customer_id,
+            service_id=service_id,
+            title=data.get('title', 'Sin título'),
+            description=data.get('description', ''),
             location=data.get('location', ''),
-            budget=data.get('budget'),
+            budget=data.get('budget', 0),
+            estimate_total=data.get('estimateTotal', 0),
+            actual_total=data.get('actualTotal', 0),
+            start_date=datetime.fromisoformat(data['startDate']) if data.get('startDate') else None,
+            end_date=datetime.fromisoformat(data['endDate']) if data.get('endDate') else None,
             status=JobStatus.PENDING,
             priority=JobPriority.MEDIUM,
-            start_date=data.get('startDate'),
-            end_date=data.get('endDate'),
-            categories=','.join(data.get('categories', [])),
             notes=data.get('notes', ''),
-            estimate_total=data.get('estimateTotal', 0),
-            actual_total=data.get('estimateTotal', 0),
-            progress=0,
-            is_deleted=False,
-            updated_at=datetime.utcnow(),
-            create_at=datetime.utcnow(),
-           
+            # Convertimos la lista de categorías ["A", "B"] a string "A,B"
+            categories=','.join(data.get('categories', [])) if isinstance(data.get('categories'), list) else '' 
         )
         
-        db.session.add(job)
+        db.session.add(new_job)
         db.session.commit()
         
-        return jsonify(job.to_dict()), 201
+        return jsonify({
+            'msg': 'Job created successfully',
+            'job':new_job.serialize(), 
+            "customer": customer.name   
+        }),201
+
         
     except Exception as e:
         db.session.rollback()

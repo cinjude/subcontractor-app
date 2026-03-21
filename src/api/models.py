@@ -115,6 +115,8 @@ class Contractor(db.Model):
     create_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now())
 
+    customer: Mapped[list['Customer']] = relationship(
+        back_populates='contractor_customer')
     contractor_invoice: Mapped[list['Invoice']] = relationship(
         back_populates='invoice_contractor')
     user: Mapped['User'] = relationship(back_populates='provider')
@@ -147,7 +149,10 @@ class Customer(db.Model):
     note: Mapped[str] = mapped_column(String(500), nullable=True)
     create_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
+    contractor_customer: Mapped['Contractor']= relationship(back_populates='customer')
     customer_invoice: Mapped[list['Invoice']] = relationship(
         back_populates='invoice_customer')
     customer_job: Mapped[list['Job']] = relationship(
@@ -184,6 +189,8 @@ class Services(db.Model):
         back_populates='service')
     material_service: Mapped[list['ServiceMaterial']] = relationship(
         back_populates='service_mat', cascade='all, delete-orphan')
+    service_estimate: Mapped[list['EstimateRequest']] = relationship(
+        back_populates='service')
 
 
 class ServiceMaterial(db.Model):
@@ -436,7 +443,7 @@ class EstimateRequest(db.Model):
     customer_email: Mapped[str] = mapped_column(String(120), nullable=False)
     customer_phone: Mapped[str] = mapped_column(String(20), nullable=False)
     service_id: Mapped[int] = mapped_column(
-        ForeignKey('services.id'), nullable=False)
+        ForeignKey('services.id'), nullable=True)
     description: Mapped[str] = mapped_column(String(500))
     status: Mapped[EstimateStatus] = mapped_column(
         Enum(EstimateStatus), nullable=False)
@@ -449,6 +456,8 @@ class EstimateRequest(db.Model):
         back_populates='estimate_contractor')
     estim_customer: Mapped['Customer'] = relationship(
         back_populates='customer_request')
+    service: Mapped['Services'] = relationship(
+        back_populates='service_estimate')
 
     __table_args__ = (
         db.Index('idx_estimate_email', 'customer_email'),

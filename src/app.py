@@ -132,7 +132,7 @@ def login_stylist():
     if is_hash_pw_correct == False:
         return jsonify({'msg': 'email or password is incorect'}), 400
 
-    access_token = create_access_token(identity=user.email)
+    access_token = create_access_token(identity=str(user.id))
     return jsonify({
         'msg': 'login successfully',
         'token': access_token,
