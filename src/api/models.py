@@ -242,7 +242,7 @@ class Job(db.Model):
         db.Index('idx_job_priority', 'priority'),
     )
 
-    def to_dict(self):
+    def serialize(self):
         """Convert job to dictionary for JSON response"""
         return {
             'id': self.id,
