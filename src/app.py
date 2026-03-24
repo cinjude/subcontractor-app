@@ -55,7 +55,7 @@ setup_admin(app)
 setup_commands(app)
 
 # Register blueprints
-app.register_blueprint(api)
+app.register_blueprint(api, url_prefix='/api')
 
 # Handle/serialize errors like a JSON object
 

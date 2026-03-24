@@ -162,6 +162,22 @@ class Customer(db.Model):
 
     __table_args__ = (db.Index('idx_customer_contractor', 'contractor_id', 'email'),
                       db.UniqueConstraint('contractor_id', 'email'))
+    
+    def serialize(self):
+        return {
+            "id": self.id,
+            "contractor_id": self.contractor_id,
+            "email": self.email,
+            "name": self.name,
+            "address": self.address,
+            "city": self.city,
+            "state": self.state,
+            "zip_code": self.zip_code,
+            "phone": self.phone,
+            "note": self.note,
+            "create_at": self.create_at.isoformat() if self.create_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
 
 
 class Services(db.Model):

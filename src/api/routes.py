@@ -10,7 +10,7 @@ from datetime import datetime
 
 api = Blueprint('api', __name__)
 
-# Allow CORS requests to this API
+from api.customer.customer import * 
 CORS(api)
 
 
@@ -105,9 +105,6 @@ def create_job():
         customer = db.session.get(Customer, customer_id)
         if not customer:
             return jsonify({'error': f'Customer with id {customer_id} not found'}), 404
-
-        print(f"ID del Token: {current_contractor_id} (Tipo: {type(current_contractor_id)})")
-        print(f"ID del dueño del Cliente: {customer.contractor_id} (Tipo: {type(customer.contractor_id)})")
 
         if customer.contractor_id != int(current_contractor_id):
             return jsonify({'error': f'Unauthorized to create job for customer {customer_id}'}), 403
