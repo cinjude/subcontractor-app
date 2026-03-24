@@ -14,7 +14,9 @@ export const initialStore = () => {
   };
   return {
     provider: getProvider(),
+     setCustomer:[]
   };
+  
 };
 
 export default function storeReducer(store, action = {}) {
@@ -31,6 +33,12 @@ export default function storeReducer(store, action = {}) {
         ...store,
         provider: null,
         token: null,
+      };
+
+    case "set-customer":
+      return {
+        ...store,
+        setCustomer: action.payload,
       };
 
     default:

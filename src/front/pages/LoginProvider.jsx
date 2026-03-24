@@ -32,7 +32,7 @@ export const LoginProvider = () => {
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
-            const resp = await fetch(`${import.meta.env.VITE_BACKEND_URL}api/user/provider/login`, {
+            const resp = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/provider/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

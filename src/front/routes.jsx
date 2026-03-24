@@ -18,6 +18,7 @@ import { ProviderDashboard } from "./pages/dashboardProvider/ProviderDashboard"
 import { DashboardHome } from "./pages/dashboardProvider/DashboardHome"
 import { PrivateProviderRoute } from "./pages/dashboardProvider/PrivateProviderRoute"
 import { JobsPage } from "./pages/jobs"
+import { CustomersPage } from "./pages/customer/CustomersPage"
 
 // Componente temporal para debug — ponlo arriba del router
 const ErrorDebug = () => {
@@ -52,6 +53,7 @@ export const router = createBrowserRouter(
 
         <Route index element={<DashboardHome />} />
         <Route path="jobs" element={<JobsPage />} />
+        <Route path="customers" element={<CustomersPage />} />
       </Route>
 
       <Route path="/signupprovider" element={<SignUpProvider />} />
