@@ -1,8 +1,8 @@
-import { Link } from "react-router-dom";
 import useGlobalReducer from "../../hooks/useGlobalReducer";
 import { useState } from "react";
+import CustomerPageList from "./CustomerPageList"
 
-export const CustomersPage = () => {
+export const CustomersPage = ({ fetchCustomers }) => {
 
     const { store, dispatch } = useGlobalReducer();
 
@@ -54,6 +54,7 @@ export const CustomersPage = () => {
             }
 
             dispatch({ type: 'set-customer', payload: data.customer });
+            fetchCustomers();
             setFormData(initialhtmlForm);  // ✅ nombre correcto
             setError(null);
 
@@ -77,6 +78,9 @@ export const CustomersPage = () => {
                         <button type="button" className="btn btn-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
                             New Customer
                         </button>
+                    </div>
+                    <div>
+                        <CustomerPageList />
                     </div>
 
                     <div className="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabIndex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">

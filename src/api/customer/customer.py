@@ -40,6 +40,7 @@ def get_all_customers():
     """Get all customers for current contractor"""
     try:
         contractor_id = get_current_contractor_id()
+    
 
         search = request.args.get('search', '').strip().lower()
 
