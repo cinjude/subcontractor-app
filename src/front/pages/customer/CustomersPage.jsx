@@ -31,51 +31,42 @@ export const CustomersPage = () => {
         setError(null);
         setLoading(true);
 
+        const token = store.token || localStorage.getItem("token");
+
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/customers/create`, {
+            const { address2, ...dataToSend } = formData;
+
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/customers/create`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${store.token}`, // Asegúrate que store.token existe
+                    Authorization: `Bearer ${token}`,  // ✅ usa la variable token
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(dataToSend)
             });
 
             const data = await response.json();
             console.log(data);
 
             if (!response.ok) {
-                setError(data.message || 'Failed to create customer, something went wrong');
+                setError(data.error || 'Failed to create customer');
                 return;
             }
 
-            // Si usas Redux
-            dispatch({
-                type: 'set-customer',
-                payload: data.customer
-            });
+            dispatch({ type: 'set-customer', payload: data.customer });
+            setFormData(initialhtmlForm);  // ✅ nombre correcto
+            setError(null);
 
-            // Resetear formulario
-            setFormData(initialFormState);
-
-            // Cerrar modal (si estás usando Bootstrap)
             const modal = document.querySelector("[data-bs-dismiss='modal']");
-            if (modal) {
-                modal.click();
-            }
-            // Opcional: mostrar mensaje de éxito
-            // toast.success('Cliente creado exitosamente');
+            if (modal) modal.click();
 
-        } catch (error) {
-            console.error('Error creating customer:', error);
-            setError(error.message || 'Failed to create customer, please try again');
+        } catch (err) {
+            console.error('Error creating customer:', err);
+            setError('Network error. Please try again.');
         } finally {
             setLoading(false);
         }
-    }
-
-
-
+    };
 
     return (
         <div>

@@ -27,7 +27,7 @@ def get_current_contractor_id():
     if not user:
         raise APIException('User not found', status_code=404)
     
-    contractor = Contractor.query.filter_by(id=user_id).first()
+    contractor = Contractor.query.filter_by(user_id=user_id).first()
     if not contractor:
         raise APIException('Contractor not found', status_code=404)
     
@@ -95,6 +95,7 @@ def create_customer():
             state=data['state'].strip(),
             zip_code=data['zip_code'].strip(),
             phone=data.get('phone', '').strip(),
+            address2=data.get('address2', '').strip(),
             note=data.get('note', '').strip()
         )
         

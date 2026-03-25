@@ -14,6 +14,7 @@ export const initialStore = () => {
   };
   return {
     provider: getProvider(),
+     token: localStorage.getItem("token") || null,
      setCustomer:[]
   };
   
@@ -23,12 +24,14 @@ export default function storeReducer(store, action = {}) {
   switch (action.type) {
     case "login-provider":
       const { provider, token } = action.payload;
+      localStorage.setItem("token", token); 
       return {
         ...store,
         provider,
         token,
       };
     case "logout":
+      localStorage.removeItem("token");
       return {
         ...store,
         provider: null,

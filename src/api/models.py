@@ -142,6 +142,7 @@ class Customer(db.Model):
     email: Mapped[str] = mapped_column(
         String(120), nullable=False)
     address: Mapped[str] = mapped_column(String(120), nullable=False)
+    address2: Mapped[str] = mapped_column(String(120), nullable=True)
     city: Mapped[str] = mapped_column(String(120), nullable=False)
     state: Mapped[str] = mapped_column(String(120), nullable=False)
     zip_code: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -170,6 +171,7 @@ class Customer(db.Model):
             "email": self.email,
             "name": self.name,
             "address": self.address,
+            "address2": self.address2,
             "city": self.city,
             "state": self.state,
             "zip_code": self.zip_code,
