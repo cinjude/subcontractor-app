@@ -1,8 +1,8 @@
 import useGlobalReducer from "../../hooks/useGlobalReducer";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import CustomerPageList from "./CustomerPageList"
 
-export const CustomersPage = ({ fetchCustomers }) => {
+export const CustomersPage = () => {
 
     const { store, dispatch } = useGlobalReducer();
 
@@ -21,6 +21,8 @@ export const CustomersPage = ({ fetchCustomers }) => {
     const [formData, setFormData] = useState(initialhtmlForm)
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
+
+    const fetchCustomersRef = useRef(null)
 
     const handleChange = (e) => {
         const { id, value } = e.target;
@@ -54,8 +56,10 @@ export const CustomersPage = ({ fetchCustomers }) => {
             }
 
             dispatch({ type: 'set-customer', payload: data.customer });
-            fetchCustomers();
-            setFormData(initialhtmlForm);  // ✅ nombre correcto
+
+            if (fetchCustomersRef.current) fetchCustomersRef.current()
+
+            setFormData(initialhtmlForm);
             setError(null);
 
             const modal = document.querySelector("[data-bs-dismiss='modal']");
@@ -80,7 +84,7 @@ export const CustomersPage = ({ fetchCustomers }) => {
                         </button>
                     </div>
                     <div>
-                        <CustomerPageList />
+                        <CustomerPageList onReady={(fn) => fetchCustomersRef.current = fn} />
                     </div>
 
                     <div className="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabIndex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
