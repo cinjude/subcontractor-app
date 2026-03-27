@@ -40,7 +40,6 @@ def get_all_customers():
     """Get all customers for current contractor"""
     try:
         contractor_id = get_current_contractor_id()
-    
 
         search = request.args.get('search', '').strip().lower()
 
@@ -119,3 +118,27 @@ def create_customer():
         db.session.rollback()
         return jsonify({'error': f'Failed to create customer: {str(e)}'}), 500
 
+@api.route('/customer/<int:customer_id>', methods=['GET'])
+@jwt_required()
+def get_customer_by_id(customer_id):
+    try:
+        contractor_id=get_current_contractor_id()
+     
+
+        customer = Customer.query.filter_by(
+            id=customer_id,
+            contractor_id=contractor_id
+        ).first()
+
+        if not customer:
+            return jsonify({'msg': 'Customer not found'}), 400
+
+        return jsonify({
+            'msg': 'Customer retrieved successfully',
+            'customer': customer.serialize()
+        }), 200
+
+    except APIException as e:
+        raise e
+    except Exception as e:
+        return jsonify({'error': f'Failed to fetch customer: {str(e)}'}), 500

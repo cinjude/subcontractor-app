@@ -11,6 +11,8 @@ const CustomerPageList = ({ onReady }) => {
     const [customers, setCustomers] = useState([]);
     const [loadingCustomers, setLoadingCustomers] = useState(false);
 
+    const [selectedCustomer, setSelectedCustomer] = useState(null);
+
     const fetchCustomers = async () => {
         setLoadingCustomers(true);
         const token = store.token || localStorage.getItem("token");
@@ -84,7 +86,10 @@ const CustomerPageList = ({ onReady }) => {
                                     <td>{customer.city}</td>
                                     <td>{customer.state}</td>
                                     <td>
-                                        <button className="btn btn-sm btn-outline-primary">View</button>
+
+                                        <Link to={"/providerdashboard/customer/" + customer.id} class="btn btn-sm btn-outline-primary">
+                                            View
+                                        </Link>
                                         <Link className="btn btn-sm btn-outline-warning ms-2">Edit</Link>
                                         <button className="btn btn-sm btn-outline-danger ms-2">Delete</button>
                                     </td>
@@ -128,7 +133,27 @@ const CustomerPageList = ({ onReady }) => {
                             </div>
 
                             <div className="cpl-card-actions">
-                                <button className="btn btn-sm btn-outline-primary">View</button>
+
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+                                    View
+                                </button>
+                                <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h1 class="modal-title fs-5" id="staticBackdropLabel">Modal title</h1>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body modal-dialog modal-dialog-centered">
+                                                ...
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                <button type="button" class="btn btn-primary">Understood</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                                 <Link className="btn btn-sm btn-outline-warning">Edit</Link>
                                 <button className="btn btn-sm btn-outline-danger">Delete</button>
                             </div>
@@ -138,7 +163,7 @@ const CustomerPageList = ({ onReady }) => {
                 )}
             </div>
 
-        </div>
+        </div >
     );
 };
 
