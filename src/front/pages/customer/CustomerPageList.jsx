@@ -166,5 +166,4 @@ const CustomerPageList = ({ onReady }) => {
         </div >
     );
 };
-
 export default CustomerPageList;

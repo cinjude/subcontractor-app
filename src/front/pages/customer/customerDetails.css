@@ -1,0 +1,23 @@
+
+
+.cpl-avatar-details{
+    background-color: #3f6ea1c6;
+    color: white;
+    border-radius: 50%;
+    width: 55px;
+    height: 55px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.profile-header-customer{
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 0.7rem;
+}
+
+.contact-info{
+ border-radius: 0.7rem;
+ border: 1px solid rgb(178, 176, 176);
+}
