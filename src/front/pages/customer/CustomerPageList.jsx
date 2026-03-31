@@ -87,7 +87,7 @@ const CustomerPageList = ({ onReady }) => {
                                     <td>{customer.state}</td>
                                     <td>
 
-                                        <Link to={"/providerdashboard/customer/" + customer.id} class="btn btn-sm btn-outline-primary">
+                                        <Link to={"/providerdashboard/customer/" + customer.id} className="btn btn-sm btn-outline-primary">
                                             View
                                         </Link>
                                         <Link className="btn btn-sm btn-outline-warning ms-2">Edit</Link>
@@ -134,22 +134,22 @@ const CustomerPageList = ({ onReady }) => {
 
                             <div className="cpl-card-actions">
 
-                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+                                <button type="button" className="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
                                     View
                                 </button>
-                                <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-                                    <div class="modal-dialog">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h1 class="modal-title fs-5" id="staticBackdropLabel">Modal title</h1>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                <div className="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabIndex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                                    <div className="modal-dialog">
+                                        <div className="modal-content">
+                                            <div className="modal-header">
+                                                <h1 className="modal-title fs-5" id="staticBackdropLabel">Modal title</h1>
+                                                <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                             </div>
-                                            <div class="modal-body modal-dialog modal-dialog-centered">
+                                            <div className="modal-body modal-dialog modal-dialog-centered">
                                                 ...
                                             </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                                <button type="button" class="btn btn-primary">Understood</button>
+                                            <div className="modal-footer">
+                                                <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                <button type="button" className="btn btn-primary">Understood</button>
                                             </div>
                                         </div>
                                     </div>

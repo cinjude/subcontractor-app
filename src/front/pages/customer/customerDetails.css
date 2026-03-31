@@ -19,5 +19,93 @@
 
 .contact-info{
  border-radius: 0.7rem;
- border: 1px solid rgb(178, 176, 176);
+ border: 1px solid rgba(188, 187, 187, 0.901) ;
 }
+
+.contact-customer-info{
+    border-top: 1px solid rgba(188, 187, 187, 0.901) ;
+    width: 33%;
+}
+
+.contact-customer-info-email{
+width: 33.5%;
+border-top: 1px solid rgba(188, 187, 187, 0.901) ;
+border-left: 1px solid rgba(188, 187, 187, 0.901) ;
+}
+
+.contact-customer-info-phone{
+width: 33.5%;
+border-top: 1px solid rgba(188, 187, 187, 0.901) ;
+border-left: 1px solid rgba(188, 187, 187, 0.901) ;
+}
+
+.customer-address {
+    border-radius: 0.7rem;
+    border: 1px solid rgba(188, 187, 187, 0.901) ;
+}
+
+.customer-address1 {
+   width: 66.50%;
+ border-top: 1px solid rgba(188, 187, 187, 0.901) ;
+}
+
+.customer-address2 {
+   width: 33.50%;
+ border-top: 1px solid rgba(188, 187, 187, 0.901) ;
+ border-left: 1px solid rgba(188, 187, 187, 0.901) ;
+}
+
+.customer-address-city{
+    width: 33%;
+    border-top: 1px solid rgba(188, 187, 187, 0.901) ;
+ border-right: 1px solid rgba(188, 187, 187, 0.901) ;
+}
+
+.customer-address-state{
+    width: 33.50%;
+    border-top: 1px solid rgba(188, 187, 187, 0.901) ;
+ border-right: 1px solid rgba(188, 187, 187, 0.901) ;
+}
+
+.customer-address-zip{
+    width: 33.50%;
+    border-top: 1px solid rgba(188, 187, 187, 0.901) ;
+}
+
+.customer-note{
+ border-radius: 0.7rem;
+    border: 1px solid rgba(188, 187, 187, 0.901) ;
+}
+
+.customer-notes{
+    padding: 1rem;
+}
+
+.customer-summary{
+    border-radius: 0.7rem;
+    border: 1px solid rgba(188, 187, 187, 0.901) ;
+}
+
+.customer-summary-total-jobs{
+    width: 32.5%;
+    border: 1px solid rgba(202, 208, 208, 0.623) ;
+
+}
+
+.customer-summary-open-invoice{
+    width: 32.5%;
+    border: 1px solid rgba(202, 208, 208, 0.623) ;
+}
+
+.customer-summary-paid-invoice{
+    width: 32.5%;
+    border: 1px solid rgba(202, 208, 208, 0.623) ;
+}
+
+.sumary-hr{
+    height: 0.1rem;
+    background-color:  #3f6ea1c6;
+}
+
+
+
