@@ -142,3 +142,78 @@ def get_customer_by_id(customer_id):
         raise e
     except Exception as e:
         return jsonify({'error': f'Failed to fetch customer: {str(e)}'}), 500
+
+@api.route('/customer/<int:customer_id>', methods=['PUT'])
+@jwt_required()
+def update_customer(customer_id):
+    try:
+        contractor_id = get_current_contractor_id()
+
+        customer = Customer.query.filter_by(
+        id=customer_id,
+        contractor_id=contractor_id
+        ).first()
+
+        if not customer:
+            return jsonify({'msg': 'Customer not found'}), 404
+
+        body = request.get_json(silent=True)
+
+        if 'name' in body:
+            customer.name = body['name'].strip()
+        if 'email' in body:
+            customer.email = body['email'].strip().lower()
+        if 'address' in body:
+            customer.address = body['address'].strip()
+        if 'city' in body:
+            customer.city = body['city'].strip()
+        if 'state' in body:
+            customer.state = body['state'].strip()
+        if 'zip_code' in body:
+            customer.zip_code = body['zip_code'].strip()
+        if 'phone' in body:
+            customer.phone = body['phone'].strip()
+        if 'address2' in body:
+            customer.address2 = body['address2'].strip()
+        if 'note' in body:
+            customer.note = body['note'].strip()
+        
+        db.session.commit()
+    
+        return jsonify({
+            'msg': 'Customer updated successfully',
+            'customer': customer.serialize() }), 200
+
+    except APIException as e:
+        raise e
+    except Exception as e:
+        return jsonify({'error': f'Failed to update customer: {str(e)}'}), 500
+
+
+@api.route('/customer/<int:customer_id>', methods=['DELETE'])
+@jwt_required()
+def delete_customer(customer_id):
+    try:
+        contractor_id = get_current_contractor_id()
+
+        customer = Customer.query.filter_by(
+            id=customer_id,
+            contractor_id=contractor_id
+        ).first()
+
+        if not customer:
+            return jsonify({'msg': 'Customer not fount'}), 400
+        
+        db.session.delete(customer)
+        db.session.commit()
+
+        return jsonify({'msg': 'Customer deleted successfully'}), 200
+    
+    except APIException as e:
+        raise e
+    except Exception as e:
+        return jsonify({'error': f'Failed to delete customer: {str(e)}'}), 500
+
+
+
+

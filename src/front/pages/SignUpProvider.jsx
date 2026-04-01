@@ -18,7 +18,7 @@ export const SignUpProvider = () => {
 
     const handleRegister = async (e) => {
         e.preventDefault();
-        setErrorMsg(null); // Limpiar error anterior
+        setErrorMsg(null);
 
         try {
             const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}api/user/provider/register`, {

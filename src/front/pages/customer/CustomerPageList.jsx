@@ -133,27 +133,7 @@ const CustomerPageList = ({ onReady }) => {
                             </div>
 
                             <div className="cpl-card-actions">
-
-                                <button type="button" className="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
-                                    View
-                                </button>
-                                <div className="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabIndex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-                                    <div className="modal-dialog">
-                                        <div className="modal-content">
-                                            <div className="modal-header">
-                                                <h1 className="modal-title fs-5" id="staticBackdropLabel">Modal title</h1>
-                                                <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                            </div>
-                                            <div className="modal-body modal-dialog modal-dialog-centered">
-                                                ...
-                                            </div>
-                                            <div className="modal-footer">
-                                                <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                                <button type="button" className="btn btn-primary">Understood</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <Link to={"/providerdashboard/customer/" + customer.id} className="btn btn-sm btn-outline-primary" > View  </Link>
                                 <Link className="btn btn-sm btn-outline-warning">Edit</Link>
                                 <button className="btn btn-sm btn-outline-danger">Delete</button>
                             </div>

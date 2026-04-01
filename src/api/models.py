@@ -155,11 +155,11 @@ class Customer(db.Model):
 
     contractor_customer: Mapped['Contractor']= relationship(back_populates='customer')
     customer_invoice: Mapped[list['Invoice']] = relationship(
-        back_populates='invoice_customer')
+        back_populates='invoice_customer', cascade='all, delete-orphan')
     customer_job: Mapped[list['Job']] = relationship(
-        back_populates='job_customer')
+        back_populates='job_customer', cascade='all, delete-orphan')
     customer_request: Mapped[list['EstimateRequest']] = relationship(
-        back_populates='estim_customer')
+        back_populates='estim_customer', cascade='all, delete-orphan')
 
     __table_args__ = (db.Index('idx_customer_contractor', 'contractor_id', 'email'),
                       db.UniqueConstraint('contractor_id', 'email'))

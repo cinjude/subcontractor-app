@@ -1,111 +1,389 @@
+/* ================================================================
+   customerDetails.css
+   SISTEMA RESPONSIVO — mobile first
+   ─────────────────────────────────
+   .cd-mobile-only  → visible en mobile/tablet, escondido en desktop
+   .cd-desktop-only → escondido en mobile/tablet, visible en desktop
+   ─────────────────────────────────
+   Breakpoints:
+     Mobile   default  (< 576px)
+     Tablet   ≥ 576px
+     Desktop  ≥ 992px
+   ================================================================ */
 
+/* ══════════════════════════════════════════
+   VISIBILITY HELPERS — el corazon del sistema
+   ══════════════════════════════════════════
+   Por defecto (mobile): mobile-only visible, desktop-only escondido
+*/
+.cd-mobile-only  { display: block; }
+.cd-desktop-only { display: none;  }
 
-.cpl-avatar-details{
-    background-color: #3f6ea1c6;
-    color: white;
-    border-radius: 50%;
-    width: 55px;
-    height: 55px;
-    display: flex;
-    align-items: center;
+/* En desktop (≥ 992px): se invierte */
+@media (min-width: 992px) {
+  .cd-mobile-only  { display: none  !important; }
+  .cd-desktop-only { display: block !important; }
+}
+
+/* ── Page wrapper ── */
+.cd-page {
+  padding: 1rem 1rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: #f3f4f6;
+  min-height: 100vh;
+}
+
+/* ── Topbar: solo el boton back ── */
+.cd-topbar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+.cd-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #374151;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 7px 14px;
+  font-weight: 500;
+}
+.cd-back-btn:hover { background: #f9fafb; }
+
+/* ── Botones Edit / Delete ── */
+.cd-btn-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1.5px solid #f59e0b;
+  background: transparent;
+  color: #b45309;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.cd-btn-edit:hover { background: #fef3c7; }
+
+.cd-btn-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1.5px solid #ef4444;
+  background: transparent;
+  color: #dc2626;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.cd-btn-delete:hover { background: #fee2e2; }
+
+/* ══════════════════════════════════════════
+   LAYOUT — por defecto es una sola columna
+   ══════════════════════════════════════════ */
+.cd-layout { display: block; }
+
+/* ── SIDEBAR ── */
+.cd-sidebar { margin-bottom: 16px; }
+
+/* ── HERO BANNER ──
+   Mobile:  fila horizontal (avatar | info | botones)
+   Desktop: columna vertical centrada (sidebar)
+── */
+.cd-hero {
+  background: #dbeafe;
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.cd-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #93c5fd;
+  color: #1e3a5f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.cd-hero-info { flex: 1; min-width: 0; }
+.cd-hero-name  { font-size: 16px; font-weight: 700; color: #1e40af; margin: 0 0 2px; }
+.cd-hero-email { font-size: 13px; color: #2563eb; margin: 0 0 2px; }
+.cd-hero-meta  { font-size: 11px; color: #3b82f6; margin: 0; }
+
+.cd-badge-active {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #166534;
+  margin-top: 6px;
+}
+.cd-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: #16a34a; }
+
+/* Botones dentro del hero — siempre a la derecha en tablet+ */
+.cd-hero-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+/* Mobile: botones en columna, full width */
+@media (max-width: 575px) {
+  .cd-hero { align-items: flex-start; }
+  .cd-hero-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+  }
+  .cd-hero-actions .cd-btn-edit,
+  .cd-hero-actions .cd-btn-delete {
+    width: 100%;
     justify-content: center;
+  }
 }
 
-.profile-header-customer{
-    margin-top: 1rem;
-    padding: 1rem;
-    border-radius: 0.7rem;
+/* ── Record info card ── */
+.cd-record-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 16px;
+}
+.cd-record-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: #9ca3af;
+  margin-bottom: 14px;
+}
+.cd-record-row { margin-bottom: 12px; }
+.cd-record-row:last-child { margin-bottom: 0; }
+.cd-record-label { font-size: 11px; color: #9ca3af; margin-bottom: 2px; }
+.cd-record-val   { font-size: 13px; font-weight: 600; color: #111827; }
+
+/* ── Main content ── */
+.cd-main { display: flex; flex-direction: column; gap: 14px; }
+
+/* ── Card base ── */
+.cd-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.cd-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px 10px;
+}
+.cd-card-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: #374151;
+  margin: 0;
+}
+.cd-card-tag {
+  font-size: 11px;
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-weight: 500;
 }
 
-.contact-info{
- border-radius: 0.7rem;
- border: 1px solid rgba(188, 187, 187, 0.901) ;
+/* ── Field rows (mobile / tablet) ── */
+.cd-field-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 10px 20px;
+  border-top: 1px solid #f3f4f6;
+  gap: 12px;
+}
+.cd-field-label {
+  font-size: 13px;
+  color: #9ca3af;
+  flex-shrink: 0;
+  min-width: 90px;
+}
+.cd-field-val {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  text-align: right;
+  word-break: break-word;
+}
+.cd-field-val.link  { color: #2563eb; font-weight: 500; }
+.cd-field-val.muted { color: #9ca3af; font-weight: 400; font-style: italic; }
+
+/* ── Note ── */
+.cd-note-box {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #4b5563;
+  line-height: 1.7;
+  margin: 0 20px 10px;
+}
+.cd-note-dates {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #9ca3af;
+  padding: 10px 20px 14px;
+  border-top: 1px solid #f3f4f6;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
-.contact-customer-info{
-    border-top: 1px solid rgba(188, 187, 187, 0.901) ;
-    width: 33%;
+/* ── Stats ── */
+.cd-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 14px 20px;
+}
+.cd-stat {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.cd-stat-label { font-size: 12px; color: #6b7280; margin-bottom: 6px; }
+.cd-stat-val   { font-size: 26px; font-weight: 600; color: #111827; line-height: 1; margin-bottom: 4px; }
+.cd-stat-sub   { font-size: 11px; color: #9ca3af; }
+.cd-summary-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #9ca3af;
+  padding: 10px 20px 14px;
+  border-top: 2px solid #93c5fd;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
-.contact-customer-info-email{
-width: 33.5%;
-border-top: 1px solid rgba(188, 187, 187, 0.901) ;
-border-left: 1px solid rgba(188, 187, 187, 0.901) ;
+/* ── Tablet 2-col wrapper ── */
+.cd-two-col { display: flex; flex-direction: column; gap: 14px; }
+
+/* ══════════════════════════════════════════
+   TABLET ≥ 576px
+   ══════════════════════════════════════════ */
+@media (min-width: 576px) {
+  .cd-two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
 }
 
-.contact-customer-info-phone{
-width: 33.5%;
-border-top: 1px solid rgba(188, 187, 187, 0.901) ;
-border-left: 1px solid rgba(188, 187, 187, 0.901) ;
+/* ══════════════════════════════════════════
+   DESKTOP ≥ 992px
+   ══════════════════════════════════════════ */
+@media (min-width: 992px) {
+  .cd-page { padding: 1.5rem 2rem 3rem; }
+
+  /* Sidebar + main grid */
+  .cd-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  .cd-sidebar { margin-bottom: 0; }
+
+  /* Hero vertical en el sidebar */
+  .cd-hero {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 28px 20px 20px;
+    gap: 10px;
+  }
+  .cd-hero-info { text-align: center; }
+  .cd-avatar    { width: 70px; height: 70px; font-size: 26px; }
+  .cd-hero-name { font-size: 20px; }
+
+  /* Botones en columna full-width en el sidebar */
+  .cd-hero-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .cd-hero-actions .cd-btn-edit,
+  .cd-hero-actions .cd-btn-delete {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 0;
+    font-size: 14px;
+  }
+
+  /* Contact info: 3 columnas */
+  .cd-contact-cols {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid #f3f4f6;
+  }
+  .cd-contact-col {
+    padding: 16px 20px;
+    border-right: 1px solid #f3f4f6;
+  }
+  .cd-contact-col:last-child { border-right: none; }
+  .cd-contact-col-label { font-size: 12px; color: #9ca3af; margin-bottom: 6px; }
+  .cd-contact-col-val   { font-size: 15px; font-weight: 600; color: #111827; word-break: break-word; }
+  .cd-contact-col-val.link { color: #2563eb; font-weight: 500; }
+
+  /* Address: grid 2 columnas */
+  .cd-address-grid-desktop {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 1px solid #f3f4f6;
+  }
+  .cd-addr-col {
+    padding: 14px 20px;
+    border-right: 1px solid #f3f4f6;
+    border-bottom: 1px solid #f3f4f6;
+  }
+  .cd-addr-col:nth-child(even) { border-right: none; }
+  .cd-addr-col.no-bottom       { border-bottom: none; }
+  .cd-addr-col-label { font-size: 12px; color: #9ca3af; margin-bottom: 6px; }
+  .cd-addr-col-val   { font-size: 15px; font-weight: 600; color: #111827; }
+  .cd-addr-col-val.muted { color: #9ca3af; font-weight: 400; font-style: italic; }
+
+  /* En desktop la tarjeta Location desaparece */
+  .cd-location-card { display: none !important; }
+
+  /* cd-two-col se vuelve transparente — las cards se renderizan sueltas */
+  .cd-two-col { display: contents; }
 }
-
-.customer-address {
-    border-radius: 0.7rem;
-    border: 1px solid rgba(188, 187, 187, 0.901) ;
-}
-
-.customer-address1 {
-   width: 66.50%;
- border-top: 1px solid rgba(188, 187, 187, 0.901) ;
-}
-
-.customer-address2 {
-   width: 33.50%;
- border-top: 1px solid rgba(188, 187, 187, 0.901) ;
- border-left: 1px solid rgba(188, 187, 187, 0.901) ;
-}
-
-.customer-address-city{
-    width: 33%;
-    border-top: 1px solid rgba(188, 187, 187, 0.901) ;
- border-right: 1px solid rgba(188, 187, 187, 0.901) ;
-}
-
-.customer-address-state{
-    width: 33.50%;
-    border-top: 1px solid rgba(188, 187, 187, 0.901) ;
- border-right: 1px solid rgba(188, 187, 187, 0.901) ;
-}
-
-.customer-address-zip{
-    width: 33.50%;
-    border-top: 1px solid rgba(188, 187, 187, 0.901) ;
-}
-
-.customer-note{
- border-radius: 0.7rem;
-    border: 1px solid rgba(188, 187, 187, 0.901) ;
-}
-
-.customer-notes{
-    padding: 1rem;
-}
-
-.customer-summary{
-    border-radius: 0.7rem;
-    border: 1px solid rgba(188, 187, 187, 0.901) ;
-}
-
-.customer-summary-total-jobs{
-    width: 32.5%;
-    border: 1px solid rgba(202, 208, 208, 0.623) ;
-
-}
-
-.customer-summary-open-invoice{
-    width: 32.5%;
-    border: 1px solid rgba(202, 208, 208, 0.623) ;
-}
-
-.customer-summary-paid-invoice{
-    width: 32.5%;
-    border: 1px solid rgba(202, 208, 208, 0.623) ;
-}
-
-.sumary-hr{
-    height: 0.1rem;
-    background-color:  #3f6ea1c6;
-}
-
-
-
