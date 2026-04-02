@@ -1,17 +1,35 @@
 import { useEffect, useState } from "react";
 import useGlobalReducer from "../../hooks/useGlobalReducer";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./CustomerPageList.css";
+import customerService from "./customerService";
+import Swal from 'sweetalert2'
 
 const getInitials = (name = "") =>
     name.split(" ").slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
 
-const CustomerPageList = ({ onReady }) => {
+
+
+const CustomerPageList = ({ onReady, onEdit }) => {
+
+    const navigate = useNavigate()
+
     const { store } = useGlobalReducer();
     const [customers, setCustomers] = useState([]);
     const [loadingCustomers, setLoadingCustomers] = useState(false);
-
-    const [selectedCustomer, setSelectedCustomer] = useState(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [editData, setEditData] = useState({
+        name: '',
+        email: '',
+        address: '',
+        address2: "",
+        city: '',
+        state: '',
+        zip_code: '',
+        phone: '',
+        note: ''
+    });
 
     const fetchCustomers = async () => {
         setLoadingCustomers(true);
@@ -47,13 +65,59 @@ const CustomerPageList = ({ onReady }) => {
         );
     }
 
+    const handleDelete = async (id) => {
+        Swal.fire({
+            title: "Are you sure?",
+            text: "You won't be able to revert this!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Yes, delete it!",
+            showLoaderOnConfirm: true, // Muestra un spinner en el botón mientras borra
+            preConfirm: async () => {
+
+                try {
+                    const token = store?.token || localStorage.getItem("token");
+                    const response = await fetch(
+                        `${import.meta.env.VITE_BACKEND_URL}/api/customer/${id}`,
+                        {
+                            method: "DELETE",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${token}`
+                            }
+                        }
+                    );
+
+                    if (!response.ok) {
+                        throw new Error("Could not delete the customer");
+                    }
+                    return response.json();
+                } catch (error) {
+                    Swal.showValidationMessage(`Request failed: ${error}`);
+                }
+            },
+            allowOutsideClick: () => !Swal.isLoading()
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: "Deleted!",
+                    text: "The customer has been removed.",
+                    icon: "success"
+                }).then(() => {
+                    fetchCustomers()
+                });
+            }
+        });
+    };
+
     const EmptyState = () => (
         <div className="cpl-empty">
             <div className="cpl-empty-icon">👤</div>
             <p className="cpl-empty-text">No customers yet</p>
             <p className="cpl-empty-sub text-muted">Add your first customer to get started.</p>
-        </div>
-    );
+        </div>);
 
     return (
         <div className="mt-3">
@@ -86,12 +150,13 @@ const CustomerPageList = ({ onReady }) => {
                                     <td>{customer.city}</td>
                                     <td>{customer.state}</td>
                                     <td>
-
                                         <Link to={"/providerdashboard/customer/" + customer.id} className="btn btn-sm btn-outline-primary">
                                             View
                                         </Link>
-                                        <Link className="btn btn-sm btn-outline-warning ms-2">Edit</Link>
-                                        <button className="btn btn-sm btn-outline-danger ms-2">Delete</button>
+                                        <button onClick={() => onEdit(customer)} type="button" className="btn btn-sm btn-outline-warning ms-2" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+                                            Edit
+                                        </button>
+                                        <button onClick={() => handleDelete(customer.id)} className="btn btn-sm btn-outline-danger ms-2">Delete</button>
                                     </td>
                                 </tr>
                             ))}
@@ -134,15 +199,22 @@ const CustomerPageList = ({ onReady }) => {
 
                             <div className="cpl-card-actions">
                                 <Link to={"/providerdashboard/customer/" + customer.id} className="btn btn-sm btn-outline-primary" > View  </Link>
-                                <Link className="btn btn-sm btn-outline-warning">Edit</Link>
-                                <button className="btn btn-sm btn-outline-danger">Delete</button>
+                                <button
+                                    onClick={() => onEdit(customer)}
+                                    type="button"
+                                    className="btn btn-sm btn-outline-warning"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#staticBackdrop"
+                                >
+                                    Edit
+                                </button>
+                                <button onClick={() => handleDelete(customer.id)} className="btn btn-sm btn-outline-danger">Delete</button>
                             </div>
 
                         </div>
                     ))
                 )}
             </div>
-
         </div >
     );
 };

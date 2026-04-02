@@ -1,6 +1,7 @@
 import useGlobalReducer from "../../hooks/useGlobalReducer";
 import { useRef, useState } from "react";
 import CustomerPageList from "./CustomerPageList"
+import Swal from 'sweetalert2'
 
 export const CustomersPage = () => {
 
@@ -21,6 +22,8 @@ export const CustomersPage = () => {
     const [formData, setFormData] = useState(initialhtmlForm)
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [editId, setEditId] = useState(null);
+    const [isEditing, setIsEditing] = useState(false);
 
     const fetchCustomersRef = useRef(null)
 
@@ -35,42 +38,126 @@ export const CustomersPage = () => {
 
         const token = store.token || localStorage.getItem("token");
 
+        // Definir URL y Método dinámicamente
+        const url = isEditing
+            ? `${import.meta.env.VITE_BACKEND_URL}/api/customer/${editId}`
+            : `${import.meta.env.VITE_BACKEND_URL}/api/customers/create`;
+
+        const method = isEditing ? 'PUT' : 'POST';
+
         try {
+            // Limpiamos datos si es necesario (ej: address2)
             const { address2, ...dataToSend } = formData;
 
-            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/customers/create`, {
-                method: 'POST',
+            const response = await fetch(url, {
+                method: method,
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,  // ✅ usa la variable token
+                    Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify(dataToSend)
+                body: JSON.stringify(dataToSend) // Enviamos la data limpia
             });
 
             const data = await response.json();
-            console.log(data);
 
-            if (!response.ok) {
-                setError(data.error || 'Failed to create customer');
-                return;
+            if (response.ok) {
+                // 1. Actualizamos el store global con el cliente que devuelve la API
+                dispatch({ type: 'set-customer', payload: data.customer });
+
+                // 2. Refrescamos la lista completa (si tienes la referencia)
+                if (fetchCustomersRef.current) fetchCustomersRef.current();
+
+                // 3. Limpiamos formulario y estados
+                setFormData(initialhtmlForm);
+                setIsEditing(false);
+
+                // 4. Cerramos el modal de forma segura
+                const modalCloseBtn = document.querySelector("[data-bs-dismiss='modal']");
+                if (modalCloseBtn) modalCloseBtn.click();
+
+                Swal.fire("Success!", isEditing ? "Updated" : "Created", "success");
+            } else {
+                // Si la API responde pero con error (ej: email duplicado)
+                setError(data.error || 'Failed to process request');
+                Swal.fire("Error", data.error || "Algo salió mal", "error");
             }
 
-            dispatch({ type: 'set-customer', payload: data.customer });
-
-            if (fetchCustomersRef.current) fetchCustomersRef.current()
-
-            setFormData(initialhtmlForm);
-            setError(null);
-
-            const modal = document.querySelector("[data-bs-dismiss='modal']");
-            if (modal) modal.click();
-
         } catch (err) {
-            console.error('Error creating customer:', err);
+            console.error('Error:', err);
             setError('Network error. Please try again.');
         } finally {
             setLoading(false);
         }
+    };
+
+    const createCustomer = () => {
+        setEditId(null)
+        setIsEditing(false);
+        setFormData(initialhtmlForm);
+    }
+
+    const handleEditClick = (customer) => {
+        setEditId(customer.id)
+        setIsEditing(true)
+        setFormData({
+            name: customer.name || '',
+            email: customer.email || '',
+            address: customer.address || '',
+            address2: customer.address2 || '',
+            city: customer.city || '',
+            state: customer.state || '',
+            zip_code: customer.zip_code || '',
+            phone: customer.phone || '',
+            note: customer.note || ''
+        });
+    };
+
+    const handleDelete = async () => {
+        Swal.fire({
+            title: "Are you sure?",
+            text: "You won't be able to revert this!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Yes, delete it!",
+            showLoaderOnConfirm: true, // Muestra un spinner en el botón mientras borra
+            preConfirm: async () => {
+                // Esta parte ejecuta la lógica de borrado real
+                try {
+                    const token = store?.token || localStorage.getItem("token");
+                    const response = await fetch(
+                        `${import.meta.env.VITE_BACKEND_URL}/api/customer/${id}`,
+                        {
+                            method: "DELETE",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${token}`
+                            }
+                        }
+                    );
+
+                    if (!response.ok) {
+                        throw new Error("Could not delete the customer");
+                    }
+                    return response.json();
+                } catch (error) {
+                    Swal.showValidationMessage(`Request failed: ${error}`);
+                }
+            },
+            allowOutsideClick: () => !Swal.isLoading()
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: "Deleted!",
+                    text: "The customer has been removed.",
+                    icon: "success"
+                }).then(() => {
+                    // Después de que el usuario vea el mensaje de éxito, lo enviamos a la lista
+                    navigate("/providerdashboard/customers");
+                });
+            }
+        });
     };
 
     return (
@@ -79,19 +166,22 @@ export const CustomersPage = () => {
                 <div className="col-12">
                     <div className="d-flex justify-content-between align-items-center mb-4">
                         <h4>Customers Management</h4>
-                        <button type="button" className="btn btn-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+                        <button onClick={createCustomer} type="button" className="btn btn-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
                             New Customer
                         </button>
                     </div>
                     <div>
-                        <CustomerPageList onReady={(fn) => fetchCustomersRef.current = fn} />
+                        <CustomerPageList
+                            onReady={(fn) => fetchCustomersRef.current = fn}
+                            onEdit={handleEditClick}
+                        />
                     </div>
 
                     <div className="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabIndex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
                         <div className="modal-dialog">
                             <div className="modal-content">
                                 <div className="modal-header">
-                                    <h1 className="modal-title fs-5" id="staticBackdropLabel">Create New Customer</h1>
+                                    <h1 className="modal-title fs-5" id="staticBackdropLabel">{isEditing ? 'Edit Customer' : 'Add new Customer'}</h1>
                                     <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
 
@@ -194,7 +284,7 @@ export const CustomersPage = () => {
                                         onClick={handleSubmit}
                                         disabled={loading}
                                     >
-                                        {loading ? "Saving..." : "Submit"}
+                                        {loading ? "Cargando..." : isEditing ? "Save Changes" : "Create Customer"}
                                     </button>
                                 </div>
                             </div>

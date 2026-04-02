@@ -48,14 +48,15 @@ export default function CustomerDetails() {
     useEffect(() => { getSingleCustomer(); }, [store.token]);
 
     const [editData, setEditData] = useState({
-        name: "",
-        email: "",
-        phone: "",
-        address: "",
-        city: "",
-        state: "",
-        zip_code: "",
-        note: ""
+        name: '',
+        email: '',
+        address: '',
+        address2: "",
+        city: '',
+        state: '',
+        zip_code: '',
+        phone: '',
+        note: ''
     });
 
     useEffect(() => {
@@ -65,6 +66,7 @@ export default function CustomerDetails() {
                 email: customer.email || "",
                 phone: customer.phone || "",
                 address: customer.address || "",
+                address2: customer.address2 || "",
                 city: customer.city || "",
                 state: customer.state || "",
                 zip_code: customer.zip_code || "",
@@ -126,7 +128,7 @@ export default function CustomerDetails() {
             text: "You won't be able to revert this!",
             icon: "warning",
             showCancelButton: true,
-            confirmButtonColor: "#d33", // Rojo para borrar
+            confirmButtonColor: "#d33",
             cancelButtonColor: "#3085d6",
             confirmButtonText: "Yes, delete it!",
             showLoaderOnConfirm: true, // Muestra un spinner en el botón mientras borra
