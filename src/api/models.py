@@ -3,6 +3,7 @@ from datetime import datetime, time
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import String, Boolean, Integer, Enum, DateTime, func, ForeignKey, Float, UniqueConstraint, Date, Numeric, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.ext.hybrid import hybrid_property
 from decimal import Decimal
 
 db = SQLAlchemy()
@@ -115,6 +116,19 @@ class Contractor(db.Model):
     create_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now())
 
+    @hybrid_property
+    def total_revenue(self):
+        return sum((inv.total_amount or 0) for inv in self.contractor_invoice)
+
+    @total_revenue.expression
+    def total_revenue(cls):
+        from sqlalchemy import select
+        return (
+            select(func.coalesce(func.sum(Invoice.total_amount), 0))
+            .where(Invoice.contractor_id == cls.id)
+            .scalar_subquery()
+        )
+
     customer: Mapped[list['Customer']] = relationship(
         back_populates='contractor_customer')
     contractor_invoice: Mapped[list['Invoice']] = relationship(
@@ -191,15 +205,25 @@ class Services(db.Model):
         ForeignKey('contractor.id'), nullable=False)
     description: Mapped[str] = mapped_column(String(500), nullable=False)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
-    price: Mapped[Numeric] = mapped_column(Numeric(10, 2))
-    duration: Mapped[int] = mapped_column(Integer)
-    image: Mapped[str] = mapped_column(String())
-    materials_needed: Mapped[str] = mapped_column(String())
+    price: Mapped[Numeric] = mapped_column(Numeric(10, 2), nullable=True)
+    duration: Mapped[int] = mapped_column(Integer, nullable=True)
+    image: Mapped[str] = mapped_column(String(), nullable=True)
+    materials_needed: Mapped[str] = mapped_column(String(), nullable=True)
     estimate_hours: Mapped[float] = mapped_column(Float, nullable=True)
     base_cost: Mapped[Numeric] = mapped_column(Numeric(10, 2), nullable=True)
-    is_deleted: Mapped[bool] = mapped_column(Boolean(), default=False)
+    is_deleted: Mapped[bool] = mapped_column(Boolean(), nullable=True, default=False)
     is_active: Mapped[bool] = mapped_column(
         Boolean(), nullable=False, default=True)
+
+    @hybrid_property
+    def profit(self):
+        if self.price is not None and self.base_cost is not None:
+            return self.price - self.base_cost
+        return Decimal('0.00')
+
+    @profit.expression
+    def profit(cls):
+        return func.coalesce(cls.price - cls.base_cost, 0)
 
     contractorServices: Mapped['Contractor'] = relationship(
         back_populates='service_contr')
@@ -209,27 +233,62 @@ class Services(db.Model):
         back_populates='service_mat', cascade='all, delete-orphan')
     service_estimate: Mapped[list['EstimateRequest']] = relationship(
         back_populates='service')
+    
+    def serialize(self):
+        return{
+            'id': self.id,
+            'contractor_id': self.contractor_id,
+            'description': self.description,
+            'name': self.name,
+            'price': self.price,
+            'duration': self.duration,
+            'image': self.image,
+            'materials_needed': self.materials_needed,
+            'estimate_hours': self.estimate_hours,
+            'base_cost': self.base_cost,
+            'is_deleted': self.is_deleted,
+            'is_active': self.is_active
+        }
 
 
 class ServiceMaterial(db.Model):
     __tablename__ = 'servicesMaterial'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     service_id: Mapped[int] = mapped_column(
-        ForeignKey('services.id'), nullable=False)
+        ForeignKey('services.id'), nullable=True)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
-    quantity: Mapped[Numeric] = mapped_column(Numeric(10, 2))
-    unit_cost: Mapped[Numeric] = mapped_column(Numeric(10, 2))
+    quantity: Mapped[Numeric] = mapped_column(Numeric(10, 2), nullable=True)
+    unit_cost: Mapped[Numeric] = mapped_column(Numeric(10, 2), nullable=True)
+
+    @hybrid_property
+    def total_cost(self):
+        if self.quantity and self.unit_cost:
+            return self.quantity * self.unit_cost
+        return Decimal('0.00')
+
+    @total_cost.expression
+    def total_cost(cls):
+        return func.coalesce(cls.quantity * cls.unit_cost, 0)
 
     service_mat: Mapped['Services'] = relationship(
         back_populates='material_service')
+
+    def serialize(self):
+        return{
+            'id': self.id,
+            'name': self.name,
+            'quantity': float(self.quantity) if self.quantity is not None else 0.0,
+            'unit_cost': float(self.unit_cost) if self.unit_cost is not None else 0.0,
+            'total_cost': float(self.total_cost)
+        }
 
 
 class Job(db.Model):
     __tablename__ = 'job'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     contractor_id: Mapped[int] = mapped_column(ForeignKey('contractor.id'), nullable=False)
-    customer_id: Mapped[int] = mapped_column(ForeignKey('customer.id'), nullable=False)
-    service_id: Mapped[int] = mapped_column(ForeignKey('services.id'), nullable=False)
+    customer_id: Mapped[int] = mapped_column(ForeignKey('customer.id'), nullable=True)
+    service_id: Mapped[int] = mapped_column(ForeignKey('services.id'), nullable=True)
     title: Mapped[str] = mapped_column(String(120), nullable=False)
     description: Mapped[str] = mapped_column(Text(), nullable=False)
     status: Mapped[JobStatus] = mapped_column(Enum(JobStatus), nullable=False, default=JobStatus.PENDING)
@@ -241,8 +300,8 @@ class Job(db.Model):
     actual_total: Mapped[Numeric] = mapped_column(Numeric(10, 2), default=0)
     start_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     end_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
-    progress: Mapped[int] = mapped_column(Integer, default=0)  # Progress percentage 0-100
-    categories: Mapped[str] = mapped_column(String(500), nullable=True)  # JSON string or comma-separated
+    progress: Mapped[int] = mapped_column(Integer, default=0) 
+    categories: Mapped[str] = mapped_column(String(500), nullable=True)  
     notes: Mapped[str] = mapped_column(Text(), nullable=True)
     is_deleted: Mapped[bool] = mapped_column(Boolean(), default=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
@@ -253,6 +312,16 @@ class Job(db.Model):
     job_customer: Mapped['Customer'] = relationship(back_populates='customer_job')
     service: Mapped['Services'] = relationship(back_populates='job')
     documents: Mapped[list['JobDocument']] = relationship(back_populates='job', cascade='all, delete-orphan')
+
+    @hybrid_property
+    def duration_days(self):
+        if self.start_date and self.end_date:
+            return (self.end_date - self.start_date).days
+        return 0
+
+    @duration_days.expression
+    def duration_days(cls):
+        return func.coalesce(func.date_part('day', cls.end_date - cls.start_date), 0)
 
     __table_args__ = (
         db.Index('idx_job_contractor_dates', 'contractor_id', 'schedule_date'),
@@ -284,13 +353,14 @@ class Job(db.Model):
             'is_deleted': self.is_deleted,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'create_at': self.create_at.isoformat() if self.create_at else None,
+            'duration_days': self.duration_days,
         }
 
-    def get_duration_days(self):
-        """Get job duration in days"""
-        if self.start_date and self.end_date:
-            return (self.end_date - self.start_date).days
-        return None
+    # def get_duration_days(self):
+    #     """Get job duration in days"""
+    #     if self.start_date and self.end_date:
+    #         return (self.end_date - self.start_date).days
+    #     return None
 
 
 class JobDocument(db.Model):
@@ -368,6 +438,14 @@ class Invoice(db.Model):
     invoice_items: Mapped[list['InvoiceItem']
                           ] = relationship(back_populates='invoice', cascade='all, delete-orphan')
 
+    @hybrid_property
+    def total_final(self):
+        return (self.subtotal or 0) + (self.tax or 0)
+
+    @total_final.expression
+    def total_final(cls):
+        return func.coalesce(cls.subtotal, 0) + func.coalesce(cls.tax, 0)
+
     __table_args__ = (
         db.CheckConstraint('total_amount = subtotal + tax',
                            name='check_invoice_total'),
@@ -387,13 +465,23 @@ class InvoiceItem(db.Model):
     description: Mapped[str] = mapped_column(String(550), nullable=False)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
     unit_price: Mapped[Numeric] = mapped_column(Numeric(10, 2), nullable=False)
-    amount: Mapped[Numeric] = mapped_column(Numeric(10, 2), nullable=False)
+    # amount: Mapped[Numeric] = mapped_column(Numeric(10, 2), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), onupdate=func.now())
     create_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now())
-
+    
     invoice: Mapped['Invoice'] = relationship(back_populates='invoice_items')
+
+    @hybrid_property
+    def row_total(self):
+        if self.quantity and self.unit_price:
+            return self.quantity * self.unit_price
+        return Decimal('0.00')
+
+    @row_total.expression
+    def row_total(cls):
+        return func.coalesce(cls.quantity * cls.unit_price, 0)
 
 
 class Payment(db.Model):
