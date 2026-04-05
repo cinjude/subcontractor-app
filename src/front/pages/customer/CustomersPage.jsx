@@ -112,53 +112,6 @@ export const CustomersPage = () => {
         });
     };
 
-    const handleDelete = async () => {
-        Swal.fire({
-            title: "Are you sure?",
-            text: "You won't be able to revert this!",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#d33",
-            cancelButtonColor: "#3085d6",
-            confirmButtonText: "Yes, delete it!",
-            showLoaderOnConfirm: true, // Muestra un spinner en el botón mientras borra
-            preConfirm: async () => {
-                // Esta parte ejecuta la lógica de borrado real
-                try {
-                    const token = store?.token || localStorage.getItem("token");
-                    const response = await fetch(
-                        `${import.meta.env.VITE_BACKEND_URL}/api/customer/${id}`,
-                        {
-                            method: "DELETE",
-                            headers: {
-                                "Content-Type": "application/json",
-                                Authorization: `Bearer ${token}`
-                            }
-                        }
-                    );
-
-                    if (!response.ok) {
-                        throw new Error("Could not delete the customer");
-                    }
-                    return response.json();
-                } catch (error) {
-                    Swal.showValidationMessage(`Request failed: ${error}`);
-                }
-            },
-            allowOutsideClick: () => !Swal.isLoading()
-        }).then((result) => {
-            if (result.isConfirmed) {
-                Swal.fire({
-                    title: "Deleted!",
-                    text: "The customer has been removed.",
-                    icon: "success"
-                }).then(() => {
-                    // Después de que el usuario vea el mensaje de éxito, lo enviamos a la lista
-                    navigate("/providerdashboard/customers");
-                });
-            }
-        });
-    };
 
     return (
         <div>

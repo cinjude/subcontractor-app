@@ -11,6 +11,7 @@ from datetime import datetime
 api = Blueprint('api', __name__)
 
 from api.customer.customer import * 
+from api.services.service import *
 CORS(api)
 
 
