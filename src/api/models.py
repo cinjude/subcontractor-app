@@ -195,62 +195,6 @@ class Customer(db.Model):
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
 
-
-class Services(db.Model):
-    __tablename__ = 'services'
-    __table_args__ = (db.UniqueConstraint(
-        'contractor_id', 'name', name='unique_service_per_contractor'),)
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    contractor_id: Mapped[int] = mapped_column(
-        ForeignKey('contractor.id'), nullable=False)
-    description: Mapped[str] = mapped_column(String(500), nullable=False)
-    name: Mapped[str] = mapped_column(String(120), nullable=False)
-    price: Mapped[Numeric] = mapped_column(Numeric(10, 2), nullable=True)
-    duration: Mapped[int] = mapped_column(Integer, nullable=True)
-    image: Mapped[str] = mapped_column(String(), nullable=True)
-    materials_needed: Mapped[str] = mapped_column(String(), nullable=True)
-    estimate_hours: Mapped[float] = mapped_column(Float, nullable=True)
-    base_cost: Mapped[Numeric] = mapped_column(Numeric(10, 2), nullable=True)
-    is_deleted: Mapped[bool] = mapped_column(Boolean(), nullable=True, default=False)
-    is_active: Mapped[bool] = mapped_column(
-        Boolean(), nullable=False, default=True)
-
-    @hybrid_property
-    def profit(self):
-        if self.price is not None and self.base_cost is not None:
-            return self.price - self.base_cost
-        return Decimal('0.00')
-
-    @profit.expression
-    def profit(cls):
-        return func.coalesce(cls.price - cls.base_cost, 0)
-
-    contractorServices: Mapped['Contractor'] = relationship(
-        back_populates='service_contr')
-    job: Mapped['Job'] = relationship(
-        back_populates='service')
-    material_service: Mapped[list['ServiceMaterial']] = relationship(
-        back_populates='service_mat', cascade='all, delete-orphan')
-    service_estimate: Mapped[list['EstimateRequest']] = relationship(
-        back_populates='service')
-    
-    def serialize(self):
-        return{
-            'id': self.id,
-            'contractor_id': self.contractor_id,
-            'description': self.description,
-            'name': self.name,
-            'price': self.price,
-            'duration': self.duration,
-            'image': self.image,
-            'materials_needed': self.materials_needed,
-            'estimate_hours': self.estimate_hours,
-            'base_cost': self.base_cost,
-            'is_deleted': self.is_deleted,
-            'is_active': self.is_active
-        }
-
-
 class ServiceMaterial(db.Model):
     __tablename__ = 'servicesMaterial'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -282,6 +226,90 @@ class ServiceMaterial(db.Model):
             'total_cost': float(self.total_cost)
         }
 
+class Services(db.Model):
+    __tablename__ = 'services'
+    __table_args__ = (db.UniqueConstraint(
+        'contractor_id', 'name', name='unique_service_per_contractor'),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    contractor_id: Mapped[int] = mapped_column(
+        ForeignKey('contractor.id'), nullable=False)
+    description: Mapped[str] = mapped_column(String(500), nullable=False)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    price: Mapped[Numeric] = mapped_column(Numeric(10, 2), nullable=True)
+    duration: Mapped[int] = mapped_column(Integer, nullable=True)
+    image: Mapped[str] = mapped_column(String(), nullable=True)
+    materials_needed: Mapped[str] = mapped_column(String(), nullable=True)
+    estimate_hours: Mapped[float] = mapped_column(Float, nullable=True)
+    base_cost: Mapped[Numeric] = mapped_column(Numeric(10, 2), nullable=True)
+    is_deleted: Mapped[bool] = mapped_column(Boolean(), nullable=True, default=False)
+    is_active: Mapped[bool] = mapped_column(
+        Boolean(), nullable=False, default=True)
+
+    @hybrid_property
+    def materials_cost(self):
+        return sum(
+            float(m.total_cost)
+            for m in self.material_service
+        )
+
+    @materials_cost.expression
+    def materials_cost(cls):
+        return (
+            db.select(func.coalesce(func.sum(ServiceMaterial.quantity * ServiceMaterial.unit_cost), 0))
+            .where(ServiceMaterial.service_id == cls.id)
+            .scalar_subquery()
+        )
+
+    @hybrid_property
+    def effective_base_cost(self):
+        if self.base_cost is not None:
+            return float(self.base_cost)
+        return self.materials_cost
+
+    @hybrid_property
+    def profit(self):
+        if self.price is not None:
+            return float(self.price) - self.effective_base_cost
+        return 0.0
+
+    @profit.expression
+    def profit(cls):
+        return func.coalesce(cls.price, 0) - func.coalesce(cls.base_cost, cls.materials_cost)
+
+    contractorServices: Mapped['Contractor'] = relationship(
+        back_populates='service_contr')
+    job: Mapped['Job'] = relationship(
+        back_populates='service')
+    material_service: Mapped[list['ServiceMaterial']] = relationship(
+        back_populates='service_mat', cascade='all, delete-orphan')
+    service_estimate: Mapped[list['EstimateRequest']] = relationship(
+        back_populates='service')
+    
+    def serialize(self):
+        price_val = float(self.price) if self.price is not None else None
+        base_cost_raw = float(self.base_cost) if self.base_cost is not None else None
+        mat_cost = self.materials_cost
+        eff_base_cost = self.effective_base_cost
+        profit_val = float(self.price or 0) - eff_base_cost if self.price else 0.0
+
+        return {
+            'id': self.id,
+            'contractor_id': self.contractor_id,
+            'description': self.description,
+            'name': self.name,
+            'duration': self.duration,
+            'image': self.image,
+            'materials_needed': self.materials_needed,
+            'estimate_hours': self.estimate_hours,
+            'is_deleted': self.is_deleted,
+            'is_active': self.is_active,
+            'price': price_val,
+            'base_cost': base_cost_raw,
+            'materials_cost': round(mat_cost, 2),
+            'effective_base_cost': round(eff_base_cost, 2),
+            'profit': round(profit_val, 2),
+            'materials': [m.serialize() for m in self.material_service]
+        }
 
 class Job(db.Model):
     __tablename__ = 'job'

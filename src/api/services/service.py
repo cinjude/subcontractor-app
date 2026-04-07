@@ -155,4 +155,69 @@ def create_service():
     except Exception as e:
         db.session.rollback()
         return jsonify({'msg': str(e)}), 500
+
+@api.route('/services', methods=['GEt'])
+@jwt_required()
+def get_all_services():
+    try:
+        contractor_id = get_current_contractor_id()
+
+        search = request.args.get('search', '').strip().lower()
+        is_active = request.args.get('is_active', None)
+
+        query = Services.query.filter_by(contractor_id=contractor_id, 
+        is_deleted=False)
+
+        if search:
+            search_term = f'%{search}%'
+            query = query.filter(
+                or_(
+                    Services.name.ilike(search_term),
+                    Services.description.ilike(search_term)
+                )
+            )
+        if is_active is not None:
+            is_active_bool = is_active.lower() == 'true'
+            query = query.filter(Services.is_active == is_active_bool)
+        
+        services = query.order_by(Services.id.desc()).all()
+
+        return jsonify({
+            'msg': 'Services retrieved successfully',
+            'services': [service.serialize() for service in services]
+        }), 200
+    
+    except APIException as e:
+        raise e
+    except Exception as e:
+        return jsonify({'msg': str(e)}), 500
+        
+@api.route('/services/<int:service_id>', methods=['GET'])
+@jwt_required()
+def get_services_by_id(service_id):
+    try:
+        contractor_id = get_current_contractor_id()
+
+        service = Services.query.filter_by(
+            id=service_id,
+            contractor_id=contractor_id,
+            is_deleted=False
+        ).first()
+
+        if not service:
+            return jsonify({'msg': 'Service not found'}), 400
+
+        service_data = service.serialize()
+        # service_data['materials'] = [m.serialize() for m in service.material_service]
+
+        return jsonify({
+            'msg': 'Service retrieved successfully',
+            'service': service_data
+        }), 200
+    
+    except APIException as e:
+        raise e
+    except Exception as e:
+        return jsonify({'msg': f'Failed to fetch service: {str(e)}'}), 500
+
         

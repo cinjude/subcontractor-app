@@ -133,7 +133,6 @@ export default function CustomerDetails() {
             confirmButtonText: "Yes, delete it!",
             showLoaderOnConfirm: true, // Muestra un spinner en el botón mientras borra
             preConfirm: async () => {
-                // Esta parte ejecuta la lógica de borrado real
                 try {
                     const token = store?.token || localStorage.getItem("token");
                     const response = await fetch(
@@ -163,7 +162,6 @@ export default function CustomerDetails() {
                     text: "The customer has been removed.",
                     icon: "success"
                 }).then(() => {
-                    // Después de que el usuario vea el mensaje de éxito, lo enviamos a la lista
                     navigate("/providerdashboard/customers");
                 });
             }
