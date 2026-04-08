@@ -3,7 +3,7 @@ from flask import request, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import or_, and_
+from sqlalchemy import or_, and_, func
 from datetime import datetime
 
 from api.models import db, Services, ServiceMaterial,Contractor, User
@@ -220,4 +220,30 @@ def get_services_by_id(service_id):
     except Exception as e:
         return jsonify({'msg': f'Failed to fetch service: {str(e)}'}), 500
 
+@api.route('/services/stats', methods=['GET'])
+@jwt_required()
+def get_dashboard_stats():
+    try:
+        contractor_id = get_current_contractor_id()
+ 
+        total_services = Services.query.filter_by(contractor_id=contractor_id).count()
+        active_services = Services.query.filter_by(contractor_id=contractor_id, is_active=True).count()
+
+        avg_price = db.session.query(func.avg(Services.price)).filter_by(contractor_id=contractor_id).scalar() or 0
+
+        materials_count = db.session.query(func.count(ServiceMaterial.id))\
+            .join(Services)\
+            .filter(Services.contractor_id == contractor_id).scalar() or 0
+
+        return jsonify({
+            "total_services": total_services,
+            "active_services": active_services,
+            "avg_price": round(float(avg_price), 2),
+            "materials_tracked": materials_count
+        })
+        
+    except APIException as e:
+        raise e
+    except Exception as e:
+        return jsonify({'msg': str(e)}), 500
         

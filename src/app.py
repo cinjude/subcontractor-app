@@ -113,7 +113,6 @@ def register_stylist():
     db.session.commit()
     return jsonify({'msg': 'User create succesfully'}), 200
 
-
 @app.route('/api/user/provider/login', methods=['POST'])
 def login_stylist():
     body = request.get_json(silent=True)
@@ -138,9 +137,6 @@ def login_stylist():
         'token': access_token,
         'name': user.name,
         'provider': user.serialize()}), 200
-
-# this endpoint is for the clients
-
 
 @app.route('/api/client/register', methods=['POST'])
 def register_client():
@@ -168,7 +164,6 @@ def register_client():
     db.session.commit()
     return jsonify({'msg': 'User create succesfully'}), 200
 
-
 @app.route('/api/client/login', methods=['POST'])
 def login_client():
     body = request.get_json(silent=True)
@@ -194,7 +189,6 @@ def login_client():
                     'token': access_token,
                     'client_data': user_client_login.serialize()
                     }), 200
-
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':

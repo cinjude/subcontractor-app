@@ -38,7 +38,6 @@ export const CustomersPage = () => {
 
         const token = store.token || localStorage.getItem("token");
 
-        // Definir URL y Método dinámicamente
         const url = isEditing
             ? `${import.meta.env.VITE_BACKEND_URL}/api/customer/${editId}`
             : `${import.meta.env.VITE_BACKEND_URL}/api/customers/create`;
@@ -46,7 +45,6 @@ export const CustomersPage = () => {
         const method = isEditing ? 'PUT' : 'POST';
 
         try {
-            // Limpiamos datos si es necesario (ej: address2)
             const { address2, ...dataToSend } = formData;
 
             const response = await fetch(url, {
@@ -55,23 +53,19 @@ export const CustomersPage = () => {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify(dataToSend) // Enviamos la data limpia
+                body: JSON.stringify(dataToSend)
             });
 
             const data = await response.json();
 
             if (response.ok) {
-                // 1. Actualizamos el store global con el cliente que devuelve la API
                 dispatch({ type: 'set-customer', payload: data.customer });
 
-                // 2. Refrescamos la lista completa (si tienes la referencia)
                 if (fetchCustomersRef.current) fetchCustomersRef.current();
 
-                // 3. Limpiamos formulario y estados
                 setFormData(initialhtmlForm);
                 setIsEditing(false);
 
-                // 4. Cerramos el modal de forma segura
                 const modalCloseBtn = document.querySelector("[data-bs-dismiss='modal']");
                 if (modalCloseBtn) modalCloseBtn.click();
 
