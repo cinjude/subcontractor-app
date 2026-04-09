@@ -5,27 +5,45 @@ import useGlobalReducer from "../../hooks/useGlobalReducer";
 export default function ServicesP() {
 
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     const { store, dispatch } = useGlobalReducer()
     const fetchServicesStats = async () => {
 
+
         setLoading(true);
         const token = store.token || localStorage.getItem("token");
+        const baseUrl = import.meta.env.VITE_BACKEND_URL
 
         try {
-            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/services/stats`, {
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-            if (!response.ok) {
-                throw new Error("Failed to fetch services stats");
+            const [resStats, resServices] = await Promise.all([
+                fetch(`${baseUrl}/api/services/stats`, {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                }),
+                fetch(`${baseUrl}/api/services`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                })
+            ])
+
+            if (!resStats.ok || !resServices.ok) {
+                throw new Error("Failed to fetch services stats" || setError("Failed to fetch services stats"));
             }
             else {
-                const data = await response.json();
-                dispatch({ type: "set-services-stats", payload: data });
+                const statsData = await resStats.json();
+                const servicesData = await resServices.json();
+
+                console.log(statsData);
+                console.log(servicesData);
+
+                dispatch({ type: "set-services-stats", payload: statsData });
+                dispatch({ type: "set-services", payload: servicesData.services });
             }
+            console.log("Services stats fetched successfully");
 
         } catch (error) {
             console.error(error);
@@ -37,7 +55,7 @@ export default function ServicesP() {
     useEffect(() => {
         fetchServicesStats();
     }, [store.token]);
-    console.log(store.servicesStats);
+    console.log(store.services);
 
     return (
         <div className="container">

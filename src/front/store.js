@@ -17,7 +17,7 @@ export const initialStore = () => {
      token: localStorage.getItem("token") || null,
      setCustomer:[],
      services:[],
-     servicesStats:null,
+     servicesStats:null
   };
   
 };
@@ -57,7 +57,7 @@ export default function storeReducer(store, action = {}) {
         ...store,
         servicesStats: action.payload,
       };
-
+      
     default:
       throw Error("Unknown action.");
   }
