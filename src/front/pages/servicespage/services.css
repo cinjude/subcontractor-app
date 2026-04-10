@@ -1,0 +1,148 @@
+/* ================================================================
+   services.css — solo lo que Bootstrap no puede hacer solo
+   Todo lo demas usa clases Bootstrap directamente en el JSX
+   ================================================================ */
+
+/* ── Page background ── */
+.sv-page {
+  background: #f5f5f0;
+  min-height: 100vh;
+  padding-bottom: 2rem;
+}
+
+.sv-stat-val {
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1;
+  color: #111827;
+  margin-bottom: 2px;
+}
+
+.sv-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #e8f0fe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.sv-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke: #2563eb;
+  fill: none;
+  stroke-width: 1.8;
+}
+.sv-icon.sv-icon-inactive { background: #f3f4f6; }
+.sv-icon.sv-icon-inactive svg { stroke: #9ca3af; }
+
+.sv-badge-active {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #166534;
+}
+.sv-badge-inactive {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.sv-card-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.sv-card-desc {
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.sv-price {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+}
+.sv-price-unit {
+  font-size: 13px;
+  font-weight: 400;
+  color: #6b7280;
+}
+
+.sv-mat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  padding: 5px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+.sv-mat-row:last-child { border-bottom: none; }
+.sv-mat-name  { color: #6b7280; }
+.sv-mat-price { color: #111827; font-weight: 500; }
+
+.sv-mat-more {
+  font-size: 12px;
+  color: #2563eb;
+  padding: 4px 0 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+.sv-mat-more:hover { text-decoration: underline; }
+
+.sv-card-inactive { opacity: 0.65; }
+
+.sv-stat-total { display: none; }
+@media (min-width: 576px) {
+  .sv-stat-total { display: block; }
+}
+
+.sv-btn-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color:white;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 9px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sv-btn-new:hover { background: #f9fafb; }
+.sv-btn-new svg { width: 14px; height: 14px; }
+
+.sv-btn-detail {
+  font-weight: 600;
+  color: #111827;
+  border-color: #d1d5db;
+}
+
+.sv-btn-edit   { color: #b45309 !important; border-color: #fde68a !important; }
+.sv-btn-edit:hover   { background: #fefce8 !important; }
+.sv-btn-delete { color: #dc2626 !important; border-color: #fecaca !important; }
+.sv-btn-delete:hover { background: #fef2f2 !important; }
+
+.sv-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #9ca3af;
+}
+.sv-empty-icon { font-size: 2rem; margin-bottom: 8px; opacity: 0.4; }
