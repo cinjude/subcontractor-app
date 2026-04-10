@@ -42,8 +42,18 @@ export default function ServicesP() {
     useEffect(() => { fetchServicesStats(); }, [store.token]);
 
     const allServices = store.services || [];
-    const activeServices = allServices.filter((s) => s.is_active && !s.is_deleted);
-    const inactiveServices = allServices.filter((s) => !s.is_active && !s.is_deleted);
+    const { activeServices, inactiveServices } = allServices.reduce((acc, s) => {
+        if (s.is_deleted) return acc; // Si está borrado, lo ignoramos completamente
+
+        if (s.is_active) {
+            acc.activeServices.push(s);
+        } else {
+            acc.inactiveServices.push(s);
+        }
+        return acc;
+    }, { activeServices: [], inactiveServices: [] });
+    // const activeServices = allServices.filter((s) => s.is_active && !s.is_deleted);
+    // const inactiveServices = allServices.filter((s) => !s.is_active && !s.is_deleted);
     const stats = store.servicesStats || {};
 
     const handleNew = () => navigate("/services/new");
