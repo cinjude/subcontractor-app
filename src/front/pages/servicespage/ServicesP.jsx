@@ -1,14 +1,17 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useGlobalReducer from "../../hooks/useGlobalReducer";
 import "./services.css";
 import ServiceCard from "./ServiceCard";
+import ServiceFormModal from "./ServiceFormModal";
 
 
 
 export default function ServicesP() {
     const { store, dispatch } = useGlobalReducer();
     const navigate = useNavigate();
+
+    const [editingService, setEditingService] = useState(null);
 
     const fetchServicesStats = async () => {
         const token = store.token || localStorage.getItem("token");
@@ -43,7 +46,7 @@ export default function ServicesP() {
 
     const allServices = store.services || [];
     const { activeServices, inactiveServices } = allServices.reduce((acc, s) => {
-        if (s.is_deleted) return acc; // Si está borrado, lo ignoramos completamente
+        if (s.is_deleted) return acc;
 
         if (s.is_active) {
             acc.activeServices.push(s);
@@ -56,7 +59,6 @@ export default function ServicesP() {
     // const inactiveServices = allServices.filter((s) => !s.is_active && !s.is_deleted);
     const stats = store.servicesStats || {};
 
-    const handleNew = () => navigate("/services/new");
     const handleDetail = (svc) => navigate(`/services/${svc.id}`);
     const handleEdit = (svc) => navigate(`/services/${svc.id}/edit`);
     const handleDelete = (svc) => {
@@ -92,7 +94,9 @@ export default function ServicesP() {
                         </p>
                     </div>
 
-                    <button className="sv-btn-new btn-primary" onClick={handleNew}>
+                    <button type="button" className="sv-btn-new btn-primary" data-bs-toggle="modal" data-bs-target="#serviceFormModal"
+                        onClick={() => setEditingService(null)}
+                    >
                         <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                             <path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                         </svg>
@@ -183,6 +187,13 @@ export default function ServicesP() {
                 )}
 
             </div>
+
+            <ServiceFormModal
+                modalId="serviceFormModal"
+                service={editingService}
+                onSaved={(svc) => fetchServicesStats()}
+                onClose={() => setEditingService(null)}
+            />
         </div>
     );
 }
