@@ -239,7 +239,6 @@ export default function CustomerDetails() {
                             <h3 className="cd-card-title">Contact info</h3>
                         </div>
 
-                        {/* MOBILE + TABLET: filas */}
                         <div className="cd-mobile-only">
                             <div className="cd-field-row">
                                 <span className="cd-field-label">Full name</span>
@@ -255,8 +254,6 @@ export default function CustomerDetails() {
                             </div>
                         </div>
 
-                        {/* DESKTOP: 3 columnas
-                            NO tiene style={{ display:"none" }} — el CSS lo controla solo */}
                         <div className="cd-desktop-only">
                             <div className="cd-contact-cols">
                                 <div className="cd-contact-col">
@@ -292,14 +289,12 @@ export default function CustomerDetails() {
                             </div>
                         </div>
 
-                        {/* Full Address — siempre visible */}
                         <div className="cd-card">
                             <div className="cd-card-head">
                                 <h3 className="cd-card-title">Full address</h3>
                                 <span className="cd-card-tag">{customer.city}, {customer.state}</span>
                             </div>
 
-                            {/* MOBILE + TABLET: filas */}
                             <div className="cd-mobile-only">
                                 <div className="cd-field-row">
                                     <span className="cd-field-label">Address</span>
@@ -323,7 +318,6 @@ export default function CustomerDetails() {
                                 </div>
                             </div>
 
-                            {/* DESKTOP: grid 2 columnas */}
                             <div className="cd-desktop-only">
                                 <div className="cd-address-grid-desktop">
                                     <div className="cd-addr-col">
@@ -362,7 +356,6 @@ export default function CustomerDetails() {
                         </div>
                     </div>
 
-                    {/* ── ACTIVITY SUMMARY ── */}
                     <div className="cd-card">
                         <div className="cd-card-head">
                             <h3 className="cd-card-title">Activity summary</h3>
@@ -393,7 +386,6 @@ export default function CustomerDetails() {
                 </div>
             </div>
 
-            {/* ── MODAL DE EDICIÓN ── */}
             <div className="modal fade" id="editCustomerModal" tabIndex="-1" aria-hidden="true">
                 <div className="modal-dialog modal-lg">
                     <div className="modal-content">

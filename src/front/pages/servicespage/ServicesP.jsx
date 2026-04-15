@@ -4,6 +4,7 @@ import useGlobalReducer from "../../hooks/useGlobalReducer";
 import "./services.css";
 import ServiceCard from "./ServiceCard";
 import ServiceFormModal from "./ServiceFormModal";
+import Swal from "sweetalert2";
 
 
 
@@ -12,8 +13,12 @@ export default function ServicesP() {
     const navigate = useNavigate();
 
     const [editingService, setEditingService] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     const fetchServicesStats = async () => {
+
+        setLoading(true);
+
         const token = store.token || localStorage.getItem("token");
         const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -29,6 +34,8 @@ export default function ServicesP() {
                     headers: { Authorization: `Bearer ${token}` },
                 }),
             ]);
+            console.log('resStats:', resStats)
+            console.log('resServices:', resServices)
 
             if (!resStats.ok || !resServices.ok) throw new Error("Failed to fetch");
 
@@ -39,6 +46,8 @@ export default function ServicesP() {
             dispatch({ type: "set-services", payload: servicesData.services });
         } catch (err) {
             console.error(err);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -60,12 +69,57 @@ export default function ServicesP() {
     const stats = store.servicesStats || {};
 
     const handleDetail = (svc) => navigate(`/services/${svc.id}`);
-    const handleEdit = (svc) => navigate(`/services/${svc.id}/edit`);
-    const handleDelete = (svc) => {
-        if (window.confirm(`Delete "${svc.name}"?`)) {
-            /* dispatch delete */
-        }
+    const handleEdit = (svc) => setEditingService(svc);
+
+    const handleDelete = async (svc) => {
+        Swal.fire({
+            title: "Are you sure?",
+            text: "You won't be able to revert this!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Yes, delete it!",
+            showLoaderOnConfirm: true, // Muestra un spinner en el botón mientras borra
+            preConfirm: async () => {
+                try {
+                    const token = store?.token || localStorage.getItem("token");
+                    const response = await fetch(
+                        `${import.meta.env.VITE_BACKEND_URL}/api/delete/services/${svc.id}`,
+                        {
+                            method: "DELETE",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${token}`
+                            }
+                        }
+                    );
+
+                    if (!response.ok) {
+                        throw new Error("Could not delete this service");
+                    }
+                    return response.json();
+                } catch (error) {
+                    Swal.showValidationMessage(`Request failed: ${error}`);
+                }
+            },
+            allowOutsideClick: () => !Swal.isLoading()
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: "Deleted!",
+                    text: "The services has been removed.",
+                    icon: "success"
+                }).then(() => {
+                    fetchServicesStats();
+                });
+            }
+        });
     };
+
+
+
+    if (loading) return <div className="text-center py-5"><div className="spinner-border text-primary" role="status" /></div>;
 
     const EmptyState = () => (
         <div className="col-12">

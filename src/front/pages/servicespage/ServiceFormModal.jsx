@@ -309,8 +309,8 @@ export default function ServiceFormModal({ modalId = "serviceFormModal", service
                         </div>
 
 
-                        <div className="bg-secondary-subtle rounded-3 ps-1 pe-1">
-                            <p className="sf-materials-title ms-2 pt-2">Materials needed</p>
+                        <div className="bg-secondary-subtle rounded-3 ps-1 pe-1 pb-2">
+                            <p className="sf-materials-title ms-2 pt-2 fs-6">Materials needed</p>
 
                             {materials.map((mat) => (
                                 <div className="  bg-white m-2 p-4 rounded-3" key={mat._key}>
@@ -372,7 +372,7 @@ export default function ServiceFormModal({ modalId = "serviceFormModal", service
                                 </div>
                             ))}
 
-                            <button className="sf-btn-add-mat" type="button" onClick={addMaterial}>
+                            <button className="sf-btn-add-mat bg-primary text-white" type="button" onClick={addMaterial}>
                                 {/* <IconPlus /> */}
                                 Add material
                             </button>

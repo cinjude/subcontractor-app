@@ -275,34 +275,18 @@ def full_update_service(service_id):
         service.estimate_hours = body.get('estimate_hours', service.estimate_hours)
         service.is_active = body.get('is_active', service.is_active)
 
-        materials = body.get('materials', [])
+        # materials = body.get('materials', [])
 
-        for mat in materials:
-            if id in mat:
+        ServiceMaterial.query.filter_by(service_id=service_id).delete()
 
-                existing_material = ServiceMaterial.query.filter_by(id=mat['id'],
-                service_id=service_id).first()
-
-                if existing_material:
-                    existing_material.name = mat.get('name', existing_material.name)
-                    existing_material.quantity = mat.get('quantity', existing_material.quantity)
-                    existing_material.unit_cost = mat.get('unit_cost', existing_material.unit_cost)
-
-            else:
-                new_material = ServiceMaterial(
-                    service_id=service_id,
-                    name=mat['name'],
-                    quantity=mat['quantity'],
-                    unit_cost=mat['unit_cost']
-                )
-                db.session.add(new_material)
-
-        deleted_id =  body.get('deleted_materials_id', [])
-        if deleted_id:
-            ServiceMaterial.query.filter(
-                ServiceMaterial.id.in_(deleted_id),
-                ServiceMaterial.service_id == service_id
-            ).delete(synchronize_session=False)
+        for mat in body.get('materials', []):
+            new_mat=ServiceMaterial(
+                service_id=service_id,
+                name=mat.get('name'),
+                quantity=mat.get('quantity', 0),
+                unit_cost=mat.get('unit_cost', 0)    
+            )
+            db.session.add(new_mat)
 
         db.session.commit()
         

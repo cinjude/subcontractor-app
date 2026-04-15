@@ -1,4 +1,5 @@
 import React from 'react'
+import ServiceFormModal from './ServiceFormModal';
 
 /* ── tiny SVG icons ── */
 const IconGrid = () => (
@@ -105,7 +106,7 @@ export default function ServiceCard({ service, index, onEdit, onDelete, onDetail
                     onClick={() => onDetail(service)}>
                     Details
                 </button>
-                <button
+                <button data-bs-toggle="modal" data-bs-target="#serviceFormModal"
                     className="btn btn-outline-warning btn-sm flex-fill sv-btn-edit"
                     onClick={() => onEdit(service)}>
                     Edit
