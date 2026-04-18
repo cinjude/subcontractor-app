@@ -168,8 +168,6 @@ export default function CustomerDetails() {
         });
     };
 
-
-
     if (loading) return <div className="text-center py-5"><div className="spinner-border text-primary" role="status" /></div>;
     if (!customer) return <div className="text-center py-5 text-muted">Customer not found.</div>;
 
@@ -210,7 +208,6 @@ export default function CustomerDetails() {
                         </div>
                     </div>
 
-                    {/* RECORD INFO — visible en todos los breakpoints */}
                     <div className="cd-record-card">
                         <div className="cd-record-title">Record info</div>
                         <div className="cd-record-row">
@@ -229,9 +226,6 @@ export default function CustomerDetails() {
 
                 </div>
 
-                {/* ════════════════════════
-                    MAIN CONTENT
-                ════════════════════════ */}
                 <div className="cd-main">
 
                     <div className="cd-card">

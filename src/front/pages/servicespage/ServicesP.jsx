@@ -34,8 +34,6 @@ export default function ServicesP() {
                     headers: { Authorization: `Bearer ${token}` },
                 }),
             ]);
-            console.log('resStats:', resStats)
-            console.log('resServices:', resServices)
 
             if (!resStats.ok || !resServices.ok) throw new Error("Failed to fetch");
 
@@ -68,7 +66,7 @@ export default function ServicesP() {
     // const inactiveServices = allServices.filter((s) => !s.is_active && !s.is_deleted);
     const stats = store.servicesStats || {};
 
-    const handleDetail = (svc) => navigate(`/services/${svc.id}`);
+    const handleDetail = (svc) => navigate(`/providerdashboard/servicesDetails/${svc.id}`);
     const handleEdit = (svc) => setEditingService(svc);
 
     const handleDelete = async (svc) => {
