@@ -78,7 +78,7 @@ export default function ServicesP() {
             confirmButtonColor: "#d33",
             cancelButtonColor: "#3085d6",
             confirmButtonText: "Yes, delete it!",
-            showLoaderOnConfirm: true, // Muestra un spinner en el botón mientras borra
+            showLoaderOnConfirm: true,
             preConfirm: async () => {
                 try {
                     const token = store?.token || localStorage.getItem("token");
@@ -114,8 +114,6 @@ export default function ServicesP() {
             }
         });
     };
-
-
 
     if (loading) return <div className="text-center py-5"><div className="spinner-border text-primary" role="status" /></div>;
 

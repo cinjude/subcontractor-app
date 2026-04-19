@@ -268,7 +268,6 @@ export default function CustomerDetails() {
 
                     <div className="cd-two-col">
 
-                        {/* Location — solo visible en tablet */}
                         <div className="cd-card cd-location-card">
                             <div className="cd-card-head">
                                 <h3 className="cd-card-title">Location</h3>
@@ -336,7 +335,6 @@ export default function CustomerDetails() {
 
                     </div>
 
-                    {/* ── NOTE ── */}
                     <div className="cd-card">
                         <div className="cd-card-head">
                             <h3 className="cd-card-title">Note</h3>

@@ -52,8 +52,6 @@ export const router = createBrowserRouter(
         element={<PrivateProviderRoute><ProviderDashboard /></PrivateProviderRoute>}
         errorElement={<ErrorDebug />}
       >
-
-
         <Route index element={<DashboardHome />} />
         <Route path="jobs" element={<JobsPage />} />
         <Route path="customers" element={<CustomersPage />} />

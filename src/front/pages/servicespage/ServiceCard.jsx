@@ -44,7 +44,6 @@ export default function ServiceCard({ service, index, onEdit, onDelete, onDetail
         <div className={`card border rounded-3 h-100 ${!isActive ? "sv-card-inactive" : ""}`}
             style={{ borderColor: "#e5e7eb" }}>
 
-            {/* ── top: icon + badge + name + desc ── */}
             <div className="card-body pb-2">
 
                 <div className="d-flex align-items-center justify-content-between mb-2">
