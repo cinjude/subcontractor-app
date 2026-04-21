@@ -117,8 +117,8 @@ def create_job():
         # Create simple job for testing
         new_job = Job(
             contractor_id=current_contractor_id,
-            customer_id=customer_id,
-            service_id=service_id,
+            customer_id=data.get('customerId'),
+            service_id=data.get('serviceId'),
             title=data.get('title', 'Sin título'),
             description=data.get('description', ''),
             location=data.get('location', ''),

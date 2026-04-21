@@ -14,7 +14,7 @@ const CustomerPageList = ({ onReady, onEdit }) => {
 
     const navigate = useNavigate()
 
-    const { store } = useGlobalReducer();
+    const { store, dispatch } = useGlobalReducer();
     const [customers, setCustomers] = useState([]);
     const [loadingCustomers, setLoadingCustomers] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -47,6 +47,7 @@ const CustomerPageList = ({ onReady, onEdit }) => {
             const data = await response.json();
             if (!response.ok) { console.error("Error fetching customers:", data.error); return; }
             setCustomers(data);
+            dispatch({ type: "set-customers", payload: data });
         } catch (error) {
             console.error("Network error while fetching customers:", error);
         } finally {

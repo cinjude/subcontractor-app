@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { jobCategories, jobPriorities, jobStatuses } from '../utils/jobConstants';
 import './JobForm.css';
+import useGlobalReducer from '../../../hooks/useGlobalReducer';
+import { loadAppData } from "../../customer/customerService";
 
 export const JobForm = ({ job, onSubmit, loading, onCancel }) => {
     const [formData, setFormData] = useState({
+        customerId: job?.customer_id || '',
+        serviceId: job?.service_id || '',
         title: job?.title || '',
         description: job?.description || '',
         location: job?.location || '',
@@ -13,11 +17,25 @@ export const JobForm = ({ job, onSubmit, loading, onCancel }) => {
         priority: job?.priority || 'medium',
         status: job?.status || 'pending',
         categories: job?.categories || [],
-        customerId: job?.customerId || '',
         notes: job?.notes || ''
     });
 
     const [errors, setErrors] = useState({});
+
+    const { store, dispatch } = useGlobalReducer();
+
+    const customers = store.customers || [];
+    const services = store.services || [];
+
+    useEffect(() => {
+        const token = store.token || localStorage.getItem("token");
+
+        if (customers.length === 0 || services.length === 0) {
+            loadAppData(dispatch, token);
+        }
+    }, []);
+
+    console.log(customers)
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -61,6 +79,8 @@ export const JobForm = ({ job, onSubmit, loading, onCancel }) => {
 
         const submitData = {
             ...formData,
+            customerId: formData.customerId === '' ? null : parseInt(formData.customerId),
+            serviceId: formData.serviceId === '' ? null : parseInt(formData.serviceId),
             budget: parseFloat(formData.budget),
             startDate: formData.startDate,
             endDate: formData.endDate || null
@@ -75,7 +95,7 @@ export const JobForm = ({ job, onSubmit, loading, onCancel }) => {
             </div>
 
             <form onSubmit={handleSubmit} className="job-form-content">
-                {/* Basic Information */}
+
                 <div className="form-section">
                     <h4>Basic Information</h4>
 
@@ -94,6 +114,45 @@ export const JobForm = ({ job, onSubmit, loading, onCancel }) => {
                         {errors.title && <div className="invalid-feedback">{errors.title}</div>}
                     </div>
 
+                    <div className='row'>
+
+                        <div className='col-md-6 mb-3'>
+                            <label className='form-label'> Customer (Optional)</label>
+                            <select className='form-select'
+                                name="customerId"
+                                value={formData.customerId}
+                                onChange={handleInputChange}
+                            >
+                                <option value="">-- No customer Assign later -- </option>
+                                {
+                                    customers.map(c =>
+                                        <option key={c.id} value={c.id}> {c.name} </option>
+                                    )
+                                }
+
+                            </select>
+
+                        </div>
+
+                        <div className='col-md-6 mb-3'>
+                            <label className='form-label'> Service (Optional)</label>
+                            <select className='form-select'
+                                name="serviceId"
+                                value={formData.serviceId}
+                                onChange={handleInputChange}
+                            >
+                                <option value="">-- No service Assign later -- </option>
+                                {
+                                    services.map(s =>
+                                        <option key={s.id} value={s.id}> {s.name} </option>
+                                    )
+                                }
+
+                            </select>
+
+                        </div>
+
+                    </div>
                     <div className="mb-3">
                         <label htmlFor="description" className="form-label">Description *</label>
                         <textarea

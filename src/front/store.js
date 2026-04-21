@@ -15,7 +15,7 @@ export const initialStore = () => {
   return {
     provider: getProvider(),
      token: localStorage.getItem("token") || null,
-     setCustomer:[],
+     customers:[],
      services:[],
      servicesStats:null
   };
@@ -40,10 +40,10 @@ export default function storeReducer(store, action = {}) {
         token: null,
       };
 
-    case "set-customer":
+    case "set-customers":
       return {
         ...store,
-        setCustomer: action.payload,
+        customers: action.payload,
       };
       
     case "set-services":
