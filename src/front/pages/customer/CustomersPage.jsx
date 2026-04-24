@@ -59,7 +59,7 @@ export const CustomersPage = () => {
             const data = await response.json();
 
             if (response.ok) {
-                dispatch({ type: 'set-customer', payload: data.customer });
+                dispatch({ type: 'set-customers', payload: data.customers });
 
                 if (fetchCustomersRef.current) fetchCustomersRef.current();
 

@@ -82,7 +82,6 @@ def create_customer():
              contractor_id=contractor_id
         ).first()
            
-        
         if existing_customer:
             return jsonify({'error': 'A customer with this email already exists'}), 400
 

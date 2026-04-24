@@ -21,7 +21,7 @@ export const SignUpProvider = () => {
         setErrorMsg(null);
 
         try {
-            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}api/user/provider/register`, {
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/provider/register`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -30,9 +30,6 @@ export const SignUpProvider = () => {
             });
 
             const data = await response.json()
-
-            console.log('Response status:', response.status);
-            console.log('Response data:', data);
 
             if (response.ok) {
                 Swal.fire({

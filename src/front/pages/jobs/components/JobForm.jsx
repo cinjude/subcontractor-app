@@ -34,6 +34,7 @@ export const JobForm = ({ job, onSubmit, loading, onCancel }) => {
             loadAppData(dispatch, token);
         }
     }, []);
+    console.log('service data modal', services)
 
     console.log(customers)
 

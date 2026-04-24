@@ -11,7 +11,7 @@ from api.utils import APIException
 
 from api.routes import api
 
-# Allow CORS requests
+
 CORS(api)
 
 def get_current_contractor_id():
@@ -156,7 +156,7 @@ def create_service():
         db.session.rollback()
         return jsonify({'msg': str(e)}), 500
 
-@api.route('/services', methods=['GEt'])
+@api.route('/services', methods=['GET'])
 @jwt_required()
 def get_all_services():
     try:

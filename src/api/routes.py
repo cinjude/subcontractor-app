@@ -3,7 +3,7 @@ This module takes care of starting the API Server, Loading the DB and Adding the
 """
 from flask import Flask, request, jsonify, url_for, Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from api.models import db, User, Job, JobStatus, JobPriority, JobDocument, Customer, Services
+from api.models import db, User, Job, JobStatus, JobPriority, JobDocument, Customer, Services, Contractor
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
 from datetime import datetime
@@ -96,8 +96,13 @@ def get_all_jobs():
 def create_job():
     """Create a new job"""
     try:
-        identity = get_jwt_identity()
-        current_contractor_id = int(identity)
+        user_id=get_jwt_identity()
+
+        contractor = Contractor.query.filter_by(user_id=user_id).first()
+        if not contractor:
+            return jsonify({'error': 'Contractor not found'}), 404
+        
+        current_contractor_id = contractor.id
         data = request.get_json()
 
         customer_id = data.get('customerId')
@@ -107,14 +112,13 @@ def create_job():
         if not customer:
             return jsonify({'error': f'Customer with id {customer_id} not found'}), 404
 
-        if customer.contractor_id != int(current_contractor_id):
+        if customer.contractor_id != current_contractor_id:
             return jsonify({'error': f'Unauthorized to create job for customer {customer_id}'}), 403
         
         service = db.session.get(Services, service_id)
         if not service:
             return jsonify({'error': f'Service with id {service_id} not found'}), 404
         
-        # Create simple job for testing
         new_job = Job(
             contractor_id=current_contractor_id,
             customer_id=data.get('customerId'),

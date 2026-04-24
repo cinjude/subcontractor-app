@@ -144,6 +144,8 @@ export default function ServiceFormModal({ modalId = "serviceFormModal", service
                 body: JSON.stringify(payload),
             });
 
+            console.log('resp services', res)
+
             const data = await res.json();
             if (!res.ok) {
                 setError(data.error || "Something went wrong.");

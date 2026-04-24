@@ -88,33 +88,33 @@ class Contractor(db.Model):
     __tablename__ = 'contractor'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('user.id'), nullable=False)
-    business_name: Mapped[str] = mapped_column(String(120))
-    description: Mapped[str] = mapped_column(String(500), nullable=False)
+    business_name: Mapped[str] = mapped_column(String(120), nullable=True)
+    description: Mapped[str] = mapped_column(String(500), nullable=True)
     address: Mapped[str] = mapped_column(String(120), nullable=True)
     latitude: Mapped[float] = mapped_column(Float, nullable=True)
     longitude: Mapped[float] = mapped_column(Float, nullable=True)
-    phone: Mapped[str] = mapped_column(String(20), nullable=False)
-    logo_image: Mapped[str] = mapped_column(String())
-    cover_image: Mapped[str] = mapped_column(String(500))
-    is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
-    business_email: Mapped[str] = mapped_column(String())
+    phone: Mapped[str] = mapped_column(String(20), nullable=True)
+    logo_image: Mapped[str] = mapped_column(String(), nullable=True)
+    cover_image: Mapped[str] = mapped_column(String(500), nullable=True)
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
+    business_email: Mapped[str] = mapped_column(String(), nullable=True)
     website_slug: Mapped[str] = mapped_column(
-        String(500), default=False, unique=True, index=True)
-    about: Mapped[str] = mapped_column(String())
+        String(500), default=False, unique=True, index=True, nullable=True)
+    about: Mapped[str] = mapped_column(String(), nullable=True)
     payment_link: Mapped[str] = mapped_column(String(500), nullable=True)
     subscription_status: Mapped[SubscriptionStatus] = mapped_column(Enum(
-        SubscriptionStatus), default=SubscriptionStatus.free, nullable=False, index=True)
+        SubscriptionStatus), default=SubscriptionStatus.free, nullable=True, index=True)
     plan_type: Mapped[str] = mapped_column(String(50), nullable=True)
     subscription_renewal_date: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=True)
     tax_rate: Mapped[Numeric] = mapped_column(Numeric(10, 2), nullable=True)
-    currency: Mapped[str] = mapped_column(String(10), default='USD')
-    invoice_prefix: Mapped[str] = mapped_column(String(10), default='INV')
+    currency: Mapped[str] = mapped_column(String(10), default='USD', nullable=True)
+    invoice_prefix: Mapped[str] = mapped_column(String(10), default='INV', nullable=True)
     stripe_account_id: Mapped[str] = mapped_column(String(255), nullable=True)
     stripe_onboarding_complete: Mapped[bool] = mapped_column(
-        Boolean, default=False)
+        Boolean, default=False, nullable=True)
     create_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now())
+        DateTime(timezone=True), server_default=func.now(), nullable=True)
 
     @hybrid_property
     def total_revenue(self):
