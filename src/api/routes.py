@@ -46,7 +46,12 @@ def test_jobs():
 def get_all_jobs():
     """Get all jobs with optional filtering"""
     try:
-        provider_id = 1  # Hardcoded for testing - replace with get_jwt_identity()
+        user_id = get_jwt_identity()
+
+        contractor = Contractor.query.filter_by(user_id=user_id).first()
+        if not contractor:
+            return jsonify({'error': 'Contractor not found'}), 404
+        provider_id = contractor.id
         
         # Get query parameters
         status = request.args.get('status', 'all')

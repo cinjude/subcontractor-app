@@ -66,7 +66,7 @@ export const JobCard = ({ job, viewMode = 'grid', onUpdate, onDelete }) => {
                         </div>
                         <div className="job-info-item">
                             <i className="bi bi-calendar"></i>
-                            <span>{formatDate(job.startDate || job.createdAt)}</span>
+                            <span>{formatDate(job.start_date || job.create_at)}</span>
                         </div>
                     </div>
                     <div className="job-info-row">
@@ -76,7 +76,7 @@ export const JobCard = ({ job, viewMode = 'grid', onUpdate, onDelete }) => {
                         </div>
                         <div className="job-info-item">
                             <i className="bi bi-person"></i>
-                            <span>Customer #{job.customerId}</span>
+                            <span>Customer #{job.customer_id}</span>
                         </div>
                     </div>
                 </div>

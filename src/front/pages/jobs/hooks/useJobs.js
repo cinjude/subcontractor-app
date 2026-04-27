@@ -44,7 +44,7 @@ export const useJobs = () => {
         try {
             setLoading(true);
             const response = await api.post('/api/jobs/create', jobData);
-            setJobs(prev => [...prev, response.data]);
+            setJobs(prev => [...prev, response.data.job]);
             return response.data;
         } catch (err) {
              console.log("❌ ERROR:", err.response?.status, err.response?.data);
