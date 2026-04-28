@@ -3,8 +3,12 @@ import { format } from 'date-fns';
 import { jobStatuses, jobPriorities } from '../utils/jobConstants';
 import { formatCurrency, formatDate } from '../utils/jobHelpers';
 import './JobCard.css';
+import { useNavigate } from 'react-router-dom';
 
 export const JobCard = ({ job, viewMode = 'grid', onUpdate, onDelete }) => {
+
+    const navigate = useNavigate()
+
     const getStatusInfo = (status) => {
         return jobStatuses.find(s => s.value === status) || jobStatuses[0];
     };
@@ -34,19 +38,19 @@ export const JobCard = ({ job, viewMode = 'grid', onUpdate, onDelete }) => {
                 <div className="job-card-actions">
                     <button
                         className="btn btn-sm btn-outline-primary"
-                        onClick={() => {/* TODO: View details */ }}
+                        onClick={() => navigate(`/providerdashboard/jobdetails/${job.id}`)}
                     >
                         <i className="bi bi-eye"></i>
                     </button>
                     <button
                         className="btn btn-sm btn-outline-success"
-                        onClick={() => {/* TODO: Update */ }}
+                        onClick={() => { onUpdate(job) }}
                     >
                         <i className="bi bi-pencil"></i>
                     </button>
                     <button
                         className="btn btn-sm btn-outline-danger"
-                        onClick={() => {/* TODO: Delete */ }}
+                        onClick={() => { onDelete(job.id) }}
                     >
                         <i className="bi bi-trash"></i>
                     </button>

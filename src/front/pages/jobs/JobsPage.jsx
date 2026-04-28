@@ -34,6 +34,7 @@ export const JobsPage = () => {
         try {
             await updateJob(id, jobData);
             setSelectedJob(null);
+            setShowForm(false);
         } catch (err) {
             console.error('Failed to update job:', err);
         }
@@ -126,7 +127,7 @@ export const JobsPage = () => {
                         jobs={jobs}
                         loading={loading}
                         error={error}
-                        onUpdate={handleUpdateJob}
+                        onUpdate={handleEditJob}
                         onDelete={handleDeleteJob}
                     />
                     {!showForm && (

@@ -110,6 +110,7 @@ def register_stylist():
     pw_hash = bcrypt.generate_password_hash(body['password']).decode('utf-8')
     new_user.password = pw_hash
     db.session.add(new_user)
+    
     db.session.flush()
 
     new_contractor = Contractor(user_id=new_user.id)

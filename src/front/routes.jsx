@@ -17,7 +17,7 @@ import { SignUpProvider } from "./pages/SignUpProvider";
 import { ProviderDashboard } from "./pages/dashboardProvider/ProviderDashboard"
 import { DashboardHome } from "./pages/dashboardProvider/DashboardHome"
 import { PrivateProviderRoute } from "./pages/dashboardProvider/PrivateProviderRoute"
-import { JobsPage } from "./pages/jobs"
+import { JobDetails, JobsPage } from "./pages/jobs"
 import { CustomersPage } from "./pages/customer/CustomersPage"
 import CustomerDetails from "./pages/customer/CustomerDetails";
 import ServicesP from "./pages/servicespage/ServicesP";
@@ -54,6 +54,7 @@ export const router = createBrowserRouter(
       >
         <Route index element={<DashboardHome />} />
         <Route path="jobs" element={<JobsPage />} />
+        <Route path="jobdetails/:id" element={<JobDetails />} />
         <Route path="customers" element={<CustomersPage />} />
         <Route path="customer/:id" element={<CustomerDetails />} />
         <Route path="services" element={<ServicesP />} />

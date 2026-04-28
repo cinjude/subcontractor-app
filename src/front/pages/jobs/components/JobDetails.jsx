@@ -1,11 +1,46 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { jobCategories, jobPriorities, jobStatuses } from '../utils/jobConstants';
 import './JobDetails.css';
+import { useParams } from 'react-router-dom';
+import useGlobalReducer from '../../../hooks/useGlobalReducer';
 
-export const JobDetails = ({ job, onClose, onUpdate, onDelete }) => {
+export const JobDetails = ({ onUpdate, onDelete }) => {
+
+    const { id } = useParams();
+    const { store } = useGlobalReducer();
+
+    const [job, setJob] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('details');
     const [isEditing, setIsEditing] = useState(false);
+
+    const getSingleJob = async () => {
+        setLoading(true);
+
+        const token = store?.token || localStorage.getItem('token');
+        if (!token) return;
+
+        try {
+            const resp = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/jobs/${id}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const data = await resp.json();
+            if (resp.ok) {
+                setJob(data)
+            }
+        } catch (error) {
+            console.error('Failed to fetch job:', id, error);
+        } finally {
+            setLoading(false);
+        }
+    }
+    useEffect(() => {
+        getSingleJob();
+    }, [store?.token]);
 
     const getStatusClass = (status) => {
         const statusMap = {
@@ -16,6 +51,7 @@ export const JobDetails = ({ job, onClose, onUpdate, onDelete }) => {
         };
         return statusMap[status] || 'status-default';
     };
+
 
     const getPriorityClass = (priority) => {
         const priorityMap = {
@@ -61,7 +97,14 @@ export const JobDetails = ({ job, onClose, onUpdate, onDelete }) => {
         }
     };
 
-    if (!job) return null;
+    const onClose = () => {
+        window.location.href = '/providerdashboard/jobs';
+    };
+
+    if (loading) return <div>Loading...</div>;
+    if (!job) return <div>Job not found</div>;
+
+    console.log('Job details:', job);
 
     return (
         <div className="job-details-modal">

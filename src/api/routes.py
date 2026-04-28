@@ -6,7 +6,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from api.models import db, User, Job, JobStatus, JobPriority, JobDocument, Customer, Services, Contractor
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
-from datetime import datetime
+from datetime import datetime, timedelta
 
 api = Blueprint('api', __name__)
 
@@ -53,15 +53,14 @@ def get_all_jobs():
             return jsonify({'error': 'Contractor not found'}), 404
         provider_id = contractor.id
         
-        # Get query parameters
         status = request.args.get('status', 'all')
         priority = request.args.get('priority', 'all')
         search = request.args.get('search', '')
+        category = request.args.get('category', 'all')
+        date_range = request.args.get('dateRange', 'all')
         
-        # Build query
         query = Job.query.filter_by(contractor_id=provider_id, is_deleted=False)
         
-        # Apply filters
         if status != 'all':
             try:
                 query = query.filter(Job.status == JobStatus(status))
@@ -81,15 +80,26 @@ def get_all_jobs():
                 Job.description.ilike(search_term) |
                 Job.location.ilike(search_term)
             )
+
+        if category != 'all':
+            query = query.filter(Job.categories.ilike(f'%{category}%'))
         
-        # Order by created_at desc
-        query = query.order_by(Job.create_at.desc())
-        
-        # Get all jobs (simplified for testing)
-        jobs = query.all()
+        now = datetime.utcnow()
+        if date_range == 'today':
+            query = query.filter(Job.create_at >= now.replace(hour=0, minute=0, second=0))
+        elif date_range == 'week':
+            query = query.filter(Job.create_at >= now - timedelta(days=7))
+        elif date_range == 'month':
+            query = query.filter(Job.create_at >= now - timedelta(days=30))
+        elif date_range == 'quarter':
+            query = query.filter(Job.create_at >= now - timedelta(days=90))
+        elif date_range == 'year':
+            query = query.filter(Job.create_at >= now - timedelta(days=365))
+
+        jobs = query.order_by(Job.create_at.desc()).all()
         
         return jsonify({
-            'jobs': [job.to_dict() for job in jobs],
+            'jobs': [job.serialize() for job in jobs],
             'total': len(jobs)
         }), 200
         
@@ -170,7 +180,7 @@ def get_job(job_id):
         if not job:
             return jsonify({'error': 'Job not found'}), 404
         
-        return jsonify(job.to_dict()), 200
+        return jsonify(job.serialize()), 200
         
     except Exception as e:
         return jsonify({'error': f'Failed to fetch job: {str(e)}'}), 500
@@ -222,7 +232,7 @@ def update_job(job_id):
         
         db.session.commit()
         
-        return jsonify(job.to_dict()), 200
+        return jsonify(job.serialize()), 200
         
     except Exception as e:
         db.session.rollback()
@@ -270,7 +280,7 @@ def update_job_status(job_id):
             except ValueError:
                 return jsonify({'error': f'Invalid status: {new_status}'}), 400
         
-        return jsonify(job.to_dict()), 200
+        return jsonify(job.serialize()), 200
         
     except Exception as e:
         db.session.rollback()
