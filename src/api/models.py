@@ -340,6 +340,7 @@ class Job(db.Model):
     job_customer: Mapped['Customer'] = relationship(back_populates='customer_job')
     service: Mapped['Services'] = relationship(back_populates='job')
     documents: Mapped[list['JobDocument']] = relationship(back_populates='job', cascade='all, delete-orphan')
+    timeline: Mapped[list['JobTimeline']] = relationship(cascade='all, delete-orphan', order_by="JobTimeline.date" )
 
     @hybrid_property
     def duration_days(self):
@@ -384,11 +385,26 @@ class Job(db.Model):
             'duration_days': self.duration_days,
         }
 
-    # def get_duration_days(self):
-    #     """Get job duration in days"""
-    #     if self.start_date and self.end_date:
-    #         return (self.end_date - self.start_date).days
-    #     return None
+class JobTimeline(db.Model):
+    __tablename__ = 'job_timeline'
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    job_id: Mapped[int] = mapped_column(ForeignKey('job.id'), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=True)
+    description: Mapped[str] = mapped_column(Text)
+    date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    type: Mapped[str] = mapped_column(String(50))
+    
+    job: Mapped['Job'] = relationship(back_populates='timeline')
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "description": self.description,
+            "date": self.date.isoformat(),
+            "type": self.type
+        }
 
 
 class JobDocument(db.Model):
