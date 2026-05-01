@@ -68,7 +68,6 @@ export const JobDetails = () => {
         return statusMap[status] || 'status-default';
     };
 
-
     const getPriorityClass = (priority) => {
         const priorityMap = {
             'low': 'priority-low',
@@ -86,12 +85,14 @@ export const JobDetails = () => {
         }).format(amount);
     };
 
-    const formatDate = (dateString) => {
-        try {
-            return format(new Date(dateString), 'MMMM dd, yyyy');
-        } catch {
-            return 'Invalid date';
-        }
+    const formatDate = (dateString, formatString = 'MMM dd, yyyy') => {
+        if (!dateString) return 'No date';
+
+        const date = new Date(dateString);
+
+        return isNaN(date.getTime())
+            ? 'Invalid date'
+            : format(date, formatString);
     };
 
     const handleStatusChange = async (newStatus) => {

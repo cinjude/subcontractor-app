@@ -373,14 +373,14 @@ class Job(db.Model):
             'schedule_date': self.schedule_date.isoformat() if self.schedule_date else None,
             'estimate_total': float(self.estimate_total) if self.estimate_total else None,
             'actual_total': float(self.actual_total) if self.actual_total else None,
-            'start_date': self.start_date.isoformat() if self.start_date else None,
-            'end_date': self.end_date.isoformat() if self.end_date else None,
+            'startDate': self.start_date.isoformat() if self.start_date else None,
+            'endDate': self.end_date.isoformat() if self.end_date else None,
             'progress': self.progress,
             'categories': self.categories.split(',') if self.categories else [],
             'notes': self.notes,
             'is_deleted': self.is_deleted,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'create_at': self.create_at.isoformat() if self.create_at else None,
+            'updatedAt': self.updated_at.isoformat() if self.updated_at else None,
+            'createdAt': self.create_at.isoformat() if self.create_at else None,
             'duration_days': self.duration_days,
         }
 
