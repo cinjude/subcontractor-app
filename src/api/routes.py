@@ -3,10 +3,11 @@ This module takes care of starting the API Server, Loading the DB and Adding the
 """
 from flask import Flask, request, jsonify, url_for, Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from api.models import db, User, Job, JobStatus, JobPriority, JobDocument, Customer, Services, Contractor
+from api.models import db, User, Job, JobStatus, JobPriority, JobDocument, Customer, Services, Contractor, JobTimeline
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
 from datetime import datetime, timedelta
+from sqlalchemy import func, case
 
 api = Blueprint('api', __name__)
 
@@ -46,21 +47,22 @@ def test_jobs():
 def get_all_jobs():
     """Get all jobs with optional filtering"""
     try:
-        user_id = get_jwt_identity()
 
+        user_id = get_jwt_identity()
         contractor = Contractor.query.filter_by(user_id=user_id).first()
         if not contractor:
             return jsonify({'error': 'Contractor not found'}), 404
-        provider_id = contractor.id
         
         status = request.args.get('status', 'all')
         priority = request.args.get('priority', 'all')
         search = request.args.get('search', '')
         category = request.args.get('category', 'all')
         date_range = request.args.get('dateRange', 'all')
-        
-        query = Job.query.filter_by(contractor_id=provider_id, is_deleted=False)
-        
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+
+        query = Job.query.filter_by(contractor_id=contractor.id, is_deleted=False) 
+
         if status != 'all':
             try:
                 query = query.filter(Job.status == JobStatus(status))
@@ -96,11 +98,13 @@ def get_all_jobs():
         elif date_range == 'year':
             query = query.filter(Job.create_at >= now - timedelta(days=365))
 
-        jobs = query.order_by(Job.create_at.desc()).all()
-        
+        pagination = query.order_by(Job.create_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+
         return jsonify({
-            'jobs': [job.serialize() for job in jobs],
-            'total': len(jobs)
+            'jobs': [job.serialize() for job in pagination.items],
+            'total': pagination.total,
+            'pages': pagination.pages,
+            'current_page': page
         }), 200
         
     except Exception as e:
@@ -123,16 +127,18 @@ def create_job():
         customer_id = data.get('customerId')
         service_id = data.get('serviceId')
 
-        customer = db.session.get(Customer, customer_id)
-        if not customer:
-            return jsonify({'error': f'Customer with id {customer_id} not found'}), 404
+        if customer_id:
 
-        if customer.contractor_id != current_contractor_id:
-            return jsonify({'error': f'Unauthorized to create job for customer {customer_id}'}), 403
-        
-        service = db.session.get(Services, service_id)
-        if not service:
-            return jsonify({'error': f'Service with id {service_id} not found'}), 404
+            customer = db.session.get(Customer, customer_id)
+            if not customer:
+                return jsonify({'error': f'Customer {customer_id} not found'}), 404
+            if customer.contractor_id != current_contractor_id:
+                return jsonify({'error': 'Unauthorized'}), 403
+
+        if service_id:
+            service = db.session.get(Services, service_id)
+            if not service:
+                return jsonify({'error': f'Service {service_id} not found'}), 404
         
         new_job = Job(
             contractor_id=current_contractor_id,
@@ -149,17 +155,26 @@ def create_job():
             status=JobStatus.PENDING,
             priority=JobPriority.MEDIUM,
             notes=data.get('notes', ''),
-            # Convertimos la lista de categorías ["A", "B"] a string "A,B"
             categories=','.join(data.get('categories', [])) if isinstance(data.get('categories'), list) else '' 
         )
         
         db.session.add(new_job)
+        db.session.flush()
+        
+        timeline_entry = JobTimeline(
+            job_id=new_job.id,
+            title='Job Created',
+            description=f'Job "{new_job.title}" was created by {contractor.user.name}',
+            type='system'
+        )
+        db.session.add(timeline_entry)
+
         db.session.commit()
         
         return jsonify({
             'msg': 'Job created successfully',
             'job':new_job.serialize(), 
-            "customer": customer.name   
+            "customer": customer.name if customer_id else None 
         }),201
 
         
@@ -172,8 +187,15 @@ def create_job():
 def get_job(job_id):
     """Get a specific job"""
     try:
+        user_id = get_jwt_identity()
+        contractor = Contractor.query.filter_by(user_id=user_id).first()
+        if not contractor:
+            return jsonify({'error': 'Contractor not found'}), 404
+        current_contractor_id = contractor.id
+        
         job = Job.query.filter(
             Job.id == job_id,
+            Job.contractor_id == current_contractor_id,
             Job.is_deleted == False
         ).first()
         
@@ -190,8 +212,15 @@ def get_job(job_id):
 def update_job(job_id):
     """Update a job"""
     try:
+        user_id = get_jwt_identity()
+        contractor = Contractor.query.filter_by(user_id=user_id).first()
+        if not contractor:
+            return jsonify({'error': 'Contractor not found'}), 404
+        current_contractor_id = contractor.id
+        
         job = Job.query.filter(
             Job.id == job_id,
+            Job.contractor_id == current_contractor_id,
             Job.is_deleted == False
         ).first()
         
@@ -200,9 +229,6 @@ def update_job(job_id):
         
         data = request.get_json()
         
-        # Update job fields
-        if 'title' in data:
-            job.title = data['title']
         if 'description' in data:
             job.description = data['description']
         if 'location' in data:
@@ -220,15 +246,28 @@ def update_job(job_id):
             except ValueError:
                 pass
         if 'startDate' in data and data['startDate']:
-            job.start_date = data['startDate']
+            job.start_date = datetime.fromisoformat(data['startDate'])
         if 'endDate' in data and data['endDate']:
-            job.end_date = data['endDate']
+            job.end_date = datetime.fromisoformat(data['endDate'])
         if 'categories' in data:
             job.categories = ','.join(data['categories'])
         if 'notes' in data:
             job.notes = data['notes']
         if 'progress' in data:
             job.progress = data['progress']
+
+        if 'title' in data and data['title'] != job.title:
+            old_title = job.title             
+            job.title = data['title']          
+            timeline_entry = JobTimeline(
+                job_id=job.id,
+                title='Title Update',
+                description=f'Title changed from "{old_title}" to "{job.title}"',
+                type='updated'
+            )
+            db.session.add(timeline_entry)
+        elif 'title' in data:
+            job.title = data['title']
         
         db.session.commit()
         
@@ -243,7 +282,17 @@ def update_job(job_id):
 def delete_job(job_id):
     """Soft delete a job"""
     try:
-        job = Job.query.filter(Job.id == job_id).first()
+
+        user_id = get_jwt_identity()
+        contractor = Contractor.query.filter_by(user_id=user_id).first()
+        if not contractor:
+            return jsonify({'error': 'Contractor not found'}), 404
+        current_contractor_id = contractor.id
+
+        job = Job.query.filter(Job.id == job_id,
+            Job.contractor_id == current_contractor_id,
+            Job.is_deleted == False
+        ).first()
         
         if not job:
             return jsonify({'error': 'Job not found'}), 404
@@ -262,8 +311,15 @@ def delete_job(job_id):
 def update_job_status(job_id):
     """Update job status"""
     try:
+        user_id = get_jwt_identity()
+        contractor = Contractor.query.filter_by(user_id=user_id).first()
+        if not contractor:
+            return jsonify({'error': 'Contractor not found'}), 404
+        current_contractor_id = contractor.id
+
         job = Job.query.filter(
             Job.id == job_id,
+            Job.contractor_id == current_contractor_id,
             Job.is_deleted == False
         ).first()
         
@@ -291,23 +347,28 @@ def update_job_status(job_id):
 def get_job_stats():
     """Get job statistics"""
     try:
-        provider_id = 1  # Hardcoded for testing
+        user_id = get_jwt_identity()
+        contractor = Contractor.query.filter_by(user_id=user_id).first()
+        provider_id = contractor.id
+
+        contractor = Contractor.query.filter_by(user_id=user_id).first()
+        if not contractor: 
+            return jsonify({'error': 'Contractor not found'}), 404
+        provider_id = contractor.id
         
-        # Get all jobs for this provider
-        all_jobs = Job.query.filter_by(contractor_id=provider_id, is_deleted=False).all()
-        
-        # Calculate stats
-        stats = {
-            'total': len(all_jobs),
-            'pending': len([j for j in all_jobs if j.status == JobStatus.PENDING]),
-            'in_progress': len([j for j in all_jobs if j.status == JobStatus.IN_PROGRESS]),
-            'completed': len([j for j in all_jobs if j.status == JobStatus.COMPLETED]),
-            'canceled': len([j for j in all_jobs if j.status == JobStatus.CANCELED]),
-            'high_priority': len([j for j in all_jobs if j.priority == JobPriority.HIGH]),
-            'urgent': len([j for j in all_jobs if j.priority == JobPriority.URGENT])
-        }
-        
-        return jsonify(stats), 200
+        stats_query = db.session.query(
+            func.count().label('total'),
+            func.sum(case((Job.status == JobStatus.PENDING, 1), else_=0)).label('pending'),
+            func.sum(case((Job.status == JobStatus.IN_PROGRESS, 1), else_=0)).label('in_progress'),
+            func.sum(case((Job.status == JobStatus.COMPLETED, 1), else_=0)).label('completed'),
+        ).filter(Job.contractor_id==provider_id, Job.is_deleted==False).one()
+
+        return jsonify({
+            'total': stats_query.total or 0,
+            'pending': stats_query.pending or 0,
+            'in_progress': stats_query.in_progress or 0,
+            'completed': stats_query.completed or 0,
+        }), 200
         
     except Exception as e:
         return jsonify({'error': f'Failed to fetch stats: {str(e)}'}), 500
@@ -340,14 +401,20 @@ def get_job_categories():
     except Exception as e:
         return jsonify({'error': f'Failed to fetch categories: {str(e)}'}), 500
 
-# Job Documents endpoints
 @api.route('/jobs/<int:job_id>/documents', methods=['GET'])
 @jwt_required()
 def get_job_documents(job_id):
     """Get all documents for a job"""
     try:
+        user_id = get_jwt_identity()
+        contractor = Contractor.query.filter_by(user_id=user_id).first()
+        if not contractor:
+            return jsonify({'error': 'Contractor not found'}), 404
+        current_contractor_id = contractor.id
+
         job = Job.query.filter(
             Job.id == job_id,
+            Job.contractor_id == current_contractor_id,
             Job.is_deleted == False
         ).first()
         
@@ -365,15 +432,21 @@ def get_job_documents(job_id):
 def upload_job_document(job_id):
     """Upload a document for a job"""
     try:
+        user_id = get_jwt_identity()
+        contractor = Contractor.query.filter_by(user_id=user_id).first()
+        if not contractor:
+            return jsonify({'error': 'Contractor not found'}), 404
+        current_contractor_id = contractor.id
+
         job = Job.query.filter(
             Job.id == job_id,
+            Job.contractor_id == current_contractor_id,
             Job.is_deleted == False
         ).first()
         
         if not job:
             return jsonify({'error': 'Job not found'}), 404
         
-        # For now, return a mock response (file upload would need actual file handling)
         data = request.get_json()
         document = JobDocument(
             job_id=job_id,
@@ -381,7 +454,7 @@ def upload_job_document(job_id):
             file_path=data.get('file_path', '/mock/path'),
             file_size=data.get('file_size', 0),
             file_type=data.get('file_type', 'application/pdf'),
-            uploaded_by=1  # Hardcoded for testing
+            uploaded_by=contractor.id
         )
         
         db.session.add(document)
@@ -396,21 +469,19 @@ def upload_job_document(job_id):
 @api.route('/jobs/<int:job_id>/documents/<int:document_id>', methods=['DELETE'])
 @jwt_required()
 def delete_job_document(job_id, document_id):
-    """Delete a document from a job"""
-    try:
-        document = JobDocument.query.filter_by(
-            id=document_id,
-            job_id=job_id
-        ).first()
-        
-        if not document:
-            return jsonify({'error': 'Document not found'}), 404
-        
-        db.session.delete(document)
-        db.session.commit()
-        
-        return jsonify({'message': 'Document deleted successfully'}), 200
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': f'Failed to delete document: {str(e)}'}), 500
+    user_id = get_jwt_identity()
+    contractor = Contractor.query.filter_by(user_id=user_id).first()
+    if not contractor:
+        return jsonify({'error': 'Contractor not found'}), 404
+
+    job = Job.query.filter_by(id=job_id, contractor_id=contractor.id, is_deleted=False).first()
+    if not job:
+        return jsonify({'error': 'Job not found'}), 404
+
+    document = JobDocument.query.filter_by(id=document_id, job_id=job_id).first()
+    if not document:
+        return jsonify({'error': 'Document not found'}), 404
+
+    db.session.delete(document)
+    db.session.commit()
+    return jsonify({'message': 'Document deleted successfully'}), 200
