@@ -17,8 +17,9 @@ export const JobDetails = () => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('details');
     const [isEditing, setIsEditing] = useState(false);
+    const [uploadingDoc, setUploadingDoc] = useState(false);
 
-    const { updateJob, deleteJob } = useJobs();
+    const { updateJob, deleteJob, uploadDocument, deleteDocument } = useJobs();
 
     const getSingleJob = async () => {
         setLoading(true);
@@ -112,6 +113,31 @@ export const JobDetails = () => {
             } catch (error) {
                 console.error('Failed to delete job:', error);
             }
+        }
+    };
+
+    const handleUploadDocument = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setUploadingDoc(true)
+        try {
+            await uploadDocument(job.id, file);
+            await getSingleJob();
+        } catch (error) {
+            console.error('Failed to upload document:', error);
+        } finally {
+            setUploadingDoc(false);
+        }
+    };
+
+    const handleDeleteDocument = async (documentId) => {
+        if (!window.confirm('Delete this document?')) return;
+        try {
+            await deleteDocument(job.id, documentId);
+            await getSingleJob();
+        } catch (error) {
+            console.error('Failed to delete document:', error);
         }
     };
 
@@ -303,10 +329,22 @@ export const JobDetails = () => {
                                     <div className="job-documents">
                                         <div className="documents-header">
                                             <h4>Documents</h4>
-                                            <button className="btn btn-primary btn-sm">
-                                                <i className="bi bi-plus"></i> Upload Document
-                                            </button>
+
+                                            <label className="btn btn-primary btn-sm" style={{ cursor: 'pointer' }}>
+                                                {uploadingDoc
+                                                    ? <><span className="spinner-border spinner-border-sm me-1"></span>Uploading...</>
+                                                    : <><i className="bi bi-plus"></i> Upload Document</>
+                                                }
+                                                <input
+                                                    type="file"
+                                                    hidden
+                                                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                                    onChange={handleUploadDocument}
+                                                    disabled={uploadingDoc}
+                                                />
+                                            </label>
                                         </div>
+
                                         <div className="documents-list">
                                             {job.documents?.length > 0 ? (
                                                 job.documents.map((doc, index) => (
@@ -314,13 +352,27 @@ export const JobDetails = () => {
                                                         <i className="bi bi-file-earmark"></i>
                                                         <div className="document-info">
                                                             <h6>{doc.name}</h6>
-                                                            <small>{doc.size} • {formatDate(doc.uploadedAt)}</small>
+                                                            <small>
+                                                                {doc.file_size
+                                                                    ? `${(doc.file_size / 1024).toFixed(1)} KB`
+                                                                    : ''
+                                                                } • {formatDate(doc.created_at)}
+                                                            </small>
                                                         </div>
                                                         <div className="document-actions">
-                                                            <button className="btn btn-sm btn-outline-primary">
+
+                                                            <a
+                                                                href={doc.file_path}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                                className="btn btn-sm btn-outline-primary"
+                                                            >
                                                                 <i className="bi bi-download"></i>
-                                                            </button>
-                                                            <button className="btn btn-sm btn-outline-danger">
+                                                            </a>
+                                                            <button
+                                                                className="btn btn-sm btn-outline-danger"
+                                                                onClick={() => handleDeleteDocument(doc.id)}
+                                                            >
                                                                 <i className="bi bi-trash"></i>
                                                             </button>
                                                         </div>
@@ -413,7 +465,8 @@ export const JobDetails = () => {
                         </div>
                     </div>
                 </div>
-            )}
-        </div>
+            )
+            }
+        </div >
     );
 };

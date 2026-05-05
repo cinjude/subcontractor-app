@@ -84,6 +84,42 @@ export const useJobs = () => {
         }
     }, []);
 
+    const uploadDocument = useCallback(async (jobId, file) => {
+        try{
+            setLoading(true)
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await api.post(`/api/jobs/${jobId}/documents`, 
+                formData,
+                {
+                    headers:{
+                        'Content-Type': 'multipart/form-data'
+                    }
+                }
+            );
+            return response.data;
+
+        } catch (error) {
+            setError(error.response?.data?.error || 'Failed to upload document');
+            throw error;
+        }
+        finally{
+            setLoading(false);
+        }
+    }, [])
+
+    const deleteDocument = useCallback(async (jobId, documentId) => {
+        try{
+            await api.delete(`/api/jobs/${jobId}/documents/${documentId}`);
+
+        } catch (error) {
+            setError(error.response?.data?.error || 'Failed to delete document');
+            throw error;
+        }
+    }, [])
+
     useEffect(() => {
         fetchJobs();
     }, [fetchJobs]);
@@ -97,6 +133,8 @@ export const useJobs = () => {
         fetchJobs,
         createJob,
         updateJob,
-        deleteJob
+        deleteJob,
+        uploadDocument,
+        deleteDocument
     };
 };

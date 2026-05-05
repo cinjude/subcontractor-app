@@ -311,6 +311,27 @@ class Services(db.Model):
             'materials': [m.serialize() for m in self.material_service]
         }
 
+class JobTimeline(db.Model):
+    __tablename__ = 'job_timeline'   
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    job_id: Mapped[int] = mapped_column(ForeignKey('job.id'), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=True)
+    description: Mapped[str] = mapped_column(Text)
+    date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    type: Mapped[str] = mapped_column(String(50))
+    
+    job: Mapped['Job'] = relationship(back_populates='timeline')
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "description": self.description,
+            "date": self.date.isoformat(),
+            "type": self.type
+        }
+
+
 class Job(db.Model):
     __tablename__ = 'job'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -383,29 +404,8 @@ class Job(db.Model):
             'updatedAt': self.updated_at.isoformat() if self.updated_at else None,
             'createdAt': self.create_at.isoformat() if self.create_at else None,
             'duration_days': self.duration_days,
+            'timeline': [m.serialize() for m in self.timeline]
         }
-
-class JobTimeline(db.Model):
-    __tablename__ = 'job_timeline'
-    
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    job_id: Mapped[int] = mapped_column(ForeignKey('job.id'), nullable=False)
-    title: Mapped[str] = mapped_column(String(255), nullable=True)
-    description: Mapped[str] = mapped_column(Text)
-    date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    type: Mapped[str] = mapped_column(String(50))
-    
-    job: Mapped['Job'] = relationship(back_populates='timeline')
-
-    def serialize(self):
-        return {
-            "id": self.id,
-            "title": self.title,
-            "description": self.description,
-            "date": self.date.isoformat(),
-            "type": self.type
-        }
-
 
 class JobDocument(db.Model):
     __tablename__ = 'job_documents'
@@ -419,7 +419,6 @@ class JobDocument(db.Model):
     uploaded_by: Mapped[int] = mapped_column(ForeignKey('contractor.id'), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     
-    # Relationships
     job = relationship('Job', back_populates='documents')
     uploader = relationship('Contractor')
     

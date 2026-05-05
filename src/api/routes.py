@@ -1,6 +1,9 @@
 """
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
+import cloudinary
+import cloudinary.uploader
+import os
 from flask import Flask, request, jsonify, url_for, Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from api.models import db, User, Job, JobStatus, JobPriority, JobDocument, Customer, Services, Contractor, JobTimeline
@@ -8,6 +11,12 @@ from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
 from datetime import datetime, timedelta
 from sqlalchemy import func, case
+
+cloudinary.config(
+    cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.getenv('CLOUDINARY_API_KEY'),
+    api_secret=os.getenv('CLOUDINARY_API_SECRET')
+)
 
 api = Blueprint('api', __name__)
 
@@ -176,8 +185,7 @@ def create_job():
             'job':new_job.serialize(), 
             "customer": customer.name if customer_id else None 
         }),201
-
-        
+   
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Failed to create job: {str(e)}'}), 500
@@ -268,7 +276,6 @@ def update_job(job_id):
             db.session.add(timeline_entry)
         elif 'title' in data:
             job.title = data['title']
-        
         db.session.commit()
         
         return jsonify(job.serialize()), 200
@@ -447,13 +454,25 @@ def upload_job_document(job_id):
         if not job:
             return jsonify({'error': 'Job not found'}), 404
         
-        data = request.get_json()
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+
+        upload_result = cloudinary.uploader.upload(
+            file,
+            folder=f'jobs/{job_id}/documents',
+            resource_type='auto'
+            )
+
         document = JobDocument(
             job_id=job_id,
-            name=data.get('name', 'Document'),
-            file_path=data.get('file_path', '/mock/path'),
-            file_size=data.get('file_size', 0),
-            file_type=data.get('file_type', 'application/pdf'),
+            name=file.filename,
+            file_path=upload_result['secure_url'],
+            file_size=upload_result.get('bytes', 0),
+            file_type=upload_result.get('format', 'unknown'),
             uploaded_by=contractor.id
         )
         
