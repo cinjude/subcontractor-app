@@ -404,11 +404,12 @@ class Job(db.Model):
             'updatedAt': self.updated_at.isoformat() if self.updated_at else None,
             'createdAt': self.create_at.isoformat() if self.create_at else None,
             'duration_days': self.duration_days,
-            'timeline': [m.serialize() for m in self.timeline]
+            'timeline': [m.serialize() for m in self.timeline],
+            'documents': [d.to_dict() for d in self.documents], 
         }
 
 class JobDocument(db.Model):
-    __tablename__ = 'job_documents'
+    __tablename__ = 'job_documents' 
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     job_id: Mapped[int] = mapped_column(ForeignKey('job.id'), nullable=False)

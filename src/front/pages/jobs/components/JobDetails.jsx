@@ -141,14 +141,23 @@ export const JobDetails = () => {
         }
     };
 
+    const handleDownload = (url, filename) => {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        const downloadUrl = url.replace('/upload/', '/upload/fl_attachment/');
+        window.open(downloadUrl, '_blank');
+    };
+
     const onClose = () => {
         window.location.href = '/providerdashboard/jobs';
     };
 
     if (loading) return <div>Loading...</div>;
     if (!job) return <div>Job not found</div>;
-
-    console.log('Job details:', job);
 
     return (
         <div className="job-details-body">
@@ -361,14 +370,12 @@ export const JobDetails = () => {
                                                         </div>
                                                         <div className="document-actions">
 
-                                                            <a
-                                                                href={doc.file_path}
-                                                                target="_blank"
-                                                                rel="noreferrer"
+                                                            <button
                                                                 className="btn btn-sm btn-outline-primary"
+                                                                onClick={() => handleDownload(doc.file_path, doc.name)}
                                                             >
                                                                 <i className="bi bi-download"></i>
-                                                            </a>
+                                                            </button>
                                                             <button
                                                                 className="btn btn-sm btn-outline-danger"
                                                                 onClick={() => handleDeleteDocument(doc.id)}
