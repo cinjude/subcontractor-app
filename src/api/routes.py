@@ -461,22 +461,24 @@ def upload_job_document(job_id):
         if file.filename == '':
             return jsonify({'error': 'No file selected'}), 400
 
+        is_pdf = file.content_type == 'application/pdf'
         is_image = file.content_type.startswith('image/')
 
         upload_result = cloudinary.uploader.upload(
             file,
             folder=f'jobs/{job_id}/documents',
-            resource_type='image' if is_image else 'raw',
-            access_mode='public',  
-            type='upload'
-            )
+            resource_type='auto',
+            access_mode='public',
+            type='upload',
+        )
+        file_url = upload_result['secure_url']
 
         document = JobDocument(
             job_id=job_id,
             name=file.filename,
-            file_path=upload_result['secure_url'],
+            file_path=file_url,
             file_size=upload_result.get('bytes', 0),
-            file_type=upload_result.get('format', 'unknown'),
+            file_type=file.content_type,
             uploaded_by=contractor.id
         )
         

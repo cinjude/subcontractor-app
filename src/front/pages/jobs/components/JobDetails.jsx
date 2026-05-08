@@ -141,16 +141,32 @@ export const JobDetails = () => {
         }
     };
 
-    const handleDownload = (url, filename) => {
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        document.body.appendChild(link);
-        const downloadUrl = url.replace('/upload/', '/upload/fl_attachment/');
-        window.open(downloadUrl, '_blank');
+    const handleDownload = async (url, filename) => {
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(
+                new Blob([blob], { type: 'application/pdf' })
+            );
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = filename || 'document.pdf';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (error) {
+            console.error('Download failed:', error);
+        }
     };
+
+    const isImage = (type) => {
+        return type?.startsWith('image/');
+    }
+
+    const isPdf = (type) => {
+        return type === 'application/pdf';
+    }
 
     const onClose = () => {
         window.location.href = '/providerdashboard/jobs';
@@ -361,6 +377,19 @@ export const JobDetails = () => {
                                                         <i className="bi bi-file-earmark"></i>
                                                         <div className="document-info">
                                                             <h6>{doc.name}</h6>
+
+                                                            {isImage(doc.file_type) ? (
+                                                                <img src={doc.file_path} width="100" />
+                                                            ) : isPdf(doc.file_type) ? (
+                                                                <button
+                                                                    className="btn btn-sm btn-outline-secondary"
+                                                                    onClick={() => handleDownload(doc.file_path, doc.name)}
+                                                                >
+                                                                    Ver / Descargar PDF
+                                                                </button>
+                                                            ) : (
+                                                                <i className="bi bi-file-earmark"></i>
+                                                            )}
                                                             <small>
                                                                 {doc.file_size
                                                                     ? `${(doc.file_size / 1024).toFixed(1)} KB`
