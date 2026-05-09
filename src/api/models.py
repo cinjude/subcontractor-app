@@ -60,6 +60,66 @@ class EstimateStatus(enum.Enum):
     converted = "converted"
     rejected = "rejected"
 
+class EstimateType(enum.Enum):
+    painting    = "painting"
+    flooring    = "flooring"
+    both        = "both"         
+ 
+class PaintSurfaceCondition(enum.Enum):
+    new_drywall     = "new_drywall"
+    same_color      = "same_color"
+    color_change    = "color_change"
+    dark_to_light   = "dark_to_light"
+    damaged         = "damaged"          
+ 
+class PaintType(enum.Enum):
+    interior_standard  = "interior_standard"
+    interior_premium   = "interior_premium"
+    exterior_standard  = "exterior_standard"
+    exterior_premium   = "exterior_premium"
+    primer_only        = "primer_only"
+ 
+class PaintFinish(enum.Enum):
+    flat        = "flat"
+    eggshell    = "eggshell"
+    satin       = "satin"
+    semi_gloss  = "semi_gloss"
+    gloss       = "gloss"
+ 
+class PaintCoats(enum.Enum):
+    one   = "1"
+    two   = "2"
+    three = "3"
+ 
+class FlooringMaterial(enum.Enum):
+    hardwood        = "hardwood"
+    engineered_wood = "engineered_wood"
+    laminate        = "laminate"
+    vinyl_plank     = "vinyl_plank"      
+    tile_ceramic    = "tile_ceramic"
+    tile_porcelain  = "tile_porcelain"
+    carpet          = "carpet"
+    concrete        = "concrete"
+ 
+class FlooringCurrentState(enum.Enum):
+    bare_concrete   = "bare_concrete"
+    old_carpet      = "old_carpet"
+    old_hardwood    = "old_hardwood"
+    old_tile        = "old_tile"
+    old_vinyl       = "old_vinyl"
+    already_removed = "already_removed"   
+ 
+class FlooringPattern(enum.Enum):
+    straight        = "straight"
+    diagonal_45     = "diagonal_45"
+    herringbone     = "herringbone"
+    chevron         = "chevron"
+ 
+class SubfloorCondition(enum.Enum):
+    good        = "good"
+    needs_repair= "needs_repair"
+    unknown     = "unknown"
+
 
 class User(db.Model):
     __tablename__ = 'user'
@@ -584,31 +644,174 @@ class PortfolioImage(db.Model):
 
 class EstimateRequest(db.Model):
     __tablename__ = 'estimateRequest'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    customer_id: Mapped[int] = mapped_column(
-        ForeignKey('customer.id'), nullable=True)
-    contractor_id: Mapped[int] = mapped_column(
-        ForeignKey('contractor.id'), nullable=False)
-    customer_name: Mapped[str] = mapped_column(String(120), nullable=False)
-    customer_email: Mapped[str] = mapped_column(String(120), nullable=False)
-    customer_phone: Mapped[str] = mapped_column(String(20), nullable=False)
-    service_id: Mapped[int] = mapped_column(
-        ForeignKey('services.id'), nullable=True)
-    description: Mapped[str] = mapped_column(String(500))
-    status: Mapped[EstimateStatus] = mapped_column(
-        Enum(EstimateStatus), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), onupdate=func.now())
-    create_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now())
-
-    contractor_estimate: Mapped['Contractor'] = relationship(
-        back_populates='estimate_contractor')
-    estim_customer: Mapped['Customer'] = relationship(
-        back_populates='customer_request')
-    service: Mapped['Services'] = relationship(
-        back_populates='service_estimate')
-
+ 
+    id              : Mapped[int]      = mapped_column(Integer, primary_key=True)
+    customer_id     : Mapped[int]      = mapped_column(ForeignKey('customer.id'), nullable=True)
+    contractor_id   : Mapped[int]      = mapped_column(ForeignKey('contractor.id'), nullable=False)
+    customer_name   : Mapped[str]      = mapped_column(String(120), nullable=False)
+    customer_email  : Mapped[str]      = mapped_column(String(120), nullable=False)
+    customer_phone  : Mapped[str]      = mapped_column(String(20),  nullable=False)
+    customer_address: Mapped[str]      = mapped_column(String(255), nullable=True)   
+ 
+    estimate_type   : Mapped[str]      = mapped_column(
+                        Enum(EstimateType, native_enum=False), nullable=False, server_default="painting")
+    service_id      : Mapped[int]      = mapped_column(ForeignKey('services.id'), nullable=True)
+    description     : Mapped[str]      = mapped_column(String(500))
+    preferred_date  : Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)  
+    budget_range    : Mapped[str]      = mapped_column(String(50), nullable=True)  
+ 
+    status          : Mapped[str]      = mapped_column(
+                        Enum(EstimateStatus, native_enum=False), nullable=False, default=EstimateStatus.new)
+    quoted_amount   : Mapped[Numeric]  = mapped_column(Numeric(10,2), nullable=True)  
+    contractor_notes: Mapped[str]      = mapped_column(String(500), nullable=True)    
+ 
+    total_sqft      : Mapped[Numeric]  = mapped_column(Numeric(10,2), nullable=True)  
+    paint_surface_condition: Mapped[str] = mapped_column(
+        Enum(PaintSurfaceCondition, native_enum=False), nullable=True)
+    paint_coats     : Mapped[str]      = mapped_column(Enum(PaintCoats, native_enum=False), nullable=True)
+    paint_type      : Mapped[str]      = mapped_column(Enum(PaintType, native_enum=False), nullable=True)
+    paint_finish    : Mapped[str]      = mapped_column(Enum(PaintFinish, native_enum=False), nullable=True)
+    include_ceiling : Mapped[bool]     = mapped_column(Boolean, default=False, nullable=True)
+    include_trim    : Mapped[bool]     = mapped_column(Boolean, default=False, nullable=True)
+    include_doors   : Mapped[bool]     = mapped_column(Boolean, default=False, nullable=True)
+    door_count      : Mapped[int]      = mapped_column(Integer, nullable=True, default=0)
+    window_count    : Mapped[int]      = mapped_column(Integer, nullable=True, default=0)
+    client_provides_paint: Mapped[bool]= mapped_column(Boolean, default=False, nullable=True)
+    desired_colors  : Mapped[str]      = mapped_column(String(255), nullable=True)
+    repairs_needed  : Mapped[bool]     = mapped_column(Boolean, default=False, nullable=True)
+    repairs_detail  : Mapped[str]      = mapped_column(String(255), nullable=True)
+    flooring_material   : Mapped[str]  = mapped_column(Enum(FlooringMaterial, native_enum=False), nullable=True)
+    flooring_current    : Mapped[str]  = mapped_column(Enum(FlooringCurrentState, native_enum=False), nullable=True)
+    include_removal     : Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
+    subfloor_condition  : Mapped[str]  = mapped_column(Enum(SubfloorCondition, native_enum=False), nullable=True)
+    flooring_pattern    : Mapped[str]  = mapped_column(Enum(FlooringPattern, native_enum=False), nullable=True, default=FlooringPattern.straight)
+    include_baseboards  : Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
+    transition_strips   : Mapped[int]  = mapped_column(Integer, nullable=True, default=0)
+    include_stairs      : Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
+    stair_count         : Mapped[int]  = mapped_column(Integer, nullable=True, default=0)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), onupdate=func.now())
+    create_at : Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+ 
+    contractor_estimate : Mapped['Contractor']         = relationship(back_populates='estimate_contractor')
+    estim_customer      : Mapped['Customer']           = relationship(back_populates='customer_request')
+    service             : Mapped['Services']           = relationship(back_populates='service_estimate')
+    rooms               : Mapped[list['EstimateRoom']] = relationship(back_populates='estimate', cascade='all, delete-orphan')
+    photos              : Mapped[list['EstimatePhoto']]= relationship(back_populates='estimate', cascade='all, delete-orphan')
+ 
     __table_args__ = (
-        db.Index('idx_estimate_email', 'customer_email'),
-        db.Index('idx_estimate_contractor_status', 'contractor_id', 'status'),)
+        db.Index('idx_estimate_email',              'customer_email'),
+        db.Index('idx_estimate_contractor_status',  'contractor_id', 'status'),
+        db.Index('idx_estimate_type',               'estimate_type'),
+    )
+ 
+    @hybrid_property
+    def computed_sqft(self):
+        if self.total_sqft:
+            return float(self.total_sqft)
+        return sum(r.floor_sqft for r in self.rooms)
+ 
+    def serialize(self):
+        return {
+            'id'                    : self.id,
+            'contractor_id'         : self.contractor_id,
+            'customer_id'           : self.customer_id,
+            'estimate_type'         : self.estimate_type.value if self.estimate_type else None,
+            'status'                : self.status.value if self.status else None,
+            'quoted_amount'         : float(self.quoted_amount) if self.quoted_amount else None,
+            'contractor_notes'      : self.contractor_notes,
+            'customer_name'         : self.customer_name,
+            'customer_email'        : self.customer_email,
+            'customer_phone'        : self.customer_phone,
+            'customer_address'      : self.customer_address,
+            'preferred_date'        : self.preferred_date.isoformat() if self.preferred_date else None,
+            'budget_range'          : self.budget_range,
+            'description'           : self.description,
+            'total_sqft'            : float(self.total_sqft) if self.total_sqft else None,
+            'computed_sqft'         : round(self.computed_sqft, 2),
+            'paint_surface_condition': self.paint_surface_condition.value if self.paint_surface_condition else None,
+            'paint_coats'           : self.paint_coats.value if self.paint_coats else None,
+            'paint_type'            : self.paint_type.value if self.paint_type else None,
+            'paint_finish'          : self.paint_finish.value if self.paint_finish else None,
+            'include_ceiling'       : self.include_ceiling,
+            'include_trim'          : self.include_trim,
+            'include_doors'         : self.include_doors,
+            'door_count'            : self.door_count,
+            'window_count'          : self.window_count,
+            'client_provides_paint' : self.client_provides_paint,
+            'desired_colors'        : self.desired_colors,
+            'repairs_needed'        : self.repairs_needed,
+            'repairs_detail'        : self.repairs_detail,
+            'flooring_material'     : self.flooring_material.value if self.flooring_material else None,
+            'flooring_current'      : self.flooring_current.value if self.flooring_current else None,
+            'include_removal'       : self.include_removal,
+            'subfloor_condition'    : self.subfloor_condition.value if self.subfloor_condition else None,
+            'flooring_pattern'      : self.flooring_pattern.value if self.flooring_pattern else None,
+            'include_baseboards'    : self.include_baseboards,
+            'transition_strips'     : self.transition_strips,
+            'include_stairs'        : self.include_stairs,
+            'stair_count'           : self.stair_count,
+            'rooms'                 : [r.serialize() for r in self.rooms],
+            'photos'                : [p.serialize() for p in self.photos],
+            'service_id'            : self.service_id,
+            'create_at'             : self.create_at.isoformat() if self.create_at else None,
+            'updated_at'            : self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+class EstimateRoom(db.Model):
+    __tablename__ = 'estimate_room'
+ 
+    id          : Mapped[int] = mapped_column(Integer, primary_key=True)
+    estimate_id : Mapped[int] = mapped_column(ForeignKey('estimateRequest.id'), nullable=False)
+    name        : Mapped[str] = mapped_column(String(120), nullable=False)
+    length_ft   : Mapped[Numeric] = mapped_column(Numeric(8, 2), nullable=True)
+    width_ft    : Mapped[Numeric] = mapped_column(Numeric(8, 2), nullable=True)
+    height_ft   : Mapped[Numeric] = mapped_column(Numeric(8, 2), nullable=True)  
+    notes       : Mapped[str] = mapped_column(String(255), nullable=True)
+ 
+    estimate: Mapped['EstimateRequest'] = relationship(back_populates='rooms')
+
+    @hybrid_property
+    def floor_sqft(self):
+        if self.length_ft and self.width_ft:
+            return float(self.length_ft) * float(self.width_ft)
+        return 0.0
+ 
+    @hybrid_property
+    def wall_sqft(self):
+        if self.length_ft and self.width_ft and self.height_ft:
+            perimeter = 2 * (float(self.length_ft) + float(self.width_ft))
+            return perimeter * float(self.height_ft)
+        return 0.0
+
+    def serialize(self):
+        return {
+            'id'          : self.id,
+            'name'        : self.name,
+            'length_ft'   : float(self.length_ft) if self.length_ft else None,
+            'width_ft'    : float(self.width_ft)  if self.width_ft  else None,
+            'height_ft'   : float(self.height_ft) if self.height_ft else None,
+            'floor_sqft'  : round(self.floor_sqft, 2),
+            'wall_sqft'   : round(self.wall_sqft, 2),
+            'notes'       : self.notes,
+        }
+
+class EstimatePhoto(db.Model):
+    __tablename__ = 'estimate_photo'
+ 
+    id          : Mapped[int] = mapped_column(Integer, primary_key=True)
+    estimate_id : Mapped[int] = mapped_column(ForeignKey('estimateRequest.id'), nullable=False)
+    image_url   : Mapped[str] = mapped_column(String(500), nullable=False)
+    caption     : Mapped[str] = mapped_column(String(255), nullable=True)
+    uploaded_by : Mapped[str] = mapped_column(String(20), default='contractor')  
+    created_at  : Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+ 
+    estimate: Mapped['EstimateRequest'] = relationship(back_populates='photos')
+ 
+    def serialize(self):
+        return {
+            'id'         : self.id,
+            'image_url'  : self.image_url,
+            'caption'    : self.caption,
+            'uploaded_by': self.uploaded_by,
+            'created_at' : self.created_at.isoformat() if self.created_at else None,
+        }
