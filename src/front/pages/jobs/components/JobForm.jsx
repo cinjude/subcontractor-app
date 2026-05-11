@@ -45,7 +45,6 @@ export const JobForm = ({ job, onSubmit, loading, onCancel }) => {
             [name]: value
         }));
 
-        // Clear error for this field
         if (errors[name]) {
             setErrors(prev => ({
                 ...prev,
@@ -66,7 +65,6 @@ export const JobForm = ({ job, onSubmit, loading, onCancel }) => {
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // Basic validation
         const newErrors = {};
         if (!formData.title.trim()) newErrors.title = 'Title is required';
         if (!formData.description.trim()) newErrors.description = 'Description is required';

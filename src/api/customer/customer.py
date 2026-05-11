@@ -18,8 +18,6 @@ from api.routes import api
 # Allow CORS requests
 CORS(api)
 
-
-# Helper function to get contractor_id from JWT token
 def get_current_contractor_id():
     """Get contractor ID from current JWT token"""
     user_id = get_jwt_identity()

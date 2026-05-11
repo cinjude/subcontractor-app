@@ -22,6 +22,7 @@ api = Blueprint('api', __name__)
 
 from api.customer.customer import * 
 from api.services.service import *
+from api.estimateReq.estimateRequest import *
 CORS(api)
 
 
@@ -35,7 +36,6 @@ def handle_hello():
     return jsonify(response_body), 200
 
 
-# Jobs endpoints
 @api.route('/jobs/test', methods=['GET'])
 def test_jobs():
     """Test endpoint to verify jobs routes are working"""
