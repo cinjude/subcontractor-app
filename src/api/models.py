@@ -691,6 +691,7 @@ class EstimateRequest(db.Model):
     stair_count         : Mapped[int]  = mapped_column(Integer, nullable=True, default=0)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), onupdate=func.now())
     create_at : Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
  
     contractor_estimate : Mapped['Contractor']         = relationship(back_populates='estimate_contractor')
     estim_customer      : Mapped['Customer']           = relationship(back_populates='customer_request')
