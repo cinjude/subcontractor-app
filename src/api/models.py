@@ -527,9 +527,9 @@ class Invoice(db.Model):
     stripe_payment_link_id: Mapped[str] = mapped_column(
         String(255), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), onupdate=func.now())
+        DateTime(timezone=True), onupdate=func.now(), nullable=True)
     create_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now())
+        DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     payment: Mapped[list['Payment']] = relationship(
         back_populates='invoice_payment')
@@ -689,8 +689,8 @@ class EstimateRequest(db.Model):
     transition_strips   : Mapped[int]  = mapped_column(Integer, nullable=True, default=0)
     include_stairs      : Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
     stair_count         : Mapped[int]  = mapped_column(Integer, nullable=True, default=0)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), onupdate=func.now())
-    create_at : Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
+    create_at : Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
  
     contractor_estimate : Mapped['Contractor']         = relationship(back_populates='estimate_contractor')

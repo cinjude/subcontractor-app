@@ -5,10 +5,15 @@ from flask import request, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import or_, and_, func
+from sqlalchemy import or_, and_, func, case
 from datetime import datetime
-
-from api.models import db, EstimateRequest, Contractor, User, Customer, EstimateRoom
+from api.models import (
+    db, User, Contractor, Customer, Services,
+    EstimateRequest, EstimateRoom, EstimatePhoto,
+    EstimateStatus, EstimateType,
+    PaintSurfaceCondition, PaintType, PaintFinish, PaintCoats,
+    FlooringMaterial, FlooringCurrentState, FlooringPattern, SubfloorCondition,
+)
 from api.utils import APIException
 
 from api.routes import api
@@ -117,7 +122,7 @@ def _parse_estimate_fields(data, estimate):
 def get_all_estimates():
     try:
         contractor_id = get_current_contractor_id()
-        contractor = Contractor.query.filter_by(contractor_id=contractor_id).first()
+        contractor = Contractor.query.filter_by(id=contractor_id).first()
         if not contractor:
             return jsonify({'error': 'Contractor not found'}), 404
  
@@ -168,28 +173,27 @@ def get_all_estimates():
 def get_estimate_stats():
     try:
         contractor_id = get_current_contractor_id()
-        contractor = Contractor.query.filter_by(contractor_id=contractor_id).first()
-        if not contractor:
-            return jsonify({'error': 'Contractor not found'}), 404
 
         row = db.session.query(
             func.count().label('total'),
-            func.sum(case((EstimateRequest.status == EstimateRequest.new, 1), else_=0)).label('new'),
-            func.sum(case((EstimateRequest.status == EstimateStatus.rejected,   1), else_=0)).label('rejected'),
+            func.sum(case((EstimateRequest.status == EstimateStatus.new, 1), else_=0)).label('new'),
+            func.sum(case((EstimateRequest.status == EstimateStatus.rejected, 1), else_=0)).label('rejected'),
+            func.sum(case((EstimateRequest.status == EstimateStatus.converted, 1), else_=0)).label('converted'),
             func.sum(case((EstimateRequest.estimate_type == EstimateType.painting, 1), else_=0)).label('painting'),
             func.sum(case((EstimateRequest.estimate_type == EstimateType.flooring, 1), else_=0)).label('flooring'),
             func.coalesce(func.sum(EstimateRequest.quoted_amount), 0).label('total_quoted'),
-        ).filter(EstimateRequest.contractor_id==contractor.id).one()
+        ).filter(EstimateRequest.contractor_id == contractor_id).one()
         
         return jsonify({
-            'total'        : row.total        or 0,
-            'new'          : row.new          or 0,
-            'converted'    : row.converted    or 0,
-            'rejected'     : row.rejected     or 0,
-            'painting'     : row.painting     or 0,
-            'flooring'     : row.flooring     or 0,
-            'total_quoted' : float(row.total_quoted or 0),
+            'total': row.total or 0,
+            'new': int(row.new or 0),
+            'rejected': int(row.rejected or 0),
+            'converted': int(row.converted or 0),
+            'painting': int(row.painting or 0),
+            'flooring': int(row.flooring or 0),
+            'total_quoted': float(row.total_quoted or 0),
         }), 200
+
     except Exception as e:
         return jsonify({'error': f'Failed to fetch estimate stats: {str(e)}'}), 500
 
@@ -225,7 +229,7 @@ def create_estimate():
             return jsonify({'error': 'No data provided'}), 400
 
         contractor_id = get_current_contractor_id()
-        contractor = Contractor.query.filter_by(contractor_id=contractor_id).first()
+        contractor = Contractor.query.filter_by(id=contractor_id).first()
         if not contractor:
             return jsonify({'error': 'Contractor not found'}), 404
 
@@ -240,7 +244,7 @@ def create_estimate():
                 return jsonify({'error': 'Customer not found or unauthorized'}), 404
 
         estimate = EstimateRequest(
-            contractor_id=contractor.id,
+            contractor_id=contractor_id,
             status=EstimateStatus.new
         )
 
