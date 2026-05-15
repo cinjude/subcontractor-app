@@ -23,6 +23,7 @@ flask-bcrypt = "*"
 diagrams = "*"
 sqlalchemy-schemadisplay = "*"
 flask = "*"
+sendgrid = "*"
 
 [requires]
 python_version = "3.12"
