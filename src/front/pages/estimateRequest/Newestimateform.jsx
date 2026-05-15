@@ -277,7 +277,7 @@ export default function NewEstimateForm() {
         setSubmitting(true);
         try {
             const est = await createEstimate({ ...form, rooms: form.rooms.filter(r => r.name.trim()) });
-            navigate(`/estimates/${est.id}`);
+            navigate(`/providerdashboard/estimates/${est.id}`);
         } catch (e) {
             alert(e.message || "Failed to create estimate");
         } finally {
@@ -300,7 +300,7 @@ export default function NewEstimateForm() {
             {/* Header */}
             <div className="d-flex align-items-center gap-3 mb-4">
                 <button className="btn btn-outline-secondary btn-sm px-3"
-                    onClick={() => step === 0 ? navigate("/estimates") : back()}>← Back</button>
+                    onClick={() => step === 0 ? navigate("/providerdashboard/estimates") : back()}>← Back</button>
                 <div>
                     <h5 className="fw-bold mb-0">New estimate</h5>
                     <p className="text-muted mb-0" style={{ fontSize: 12 }}>Fill in each step — no hidden cost surprises</p>

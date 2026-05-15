@@ -116,7 +116,7 @@ export default function EstimatesPage() {
                     <h4 className="fw-bold mb-0">Estimates</h4>
                     <p className="text-muted mb-0" style={{ fontSize: 14 }}>Painting &amp; flooring quotes</p>
                 </div>
-                <button className="btn btn-dark px-4 fw-semibold" onClick={() => navigate("/estimates/new")}>
+                <button className="btn btn-dark px-4 fw-semibold" onClick={() => navigate("/providerdashboard/estimate/new")}>
                     + New estimate
                 </button>
             </div>
@@ -182,7 +182,7 @@ export default function EstimatesPage() {
                 <div className="text-center py-5">
                     <div style={{ fontSize: 56 }}>📋</div>
                     <p className="text-muted mt-2 mb-3">No estimates found</p>
-                    <button className="btn btn-dark" onClick={() => navigate("/estimates/new")}>
+                    <button className="btn btn-dark" onClick={() => navigate("/providerdashboard/estimate/new")}>
                         Create first estimate
                     </button>
                 </div>
@@ -190,7 +190,7 @@ export default function EstimatesPage() {
                 <div className="row g-3">
                     {estimates.map(e => (
                         <div key={e.id} className="col-12 col-sm-6 col-xl-4">
-                            <EstimateCard estimate={e} onClick={() => navigate(`/estimates/${e.id}`)} />
+                            <EstimateCard estimate={e} onClick={() => navigate(`/providerdashboard/estimates/${e.id}`)} />
                         </div>
                     ))}
                 </div>

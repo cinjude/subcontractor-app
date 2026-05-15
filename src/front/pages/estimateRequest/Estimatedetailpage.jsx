@@ -237,7 +237,7 @@ export default function EstimateDetailPage() {
     if (!estimate) return (
         <div className="container py-5 text-center">
             <p className="text-muted">Estimate not found</p>
-            <button className="btn btn-outline-secondary" onClick={() => navigate("/estimates")}>← Back</button>
+            <button className="btn btn-outline-secondary" onClick={() => navigate("/providerdashboard/estimates")}>← Back</button>
         </div>
     );
 
@@ -256,7 +256,7 @@ export default function EstimateDetailPage() {
 
             {/* ── Top bar ──────────────────────────────────────────────────────── */}
             <div className="d-flex align-items-center justify-content-between mb-4">
-                <button className="btn btn-outline-secondary btn-sm" onClick={() => navigate("/estimates")}>
+                <button className="btn btn-outline-secondary btn-sm" onClick={() => navigate("/providerdashboard/estimates")}>
                     ← Estimates
                 </button>
 
@@ -281,7 +281,7 @@ export default function EstimateDetailPage() {
                         </button>
                         <ul className="dropdown-menu dropdown-menu-end">
                             <li>
-                                <button className="dropdown-item" onClick={() => navigate(`/estimates/${id}/edit`)}>
+                                <button className="dropdown-item" onClick={() => navigate(`/providerdashboard/estimates/${id}/edit`)}>
                                     ✏️ Edit estimate
                                 </button>
                             </li>
@@ -486,7 +486,7 @@ export default function EstimateDetailPage() {
 
                                 {/* Danger zone */}
                                 <button className="btn btn-outline-secondary"
-                                    onClick={() => navigate(`/estimates/${id}/edit`)}>
+                                    onClick={() => navigate(`/providerdashboard/estimates/${id}/edit`)}>
                                     ✏️ Edit estimate
                                 </button>
                                 <button className="btn btn-outline-danger"
