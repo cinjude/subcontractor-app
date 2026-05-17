@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEstimate } from "./Estimatecontext.jsx";
 import { useEstimatePDF } from "./Useestimatepdf.js";
+import useGlobalReducer from "../../hooks/useGlobalReducer.jsx";
 
 /* ── helpers ──────────────────────────────────────────────────────────────── */
 const fmt = v => (v ? String(v).replace(/_/g, " ") : null);
@@ -171,6 +172,7 @@ function SendEmailModal({ show, estimate, contractorInfo, onClose }) {
 export default function EstimateDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { store } = useGlobalReducer();
     const { fetchEstimate, updateStatus, deleteEstimate, uploadPhoto, deletePhoto, convertToJob } = useEstimate();
     const { downloadPDF, previewPDF } = useEstimatePDF();
 
@@ -183,7 +185,13 @@ export default function EstimateDetailPage() {
     const fileRef = useRef();
 
     // Contractor info from localStorage (set at login)
-    const contractorInfo = JSON.parse(localStorage.getItem("contractorInfo") || "{}");
+    const contractorInfo = {
+        businessName: store.provider?.businessName || store.provider?.name || "",
+        email: store.provider?.email || "",
+        phone: store.provider?.phone || "",
+        address: store.provider?.address || "",
+    }
+    console.log("contractorInfo", contractorInfo);
 
     useEffect(() => {
         fetchEstimate(id)

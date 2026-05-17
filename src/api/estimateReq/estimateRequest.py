@@ -219,7 +219,7 @@ def get_single_estimate(estimate_id):
     except Exception as e:
         return jsonify({'error': f'Failed to fetch estimate: {str(e)}'}), 500
 
-@api.route('/estimate/create', methods=['POST'])
+@api.route('/estimates/create', methods=['POST'])
 @jwt_required()
 def create_estimate():
     try:

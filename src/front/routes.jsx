@@ -24,7 +24,7 @@ import ServicesP from "./pages/servicespage/ServicesP";
 import ServicesDetails from "./pages/servicespage/ServicesDetails";
 import EstimatesPage from "./pages/estimateRequest/Estimatespage";
 import Estimatedetailpage from "./pages/estimateRequest/Estimatedetailpage";
-import Newestimateform from "./pages/estimateRequest/Newestimateform";
+import NewEstimateForm from "./pages/estimateRequest/Newestimateform.JSX";
 
 // Componente temporal para debug — ponlo arriba del router
 const ErrorDebug = () => {
@@ -64,9 +64,7 @@ export const router = createBrowserRouter(
         <Route path="servicesDetails/:id" element={<ServicesDetails />} />
         <Route path="estimates" element={<EstimatesPage />} />
         <Route path="estimates/:id" element={<Estimatedetailpage />} />
-        <Route path="estimate/new" element={<Newestimateform />} />
-
-
+        <Route path="estimate/new" element={<NewEstimateForm />} />
       </Route>
 
       <Route path="/signupprovider" element={<SignUpProvider />} />

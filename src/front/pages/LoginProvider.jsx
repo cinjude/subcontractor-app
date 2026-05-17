@@ -45,17 +45,27 @@ export const LoginProvider = () => {
             const data = await resp.json()
 
             if (resp.ok) {
+
+                const enrichedProvider = {
+                    ...data.provider,
+                    contractorInfo: {
+                        businessName: data.provider.businessName || data.provider.name || "",
+                        phone: data.provider.phone || "",
+                        email: data.provider.email || "",
+                        address: data.provider.address || ""
+                    }
+                }
+
                 localStorage.setItem('name', data.provider.name)
-                localStorage.setItem('provider', JSON.stringify(data.provider))
+                localStorage.setItem('provider', JSON.stringify(enrichedProvider))
                 localStorage.setItem('token', data.token)
 
                 dispatch({
                     type: 'login-provider',
                     payload: {
-                        provider: data.provider,
+                        provider: enrichedProvider,
                         token: data.token
                     }
-
                 })
 
                 closeModal();
@@ -67,6 +77,8 @@ export const LoginProvider = () => {
                     showConfirmButton: false,
                     timer: 1500
                 });
+
+                console.log('Provider logged in:', enrichedProvider);
 
                 navigate('/providerDashboard')
             } else {
