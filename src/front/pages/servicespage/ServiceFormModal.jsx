@@ -49,7 +49,7 @@ export default function ServiceFormModal({ modalId = "serviceFormModal", service
                 name: service.name ?? "",
                 description: service.description ?? "",
                 price: service.price ?? "",
-                base_cost: service.base_cost ?? "",   // may be null
+                base_cost: service.base_cost ?? "",
                 estimate_hours: service.estimate_hours ?? "",
                 duration: service.duration ?? "",
                 is_active: service.is_active ?? true,

@@ -36,7 +36,7 @@ export const JobForm = ({ job, onSubmit, loading, onCancel }) => {
     }, []);
     console.log('service data modal', services)
 
-    console.log(customers)
+    // console.log(customers)
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;

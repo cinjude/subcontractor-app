@@ -1,7 +1,8 @@
 // src/pages/Estimates/NewEstimateForm.jsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEstimate } from "./Estimatecontext.jsx";
+import useGlobalReducer from "../../hooks/useGlobalReducer.jsx";
 
 /* ─── Chip selector — tap to select, no dropdown ────────────────────────── */
 function Chips({ options, value, onChange, cols = 2 }) {
@@ -218,6 +219,8 @@ export default function NewEstimateForm() {
     const [errors, setErrors] = useState({});
     const [submitting, setSubmitting] = useState(false);
 
+    const { store } = useGlobalReducer()
+
     const [form, setForm] = useState({
         estimate_type: "painting",
         customer_name: "", customer_email: "", customer_phone: "", customer_address: "",
@@ -275,8 +278,9 @@ export default function NewEstimateForm() {
 
     const handleSubmit = async () => {
         setSubmitting(true);
+        const token = localStorage.getItem("token");
         try {
-            const est = await createEstimate({ ...form, rooms: form.rooms.filter(r => r.name.trim()) });
+            const est = await createEstimate({ ...form, rooms: form.rooms.filter(r => r.name.trim()) }, token);
             navigate(`/providerdashboard/estimates/${est.id}`);
         } catch (e) {
             alert(e.message || "Failed to create estimate");
@@ -284,6 +288,10 @@ export default function NewEstimateForm() {
             setSubmitting(false);
         }
     };
+
+    useEffect(() => {
+        const token = store.token || localStorage.getItem("token");
+    }, []);
 
     /* helper to render a review row */
     const RevRow = ({ label, value }) =>
