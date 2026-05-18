@@ -11,7 +11,6 @@ from api.utils import APIException
 
 from api.routes import api
 
-
 CORS(api)
 
 def get_current_contractor_id():
@@ -31,7 +30,6 @@ def get_current_contractor_id():
 def create_service_with_materials():
     try:
         body = request.get_json(silent=True)
-        print("Body:", body)
 
         if body is None:
             return jsonify({'msg': 'you need to send something in body'}), 400

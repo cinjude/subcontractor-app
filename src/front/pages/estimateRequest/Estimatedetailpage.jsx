@@ -184,22 +184,20 @@ export default function EstimateDetailPage() {
     const [uploading, setUploading] = useState(false);
     const fileRef = useRef();
 
-    // Contractor info from localStorage (set at login)
     const contractorInfo = {
         businessName: store.provider?.businessName || store.provider?.name || "",
         email: store.provider?.email || "",
         phone: store.provider?.phone || "",
         address: store.provider?.address || "",
     }
-    console.log("contractorInfo", contractorInfo);
 
     useEffect(() => {
         fetchEstimate(id)
-            .then(e => { setEstimate(e); setLoading(false); })
+            .then(data => { setEstimate(data.estimate ?? data); setLoading(false); })
             .catch(() => setLoading(false));
     }, [id]);
 
-    const refresh = () => fetchEstimate(id).then(setEstimate);
+    const refresh = () => fetchEstimate(id).then(data => { setEstimate(data.estimate ?? data); });
 
     const handleQuoteSave = async (amount, notes) => {
         await updateStatus(id, "new", { quoted_amount: amount, contractor_notes: notes });
@@ -219,7 +217,7 @@ export default function EstimateDetailPage() {
     const handleDelete = async () => {
         if (!window.confirm("Delete this estimate permanently?")) return;
         await deleteEstimate(Number(id));
-        navigate("/estimates");
+        navigate("/providerdashboard/estimates");
     };
 
     const handlePhotoUpload = async e => {
@@ -262,7 +260,6 @@ export default function EstimateDetailPage() {
     return (
         <div className="container-fluid py-3 py-lg-4 px-3 px-lg-5" style={{ maxWidth: 960, margin: "0 auto" }}>
 
-            {/* ── Top bar ──────────────────────────────────────────────────────── */}
             <div className="d-flex align-items-center justify-content-between mb-4">
                 <button className="btn btn-outline-secondary btn-sm" onClick={() => navigate("/providerdashboard/estimates")}>
                     ← Estimates
@@ -310,13 +307,10 @@ export default function EstimateDetailPage() {
                 </div>
             </div>
 
-            {/* ── Two-column layout on desktop ─────────────────────────────────── */}
             <div className="row g-4">
 
-                {/* LEFT column */}
                 <div className="col-12 col-lg-7">
 
-                    {/* Hero card */}
                     <div className="card border shadow-sm mb-3">
                         <div className="card-body">
                             <div className="d-flex justify-content-between align-items-start mb-3">
@@ -328,7 +322,6 @@ export default function EstimateDetailPage() {
                                 <span className={`badge fs-6 px-3 py-2 ${st.cls}`}>{st.icon} {st.label}</span>
                             </div>
 
-                            {/* Sq ft + budget tags */}
                             <div className="d-flex flex-wrap gap-2 mb-3">
                                 {estimate.computed_sqft > 0 && (
                                     <span className="badge bg-secondary bg-opacity-10 text-secondary border fs-6 px-3 py-2">
