@@ -1,6 +1,3 @@
-// src/hooks/useEstimatePDF.js
-// Requires: npm install jspdf jspdf-autotable
-// Run: npm install jspdf jspdf-autotable
 
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";

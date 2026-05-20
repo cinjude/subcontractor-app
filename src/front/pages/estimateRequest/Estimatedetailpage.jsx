@@ -168,12 +168,125 @@ function SendEmailModal({ show, estimate, contractorInfo, onClose }) {
     );
 }
 
+function RoomRow({ room, estimateId, onUpdate }) {
+    const { deleteRoom, addRoom } = useEstimate();
+    const [editing, setEditing] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [form, setForm] = useState({
+        name: room.name,
+        length_ft: room.length_ft || "",
+        width_ft: room.width_ft || "",
+        height_ft: room.height_ft || "",
+    });
+
+    const sqft = form.length_ft && form.width_ft
+        ? (parseFloat(form.length_ft) * parseFloat(form.width_ft)).toFixed(0)
+        : null;
+
+    const handleDelete = async () => {
+        if (!window.confirm(`Delete "${room.name}"?`)) return;
+        setDeleting(true);
+        try {
+            await deleteRoom(estimateId, room.id);
+            await onUpdate();
+        } catch (e) { alert(e.message); }
+        finally { setDeleting(false); }
+    };
+
+    const handleSave = async () => {
+        if (!form.name.trim()) return;
+        setSaving(true);
+        try {
+            const token = localStorage.getItem("token");
+            const BASE = import.meta.env.VITE_BACKEND_URL || "";
+            const res = await fetch(`${BASE}/api/estimates/${estimateId}/rooms/${room.id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(form),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed to update room");
+            await onUpdate();
+            setEditing(false);
+        } catch (e) { alert(e.message); }
+        finally { setSaving(false); }
+    };
+
+    if (editing) {
+        return (
+            <div className="border rounded-3 p-2 mb-2 bg-light">
+                <input className="form-control form-control-sm mb-2 fw-medium"
+                    value={form.name}
+                    onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                    placeholder="Room name" />
+                <div className="row g-2 mb-2">
+                    {[["length_ft", "Length (ft)"], ["width_ft", "Width (ft)"], ["height_ft", "Height (ft)"]].map(([k, l]) => (
+                        <div key={k} className="col-4">
+                            <input type="number" inputMode="decimal"
+                                className="form-control form-control-sm"
+                                placeholder={l}
+                                value={form[k]}
+                                onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))} />
+                        </div>
+                    ))}
+                </div>
+                {sqft && (
+                    <p className="text-success mb-2" style={{ fontSize: 12 }}>≈ {sqft} sq ft</p>
+                )}
+                <div className="d-flex gap-2">
+                    <button className="btn btn-outline-secondary btn-sm" onClick={() => setEditing(false)}>
+                        Cancel
+                    </button>
+                    <button className="btn btn-dark btn-sm flex-fill fw-semibold" onClick={handleSave} disabled={saving}>
+                        {saving ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</> : "✓ Save"}
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="d-flex align-items-center justify-content-between border-bottom py-2 gap-2">
+            <div>
+                <span className="fw-medium" style={{ fontSize: 13 }}>{room.name}</span>
+                {room.floor_sqft > 0 && (
+                    <span className="text-muted ms-2" style={{ fontSize: 12 }}>
+                        {room.floor_sqft.toFixed(0)} sq ft
+                        {room.wall_sqft > 0 ? ` · ${room.wall_sqft.toFixed(0)} wall` : ""}
+                    </span>
+                )}
+            </div>
+            <div className="d-flex gap-1 flex-shrink-0">
+                <button
+                    className="btn btn-outline-secondary btn-sm px-2 py-1"
+                    style={{ fontSize: 12 }}
+                    onClick={() => setEditing(true)}
+                    title="Edit room">
+                    ✏️
+                </button>
+                <button
+                    className="btn btn-outline-danger btn-sm px-2 py-1"
+                    style={{ fontSize: 12 }}
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    title="Delete room">
+                    {deleting ? <span className="spinner-border spinner-border-sm" /> : "🗑"}
+                </button>
+            </div>
+        </div>
+    );
+}
+
 /* ── MAIN PAGE ───────────────────────────────────────────────────────────── */
 export default function EstimateDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { store } = useGlobalReducer();
-    const { fetchEstimate, updateStatus, deleteEstimate, uploadPhoto, deletePhoto, convertToJob } = useEstimate();
+    const { fetchEstimate, updateStatus, deleteEstimate, uploadPhoto, deletePhoto, convertToJob, addRoom } = useEstimate();
     const { downloadPDF, previewPDF } = useEstimatePDF();
 
     const [estimate, setEstimate] = useState(null);
@@ -181,6 +294,9 @@ export default function EstimateDetailPage() {
     const [showQuote, setShowQuote] = useState(false);
     const [showEmail, setShowEmail] = useState(false);
     const [converting, setConverting] = useState(false);
+    const [showAddRoom, setShowAddRoom] = useState(false);
+    const [newRoom, setNewRoom] = useState({ name: "", length_ft: "", width_ft: "", height_ft: "" });
+    const [addingRoom, setAddingRoom] = useState(false);
     const [uploading, setUploading] = useState(false);
     const fileRef = useRef();
 
@@ -218,6 +334,21 @@ export default function EstimateDetailPage() {
         if (!window.confirm("Delete this estimate permanently?")) return;
         await deleteEstimate(Number(id));
         navigate("/providerdashboard/estimates");
+    };
+
+    const handleAddRoom = async () => {
+        if (!newRoom.name.trim()) return;
+        setAddingRoom(true);
+        try {
+            await addRoom(id, newRoom);
+            await refresh();
+            setNewRoom({ name: "", length_ft: "", width_ft: "", height_ft: "" });
+            setShowAddRoom(false);
+        } catch (err) {
+            alert(err.message);
+        } finally {
+            setAddingRoom(false);
+        }
     };
 
     const handlePhotoUpload = async e => {
@@ -369,25 +500,73 @@ export default function EstimateDetailPage() {
                     </SectionCard>
 
                     {/* Rooms */}
-                    {estimate.rooms?.length > 0 && (
-                        <SectionCard title="Rooms / Areas" icon="📐">
-                            {estimate.rooms.map(r => (
-                                <div key={r.id} className="d-flex justify-content-between border-bottom py-2">
-                                    <span className="fw-medium" style={{ fontSize: 13 }}>{r.name}</span>
-                                    <span className="text-muted" style={{ fontSize: 13 }}>
-                                        {r.floor_sqft > 0 ? `${r.floor_sqft.toFixed(0)} sq ft` : "—"}
-                                        {r.wall_sqft > 0 ? ` · ${r.wall_sqft.toFixed(0)} wall` : ""}
-                                    </span>
-                                </div>
-                            ))}
-                            <div className="d-flex justify-content-between pt-2 fw-semibold">
+                    {/* Rooms */}
+                    <SectionCard title="Rooms / Areas" icon="📐">
+                        {estimate.rooms?.length === 0 && (
+                            <p className="text-muted mb-2" style={{ fontSize: 13 }}>No rooms added yet.</p>
+                        )}
+
+                        {estimate.rooms?.map(r => (
+                            <RoomRow
+                                key={r.id}
+                                room={r}
+                                estimateId={id}
+                                onUpdate={refresh}
+                            />
+                        ))}
+
+                        {estimate.rooms?.length > 0 && (
+                            <div className="d-flex justify-content-between pt-2 fw-semibold border-top mt-1">
                                 <span style={{ fontSize: 13 }}>Total floor area</span>
                                 <span className="text-success" style={{ fontSize: 13 }}>
                                     {Number(estimate.computed_sqft).toFixed(0)} sq ft
                                 </span>
                             </div>
-                        </SectionCard>
-                    )}
+                        )}
+
+                        {showAddRoom ? (
+                            <div className="mt-3 p-3 border rounded-3 bg-light">
+                                <p className="fw-semibold mb-2" style={{ fontSize: 13 }}>New room</p>
+                                <input className="form-control form-control-sm mb-2"
+                                    placeholder="Room name (e.g. Kitchen)"
+                                    value={newRoom.name}
+                                    onChange={e => setNewRoom(r => ({ ...r, name: e.target.value }))} />
+                                <div className="row g-2 mb-2">
+                                    {[["length_ft", "Length (ft)"], ["width_ft", "Width (ft)"], ["height_ft", "Height (ft)"]].map(([k, l]) => (
+                                        <div key={k} className="col-4">
+                                            <input type="number" inputMode="decimal"
+                                                className="form-control form-control-sm"
+                                                placeholder={l} value={newRoom[k]}
+                                                onChange={e => setNewRoom(r => ({ ...r, [k]: e.target.value }))} />
+                                        </div>
+                                    ))}
+                                </div>
+                                {newRoom.length_ft && newRoom.width_ft && (
+                                    <p className="text-success mb-2" style={{ fontSize: 12 }}>
+                                        ≈ {(parseFloat(newRoom.length_ft) * parseFloat(newRoom.width_ft)).toFixed(0)} sq ft
+                                    </p>
+                                )}
+                                <div className="d-flex gap-2">
+                                    <button className="btn btn-outline-secondary btn-sm"
+                                        onClick={() => { setShowAddRoom(false); setNewRoom({ name: "", length_ft: "", width_ft: "", height_ft: "" }); }}>
+                                        Cancel
+                                    </button>
+                                    <button className="btn btn-success btn-sm flex-fill fw-semibold"
+                                        onClick={handleAddRoom} disabled={addingRoom || !newRoom.name.trim()}>
+                                        {addingRoom
+                                            ? <><span className="spinner-border spinner-border-sm me-2" />Adding…</>
+                                            : "✓ Add room"}
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <button className="btn btn-outline-secondary w-100 mt-2"
+                                style={{ borderStyle: "dashed" }}
+                                onClick={() => setShowAddRoom(true)}>
+                                + Add room
+                            </button>
+                        )}
+                    </SectionCard>
 
                     {/* Paint */}
                     {isPainting && (
@@ -469,7 +648,6 @@ export default function EstimateDetailPage() {
 
                                 <hr className="my-1" />
 
-                                {/* Convert to job */}
                                 {estimate.status !== "converted" ? (
                                     <button className="btn btn-success fw-semibold py-2"
                                         onClick={handleConvert} disabled={converting}>

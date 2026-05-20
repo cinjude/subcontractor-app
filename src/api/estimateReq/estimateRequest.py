@@ -322,3 +322,136 @@ def update_estimate(estimate_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Failed to update estimate: {str(e)}'}), 500
+
+@api.route('/estimates/<int:estimate_id>/status', methods=['PATCH'])
+@jwt_required()
+def update_estimate_status(estimate_id):
+    try:
+        contractor_id = get_current_contractor_id()
+        estimate = EstimateRequest.query.filter_by(id=estimate_id, contractor_id=contractor_id).first()
+
+        if not estimate:
+            return jsonify({'error': 'Estimate not found or unauthorized'}), 404
+
+        data = request.get_json()
+        new_status = data['status']
+
+        if not new_status:
+            return jsonify({'error': 'No status provided'}), 400
+
+        try:
+            estimate.status = EstimateStatus(new_status)
+        except ValueError:
+            return jsonify({'error': f'Invalid status: {new_status}. Valid: new, converted, rejected '}), 400
+
+        if 'quoted_amount' in data and data['quoted_amount'] is not None:
+            estimate.quoted_amount = float(data['quoted_amount'])
+        if 'contractor_notes' in data:
+            estimate.contractor_notes = data['contractor_notes']
+        
+        db.session.commit()
+        
+        return jsonify({
+            'msg': 'Estimate status updated successfully',
+            'estimate': estimate.serialize()
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to update estimate status: {str(e)}'}), 500
+
+@api.route('/estimates/<int:estimate_id>/rooms', methods=['POST'])
+@jwt_required()
+def add_room(estimate_id):
+    try:
+        contractor_id=get_current_contractor_id()
+        estimate = EstimateRequest.query.filter_by(id=estimate_id, contractor_id=contractor_id).first()
+
+        if not estimate:
+            return jsonify({'error': 'Estimate not found or unauthorized'}), 404
+
+        data = request.get_json()
+        if not data or not data.get('name'):
+            return jsonify({'error': 'Room name is required'}), 400
+        
+        room = EstimateRoom(
+            estimate_id=estimate_id,
+            name=data['name'],
+            length_ft =data.get("length_ft"),
+            width_ft  =data.get("width_ft"),
+            height_ft =data.get("height_ft"),
+            notes     =data.get("notes"),
+        )
+        db.session.add(room)
+        db.session.commit()
+        
+        return jsonify({
+            'msg': 'Room added successfully',
+            'room': room.serialize(),
+            'total_sqft': estimate.computed_sqft
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to add room: {str(e)}'}), 500
+
+@api.route('/estimates/<int:estimate_id>/rooms/<int:room_id>', methods=['PUT'])
+@jwt_required()
+def update_room(estimate_id, room_id):
+    try:
+        contractor_id=get_current_contractor_id()
+        estimate = EstimateRequest.query.filter_by(id=estimate_id, contractor_id=contractor_id).first()
+        if not estimate:
+            return jsonify({'error': 'Estimate not found or unauthorized'}), 404
+        
+        room = EstimateRoom.query.filter_by(id=room_id, estimate_id=estimate_id).first()
+        if not room:
+            return jsonify({'error': 'Room not found or unauthorized'}), 404
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        if data.get('name'):
+            room.name = data['name']
+        if data.get('length_ft') is not None:
+            room.length_ft = float(data['length_ft']) if data['length_ft'] else None
+        if data.get('width_ft') is not None:
+            room.width_ft = float(data['width_ft']) if data['width_ft'] else None
+        if data.get('height_ft') is not None:
+            room.height_ft = float(data['height_ft']) if data['height_ft'] else None
+        if data.get('notes'):
+            room.notes = data['notes']
+        
+        db.session.commit()
+        
+        return jsonify({
+            'msg': 'Room updated successfully',
+            'room': room.serialize(),
+            'total_sqft': estimate.computed_sqft
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to update room: {str(e)}'}), 500
+
+@api.route('/estimates/<int:estimate_id>/rooms/<int:room_id>', methods=['DELETE'])
+@jwt_required()
+def delete_room(estimate_id, room_id):
+    try:
+        contractor_id = get_current_contractor_id()
+        estimate = EstimateRequest.query.filter_by(id=estimate_id, contractor_id=contractor_id).first()
+        if not estimate:
+            return jsonify({'error': 'Estimate not found or unauthorized'}), 404
+
+        room = EstimateRoom.query.filter_by(id=room_id, estimate_id=estimate_id).first()
+        if not room:
+            return jsonify({'error': 'Room not found'}), 404
+
+        db.session.delete(room)
+        db.session.commit()
+        return jsonify({'msg': 'Room deleted', 'total_sqft': estimate.computed_sqft}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to delete room: {str(e)}'}), 500
