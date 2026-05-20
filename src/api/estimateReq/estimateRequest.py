@@ -455,3 +455,49 @@ def delete_room(estimate_id, room_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Failed to delete room: {str(e)}'}), 500
+
+@api.route('/estimates/<int:estimate_id>/photos', methods=['POST'])
+@jwt_required()
+def add_photo(estimate_id):
+    try:
+        contractor_id=get_current_contractor_id()
+
+        estimate = EstimateRequest.query.filter_by(id=estimate_id, contractor_id=contractor_id).first()
+        if not estimate:
+            return jsonify({'error': 'Estimate not found or unauthorized'}), 404
+        
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+        
+        if not file.content_type.startswith('image/'):
+            return jsonify({'error': 'File must be an image'}), 400
+
+        result = cloudinary.uploader.upload(
+            file,
+            folder=f'estimates/{estimate_id}/photos',
+            resource_type='image'
+        )
+
+        photo = EstimatePhoto(
+            estimate_id=estimate_id,
+            image_url=result['secure_url'],
+            caption=request.form.get('caption', ''),
+            uploaded_by='contractor'
+        )
+        db.session.add(photo)
+        db.session.commit()
+        
+        return jsonify({
+            'msg': 'Photo uploaded successfully',
+            'photo': photo.serialize()
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to upload photo: {str(e)}'}), 500
+        
+            
