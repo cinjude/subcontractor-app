@@ -500,4 +500,26 @@ def add_photo(estimate_id):
         db.session.rollback()
         return jsonify({'error': f'Failed to upload photo: {str(e)}'}), 500
         
-            
+@api.route('/estimates/<int:estimate_id>/photos/<int:photo_id>', methods=['DELETE'])
+@jwt_required()
+def delete_photo(estimate_id, photo_id):
+    try:
+        contractor_id = get_current_contractor_id()
+        estimate = EstimateRequest.query.filter_by(id=estimate_id, contractor_id=contractor_id).first()
+
+        if not estimate:
+            return jsonify({"error": "Estimate not found or unauthorized"}), 404
+
+        photo = EstimatePhoto.query.filter_by(id=photo_id, estimate_id=estimate_id).first()
+
+        if not photo:
+            return jsonify({"error": "Photo not found or unauthorized"}), 404
+        
+        db.session.delete(photo)
+        db.session.commit()
+        
+        return jsonify({"msg": "Photo deleted successfully"}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Failed to delete photo: {str(e)}"}), 500
