@@ -13,6 +13,7 @@ from api.models import (
     EstimateStatus, EstimateType,
     PaintSurfaceCondition, PaintType, PaintFinish, PaintCoats,
     FlooringMaterial, FlooringCurrentState, FlooringPattern, SubfloorCondition,
+    InvoiceItem, Invoice, InvoiceStatus, Job, JobStatus, JobPriority
 )
 from api.utils import APIException
 
@@ -523,3 +524,103 @@ def delete_photo(estimate_id, photo_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"Failed to delete photo: {str(e)}"}), 500
+
+@api.route('/estimates/<int:estimate_id>/convert-to-job', methods=['POST'])
+@jwt_required()
+def convert_estimate_to_job(estimate_id):
+    try:
+        contractor_id=get_current_contractor_id()
+        estimate = EstimateRequest.query.filter_by(id=estimate_id, contractor_id=contractor_id).first()
+
+        if not estimate:
+            return jsonify({'error': 'Estimate not found or unauthorized'}), 404
+
+        if estimate.quoted_amount is None:
+            return jsonify({
+            'error': 'Cannot convert: estimate has no quoted amount. Set a price first.'}), 400
+            
+        data = request.get_json(silent=True) or {}
+        type_label =(estimate.estimate_type.value
+                    if hasattr(estimate.estimate_type, 'value')
+                    else str(estimate.estimate_type))
+
+        job_title = data.get('job_name') or f'{type_label.title()} - {estimate.customer_name}'
+        crew = data.get('crew', '')
+
+        start_date = None
+        if data.get('start_date'):
+            try:
+                start_date=datetime.fromisoformat(data['start_date'])
+            except ValueError:
+                pass
+
+        customer = None
+        if estimate.customer_id:
+            customer = db.session.get(Customer, estimate.customer_id)           
+        else:
+            customer = Customer.query.filter_by(contractor_id=contractor_id, email=estimate.customer_email).first()
+
+        if not customer:
+            customer = Customer(
+                contractor_id=contractor_id,
+                name=estimate.customer_name,
+                email=estimate.customer_email,
+                phone=estimate.customer_phone or '',
+                address=estimate.customer_address or '',
+                city='',
+                state='',
+                zip_code='',
+                )
+        db.session.add(customer)
+        db.session.flush()    
+
+        notes_parts = []
+        if estimate.description:
+            notes_parts.append(estimate.description)
+        if crew:
+            notes_parts.append(f'Crew: {crew}')
+        if estimate.contractor_notes:
+            notes_parts.append(f'Quote notes: {estimate.contractor_notes}')
+        combined_notes = "\n".join(notes_parts) if notes_parts else "Converted from estimate"
+
+        job = Job(
+            contractor_id = contractor_id,
+            customer_id   = customer.id,
+            service_id    = estimate.service_id,         
+            title         = job_title,
+            description   = combined_notes,
+            status        = JobStatus.PENDING,
+            priority      = JobPriority.MEDIUM,
+            location      = estimate.customer_address,
+            budget        = estimate.quoted_amount,       
+            schedule_date = start_date or datetime.utcnow(),
+            start_date    = start_date,
+            estimate_total= estimate.quoted_amount,
+            categories    = type_label,                  
+            notes         = combined_notes
+            )
+        db.session.add(job)
+        db.session.flush()
+
+        estimate.status = EstimateStatus.converted
+
+        db.session.commit()
+        return jsonify({
+
+            'msg'     : 'Estimate successfully converted to job',
+            'job_id'  : job.id,
+            'job'     : job.serialize(),
+            'estimate': estimate.serialize(),}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to convert estimate to job: {str(e)}'}), 500
+
+
+            
+
+                
+
+
+
+

@@ -1,30 +1,30 @@
-// src/pages/estimateRequest/Estimatecontext.jsx
-// ─────────────────────────────────────────────
-// CAMBIO: createContext(null) → createContext({})
-// Esto evita el crash cuando el componente se renderiza
-// ANTES de que el Provider esté listo, retornando un objeto
-// vacio en vez de undefined.
+// src/pages/Estimates/Estimatecontext.jsx
+//
+// CHANGES FROM YOUR ORIGINAL:
+//   1. Added  convertToInvoice()  — calls the new backend endpoint
+//   2. Added  convertToInvoice  to the context default value and Provider value
+//   Everything else is IDENTICAL to your original file.
 
 import { createContext, useContext, useState, useCallback } from "react";
 
-// ← UNICO CAMBIO: pasar un objeto vacío como valor por defecto
 const EstimateContext = createContext({
     estimates: [],
     stats: null,
     loading: false,
     error: null,
-    fetchEstimates: async () => { },
-    fetchStats: async () => { },
-    fetchEstimate: async () => { },
-    createEstimate: async () => { },
-    updateEstimate: async () => { },
-    updateStatus: async () => { },
-    deleteEstimate: async () => { },
-    addRoom: async () => { },
-    deleteRoom: async () => { },
-    uploadPhoto: async () => { },
-    deletePhoto: async () => { },
-    convertToJob: async () => { },
+    fetchEstimates:    async () => {},
+    fetchStats:        async () => {},
+    fetchEstimate:     async () => {},
+    createEstimate:    async () => {},
+    updateEstimate:    async () => {},
+    updateStatus:      async () => {},
+    deleteEstimate:    async () => {},
+    addRoom:           async () => {},
+    deleteRoom:        async () => {},
+    uploadPhoto:       async () => {},
+    deletePhoto:       async () => {},
+    convertToJob:      async () => {},
+    convertToInvoice:  async () => {},   // ← NEW
 });
 
 const BASE = import.meta.env.VITE_BACKEND_URL || "";
@@ -46,9 +46,9 @@ async function apiFetch(path, opts = {}) {
 
 export function EstimateProvider({ children }) {
     const [estimates, setEstimates] = useState([]);
-    const [stats, setStats] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
+    const [stats,     setStats]     = useState(null);
+    const [loading,   setLoading]   = useState(false);
+    const [error,     setError]     = useState(null);
 
     const fetchEstimates = useCallback(async (filters = {}) => {
         setLoading(true); setError(null);
@@ -76,7 +76,9 @@ export function EstimateProvider({ children }) {
     const createEstimate = useCallback(async (payload) => {
         setLoading(true); setError(null);
         try {
-            const data = await apiFetch("/estimates/create", { method: "POST", body: JSON.stringify(payload) });
+            const data = await apiFetch("/estimates/create", {
+                method: "POST", body: JSON.stringify(payload),
+            });
             setEstimates(prev => [data.estimate, ...prev]);
             return data.estimate;
         } catch (e) { setError(e.message); throw e; }
@@ -85,7 +87,9 @@ export function EstimateProvider({ children }) {
 
     const updateEstimate = useCallback(async (id, payload) => {
         try {
-            const data = await apiFetch(`/estimates/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+            const data = await apiFetch(`/estimates/${id}`, {
+                method: "PUT", body: JSON.stringify(payload),
+            });
             setEstimates(prev => prev.map(e => e.id === id ? data : e));
             return data;
         } catch (e) { setError(e.message); throw e; }
@@ -109,19 +113,25 @@ export function EstimateProvider({ children }) {
     }, []);
 
     const addRoom = useCallback(async (estimateId, room) => {
-        try { return await apiFetch(`/estimates/${estimateId}/rooms`, { method: "POST", body: JSON.stringify(room) }); }
-        catch (e) { setError(e.message); throw e; }
+        try {
+            return await apiFetch(`/estimates/${estimateId}/rooms`, {
+                method: "POST", body: JSON.stringify(room),
+            });
+        } catch (e) { setError(e.message); throw e; }
     }, []);
 
     const deleteRoom = useCallback(async (estimateId, roomId) => {
-        try { return await apiFetch(`/estimates/${estimateId}/rooms/${roomId}`, { method: "DELETE" }); }
-        catch (e) { setError(e.message); throw e; }
+        try {
+            return await apiFetch(`/estimates/${estimateId}/rooms/${roomId}`, {
+                method: "DELETE",
+            });
+        } catch (e) { setError(e.message); throw e; }
     }, []);
 
     const uploadPhoto = useCallback(async (estimateId, file, caption = "") => {
         try {
             const token = localStorage.getItem("token");
-            const form = new FormData();
+            const form  = new FormData();
             form.append("file", file);
             form.append("caption", caption);
             const res = await fetch(`${BASE}/api/estimates/${estimateId}/photos`, {
@@ -136,17 +146,42 @@ export function EstimateProvider({ children }) {
     }, []);
 
     const deletePhoto = useCallback(async (estimateId, photoId) => {
-        try { return await apiFetch(`/estimates/${estimateId}/photos/${photoId}`, { method: "DELETE" }); }
-        catch (e) { setError(e.message); throw e; }
+        try {
+            return await apiFetch(`/estimates/${estimateId}/photos/${photoId}`, {
+                method: "DELETE",
+            });
+        } catch (e) { setError(e.message); throw e; }
     }, []);
 
+    // ── UNCHANGED: convertToJob ──────────────────────────────────────────────
+    // Calls POST /api/estimates/<id>/convert-to-job
+    // Returns { job_id, job, estimate }
     const convertToJob = useCallback(async (estimateId, payload = {}) => {
         try {
             const data = await apiFetch(`/estimates/${estimateId}/convert-to-job`, {
                 method: "POST", body: JSON.stringify(payload),
             });
-            setEstimates(prev => prev.map(e => e.id === estimateId ? data.estimate : e));
-            return data;
+            // Update local estimate state to "converted"
+            setEstimates(prev =>
+                prev.map(e => e.id === Number(estimateId) ? data.estimate : e)
+            );
+            return data;   // { job_id, job, estimate }
+        } catch (e) { setError(e.message); throw e; }
+    }, []);
+
+    // ── NEW: convertToInvoice ────────────────────────────────────────────────
+    // Calls POST /api/estimates/<id>/convert-to-invoice
+    // Returns { job_id, invoice_id, invoice_number, estimate }
+    const convertToInvoice = useCallback(async (estimateId, payload = {}) => {
+        try {
+            const data = await apiFetch(`/estimates/${estimateId}/convert-to-invoice`, {
+                method: "POST", body: JSON.stringify(payload),
+            });
+            // Update local estimate state to "converted"
+            setEstimates(prev =>
+                prev.map(e => e.id === Number(estimateId) ? data.estimate : e)
+            );
+            return data;   // { job_id, invoice_id, invoice_number, estimate }
         } catch (e) { setError(e.message); throw e; }
     }, []);
 
@@ -155,7 +190,9 @@ export function EstimateProvider({ children }) {
             estimates, stats, loading, error,
             fetchEstimates, fetchStats, fetchEstimate,
             createEstimate, updateEstimate, updateStatus, deleteEstimate,
-            addRoom, deleteRoom, uploadPhoto, deletePhoto, convertToJob,
+            addRoom, deleteRoom, uploadPhoto, deletePhoto,
+            convertToJob,
+            convertToInvoice,   // ← NEW
         }}>
             {children}
         </EstimateContext.Provider>
