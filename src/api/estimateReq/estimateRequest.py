@@ -6,7 +6,7 @@ from flask_cors import CORS
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import or_, and_, func, case
-from datetime import datetime
+from datetime import datetime, timedelta
 from api.models import (
     db, User, Contractor, Customer, Services,
     EstimateRequest, EstimateRoom, EstimatePhoto,
@@ -615,6 +615,150 @@ def convert_estimate_to_job(estimate_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Failed to convert estimate to job: {str(e)}'}), 500
+
+@api.route('/estimates/<int:estimate_id>/convert-to-invoice', methods=['POST'])
+@jwt_required()
+def convert_estimate_to_invoice(estimate_id):
+    try:
+        contractor_id = get_current_contractor_id()
+
+        # BUG 1 FIXED: Estimate → EstimateRequest  (wrong model name)
+        estimate = EstimateRequest.query.filter_by(
+            id=estimate_id,
+            contractor_id=contractor_id
+        ).first()
+
+        if not estimate:
+            return jsonify({'error': 'Estimate not found or access denied'}), 404
+
+        if estimate.quoted_amount is None:
+            return jsonify({'error': 'Cannot invoice: estimate has no quoted amount'}), 400
+
+        if estimate.status == EstimateStatus.converted:
+            return jsonify({'error': 'Estimate is already converted'}), 400
+
+        data = request.get_json(silent=True) or {}
+
+        # BUG 2 FIXED: timedelta was used but never imported — add this import
+        from datetime import timedelta
+        due_date = datetime.utcnow() + timedelta(days=30)
+        if data.get('due_date'):
+            try:
+                due_date = datetime.fromisoformat(data['due_date'])
+            except ValueError:
+                pass
+
+        # Find or create customer
+        customer = None
+        if estimate.customer_id:
+            customer = db.session.get(Customer, estimate.customer_id)
+        else:
+            customer = Customer.query.filter_by(
+                contractor_id=contractor_id,
+                email=estimate.customer_email
+            ).first()
+
+        if not customer:
+            customer = Customer(
+                contractor_id=contractor_id,
+                name=estimate.customer_name,
+                email=estimate.customer_email,
+                phone=estimate.customer_phone or '',
+                address=estimate.customer_address or '',
+                city='',
+                state='',
+                zip_code='',
+            )
+            db.session.add(customer)
+            db.session.flush()
+
+        # BUG 3 FIXED: estimate.estimate_type.value() — .value is a property, not a method
+        type_label = (
+            estimate.estimate_type.value
+            if hasattr(estimate.estimate_type, 'value')
+            else str(estimate.estimate_type)
+        )
+
+        # BUG 4 FIXED: two errors in the Job creation
+        #   service.id → estimate.service_id  (service variable doesn't exist)
+        #   f'{type_label.title() - {...}}' → f'{type_label.title()} — {estimate.customer_name}'
+        #   (the f-string had a math operation inside it — syntax error)
+        job = Job(
+            contractor_id=contractor_id,
+            customer_id=customer.id,
+            service_id=estimate.service_id,
+            title=f'{type_label.title()} — {estimate.customer_name}',
+            description=estimate.description or 'Converted from estimate',
+            status=JobStatus.PENDING,
+            priority=JobPriority.MEDIUM,
+            location=estimate.customer_address,
+            budget=estimate.quoted_amount,
+            schedule_date=datetime.utcnow(),
+            estimate_total=estimate.quoted_amount,
+            categories=type_label,
+            notes=estimate.contractor_notes or '',
+        )
+        db.session.add(job)
+        db.session.flush()
+
+        # Generate next invoice number for this contractor
+        from sqlalchemy import func as sqlfunc
+        last_num = db.session.query(
+            sqlfunc.max(Invoice.invoice_number)
+        ).filter_by(contractor_id=contractor_id).scalar() or 0
+        next_num = last_num + 1
+
+        # Calculate tax
+        # BUG 5 FIXED: contractor_req → contractor_rec (typo — variable name mismatch)
+        contractor_rec = Contractor.query.get(contractor_id)
+        tax_rate   = float(contractor_rec.tax_rate or 0)
+        subtotal   = float(estimate.quoted_amount)
+        tax_amount = round(subtotal * (tax_rate / 100), 2)
+        total      = round(subtotal + tax_amount, 2)
+
+        invoice = Invoice(
+            contractor_id=contractor_id,
+            customer_id=customer.id,
+            job_id=job.id,
+            invoice_number=next_num,
+            issue_date=datetime.utcnow(),
+            due_date=due_date,
+            subtotal=subtotal,
+            tax=tax_amount,
+            total_amount=total,
+            status=InvoiceStatus.draft,
+            payment_link='',
+            notes=estimate.contractor_notes or '',
+        )
+        db.session.add(invoice)
+        db.session.flush()
+
+        item = InvoiceItem(
+            invoice_id=invoice.id,
+            description=(
+                f'{type_label.title()} — {int(estimate.computed_sqft)} sq ft'
+                if estimate.computed_sqft else type_label.title()
+            ),
+            quantity=1,
+            unit_price=subtotal,
+        )
+        db.session.add(item)
+
+        estimate.status = EstimateStatus.converted
+
+        db.session.commit()
+
+        return jsonify({
+            'msg': 'Estimate converted to job and invoice created',
+            'job_id': job.id,
+            'invoice_id': invoice.id,
+            'invoice_number': next_num,
+            'estimate': estimate.serialize(),
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error converting estimate to invoice: {str(e)}'}), 500
 
 
             
