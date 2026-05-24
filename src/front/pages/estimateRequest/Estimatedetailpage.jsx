@@ -11,13 +11,13 @@ import { useEstimate } from "./Estimatecontext.jsx";
 import { useEstimatePDF } from "./Useestimatepdf.js";
 import useGlobalReducer from "../../hooks/useGlobalReducer.jsx";
 
-const fmt   = v => (v ? String(v).replace(/_/g, " ") : null);
+const fmt = v => (v ? String(v).replace(/_/g, " ") : null);
 const money = v => v != null ? `$${Number(v).toLocaleString("en-US", { minimumFractionDigits: 2 })}` : null;
 
 const STATUS_CFG = {
-    new:       { cls: "text-bg-success", label: "New",       icon: "🆕" },
+    new: { cls: "text-bg-success", label: "New", icon: "🆕" },
     converted: { cls: "text-bg-primary", label: "Converted", icon: "✅" },
-    rejected:  { cls: "text-bg-danger",  label: "Rejected",  icon: "✕"  },
+    rejected: { cls: "text-bg-danger", label: "Rejected", icon: "✕" },
 };
 
 function InfoRow({ label, value, accent, mono }) {
@@ -26,7 +26,7 @@ function InfoRow({ label, value, accent, mono }) {
         <div className="d-flex justify-content-between align-items-start py-2 border-bottom">
             <span className="text-muted flex-shrink-0 me-3" style={{ fontSize: 13 }}>{label}</span>
             <span className={`text-end fw-medium ${accent || ""} ${mono ? "font-monospace" : ""}`}
-                  style={{ fontSize: 13 }}>{value}</span>
+                style={{ fontSize: 13 }}>{value}</span>
         </div>
     );
 }
@@ -37,7 +37,7 @@ function SectionCard({ title, icon, children, className = "" }) {
             <div className="card-header bg-light py-2 px-3 d-flex align-items-center gap-2">
                 <span>{icon}</span>
                 <span className="fw-semibold small text-uppercase"
-                      style={{ letterSpacing: "0.05em", fontSize: 11 }}>{title}</span>
+                    style={{ letterSpacing: "0.05em", fontSize: 11 }}>{title}</span>
             </div>
             <div className="card-body py-2 px-3">{children}</div>
         </div>
@@ -45,21 +45,21 @@ function SectionCard({ title, icon, children, className = "" }) {
 }
 
 function ConvertModal({ show, type, estimate, onClose, onConfirm }) {
-    const [jobName,          setJobName]          = useState("");
-    const [startDate,        setStartDate]        = useState("");
-    const [crew,             setCrew]             = useState("");
-    const [dueDate,          setDueDate]          = useState("");
-    const [terms,            setTerms]            = useState("net_30");
+    const [jobName, setJobName] = useState("");
+    const [startDate, setStartDate] = useState("");
+    const [crew, setCrew] = useState("");
+    const [dueDate, setDueDate] = useState("");
+    const [terms, setTerms] = useState("net_30");
     const [sendConfirmation, setSendConfirmation] = useState(true);
-    const [autoInvoice,      setAutoInvoice]      = useState(false);
-    const [saving,           setSaving]           = useState(false);
+    const [autoInvoice, setAutoInvoice] = useState(false);
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         if (!estimate) return;
         const typeLabel =
             estimate.estimate_type === "painting" ? "Painting"
-            : estimate.estimate_type === "flooring" ? "Flooring"
-            : "Painting + Flooring";
+                : estimate.estimate_type === "flooring" ? "Flooring"
+                    : "Painting + Flooring";
         setJobName(`${typeLabel} — ${estimate.customer_name}`);
         const d = new Date(); d.setDate(d.getDate() + 30);
         setDueDate(d.toISOString().split("T")[0]);
@@ -67,14 +67,16 @@ function ConvertModal({ show, type, estimate, onClose, onConfirm }) {
 
     if (!show) return null;
 
-    const isJob    = type === "job";
+    const isJob = type === "job";
     const hasQuote = estimate?.quoted_amount != null;
 
     const handleConfirm = async () => {
         setSaving(true);
         try {
-            await onConfirm({ type, jobName, startDate, crew, dueDate, terms,
-                              sendConfirmation, autoInvoice });
+            await onConfirm({
+                type, jobName, startDate, crew, dueDate, terms,
+                sendConfirmation, autoInvoice
+            });
             onClose();
         } catch (e) {
             alert(e.message || "Something went wrong");
@@ -109,7 +111,7 @@ function ConvertModal({ show, type, estimate, onClose, onConfirm }) {
                         </div>
                         <div className="modal-body pt-2">
                             <div className="rounded-3 p-3 mb-3"
-                                 style={{ background: "#f8f9fa", border: "1px solid #dee2e6" }}>
+                                style={{ background: "#f8f9fa", border: "1px solid #dee2e6" }}>
                                 {estimate?.computed_sqft > 0 && (
                                     <div className="d-flex justify-content-between" style={{ fontSize: 13 }}>
                                         <span className="text-muted">Area</span>
@@ -123,7 +125,7 @@ function ConvertModal({ show, type, estimate, onClose, onConfirm }) {
                                     </div>
                                 )}
                                 <div className="d-flex justify-content-between mt-2 pt-2"
-                                     style={{ borderTop: "1px solid #dee2e6" }}>
+                                    style={{ borderTop: "1px solid #dee2e6" }}>
                                     <span className="fw-semibold" style={{ fontSize: 14 }}>Total quoted</span>
                                     <span className="fw-bold text-success" style={{ fontSize: 16 }}>
                                         {hasQuote ? money(estimate.quoted_amount) : "— (not set)"}
@@ -141,19 +143,19 @@ function ConvertModal({ show, type, estimate, onClose, onConfirm }) {
                                     <div className="mb-3">
                                         <label className="form-label fw-medium small">Job name</label>
                                         <input className="form-control" value={jobName}
-                                               onChange={e => setJobName(e.target.value)}
-                                               placeholder="e.g. Painting — Maria Garcia" />
+                                            onChange={e => setJobName(e.target.value)}
+                                            placeholder="e.g. Painting — Maria Garcia" />
                                     </div>
                                     <div className="row g-3 mb-3">
                                         <div className="col-6">
                                             <label className="form-label fw-medium small">Scheduled start</label>
                                             <input type="date" className="form-control" value={startDate}
-                                                   onChange={e => setStartDate(e.target.value)} />
+                                                onChange={e => setStartDate(e.target.value)} />
                                         </div>
                                         <div className="col-6">
                                             <label className="form-label fw-medium small">Assign crew (optional)</label>
                                             <input className="form-control" value={crew}
-                                                   onChange={e => setCrew(e.target.value)} placeholder="Team A" />
+                                                onChange={e => setCrew(e.target.value)} placeholder="Team A" />
                                         </div>
                                     </div>
                                 </>
@@ -164,18 +166,18 @@ function ConvertModal({ show, type, estimate, onClose, onConfirm }) {
                                         <div className="col-6">
                                             <label className="form-label fw-medium small">Invoice date</label>
                                             <input type="date" className="form-control"
-                                                   defaultValue={new Date().toISOString().split("T")[0]} />
+                                                defaultValue={new Date().toISOString().split("T")[0]} />
                                         </div>
                                         <div className="col-6">
                                             <label className="form-label fw-medium small">Due date</label>
                                             <input type="date" className="form-control" value={dueDate}
-                                                   onChange={e => setDueDate(e.target.value)} />
+                                                onChange={e => setDueDate(e.target.value)} />
                                         </div>
                                     </div>
                                     <div className="mb-3">
                                         <label className="form-label fw-medium small">Payment terms</label>
                                         <select className="form-select" value={terms}
-                                                onChange={e => setTerms(e.target.value)}>
+                                            onChange={e => setTerms(e.target.value)}>
                                             <option value="net_30">Net 30</option>
                                             <option value="net_15">Net 15</option>
                                             <option value="due_on_receipt">Due on receipt</option>
@@ -193,9 +195,9 @@ function ConvertModal({ show, type, estimate, onClose, onConfirm }) {
                                         </label>
                                         <div className="form-check form-switch ms-3 mb-0">
                                             <input className="form-check-input" type="checkbox" role="switch"
-                                                   id="tog_confirm" checked={sendConfirmation}
-                                                   onChange={e => setSendConfirmation(e.target.checked)}
-                                                   style={{ width: "2.4em", height: "1.3em", cursor: "pointer" }} />
+                                                id="tog_confirm" checked={sendConfirmation}
+                                                onChange={e => setSendConfirmation(e.target.checked)}
+                                                style={{ width: "2.4em", height: "1.3em", cursor: "pointer" }} />
                                         </div>
                                     </div>
                                     {isJob && (
@@ -206,9 +208,9 @@ function ConvertModal({ show, type, estimate, onClose, onConfirm }) {
                                             </label>
                                             <div className="form-check form-switch ms-3 mb-0">
                                                 <input className="form-check-input" type="checkbox" role="switch"
-                                                       id="tog_autoinv" checked={autoInvoice}
-                                                       onChange={e => setAutoInvoice(e.target.checked)}
-                                                       style={{ width: "2.4em", height: "1.3em", cursor: "pointer" }} />
+                                                    id="tog_autoinv" checked={autoInvoice}
+                                                    onChange={e => setAutoInvoice(e.target.checked)}
+                                                    style={{ width: "2.4em", height: "1.3em", cursor: "pointer" }} />
                                             </div>
                                         </div>
                                     )}
@@ -218,7 +220,7 @@ function ConvertModal({ show, type, estimate, onClose, onConfirm }) {
                         <div className="modal-footer border-0 pt-0 gap-2">
                             <button type="button" className="btn btn-outline-secondary" onClick={onClose}>Cancel</button>
                             <button type="button" disabled={saving} onClick={handleConfirm}
-                                    className={`btn fw-semibold flex-fill ${isJob ? "btn-success" : "btn-primary"}`}>
+                                className={`btn fw-semibold flex-fill ${isJob ? "btn-success" : "btn-primary"}`}>
                                 {saving
                                     ? <><span className="spinner-border spinner-border-sm me-2" />{isJob ? "Creating job…" : "Creating invoice…"}</>
                                     : isJob ? "✓ Create job" : "✓ Create invoice"}
@@ -233,7 +235,7 @@ function ConvertModal({ show, type, estimate, onClose, onConfirm }) {
 
 function QuoteModal({ show, estimate, onClose, onSave }) {
     const [amount, setAmount] = useState(estimate.quoted_amount || "");
-    const [notes,  setNotes]  = useState(estimate.contractor_notes || "");
+    const [notes, setNotes] = useState(estimate.contractor_notes || "");
     const [saving, setSaving] = useState(false);
     const save = async () => {
         if (!amount) return; setSaving(true);
@@ -256,18 +258,18 @@ function QuoteModal({ show, estimate, onClose, onSave }) {
                             <div className="input-group input-group-lg mb-3">
                                 <span className="input-group-text">$</span>
                                 <input type="number" inputMode="decimal" className="form-control fw-bold text-success"
-                                       style={{ fontSize: 24 }} value={amount}
-                                       onChange={e => setAmount(e.target.value)} placeholder="0.00" autoFocus />
+                                    style={{ fontSize: 24 }} value={amount}
+                                    onChange={e => setAmount(e.target.value)} placeholder="0.00" autoFocus />
                             </div>
                             <label className="form-label fw-medium small">Notes for client (included in PDF)</label>
                             <textarea className="form-control" rows={3}
-                                      placeholder="e.g. Includes 2 coats premium paint, labor, cleanup…"
-                                      value={notes} onChange={e => setNotes(e.target.value)} />
+                                placeholder="e.g. Includes 2 coats premium paint, labor, cleanup…"
+                                value={notes} onChange={e => setNotes(e.target.value)} />
                         </div>
                         <div className="modal-footer border-0 pt-0 gap-2">
                             <button type="button" className="btn btn-outline-secondary" onClick={onClose}>Cancel</button>
                             <button type="button" className="btn btn-success fw-semibold flex-fill"
-                                    onClick={save} disabled={saving || !amount}>
+                                onClick={save} disabled={saving || !amount}>
                                 {saving ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</> : "Save quote"}
                             </button>
                         </div>
@@ -280,9 +282,9 @@ function QuoteModal({ show, estimate, onClose, onSave }) {
 
 function SendEmailModal({ show, estimate, contractorInfo, onClose }) {
     const { sendByEmail } = useEstimatePDF();
-    const [email,   setEmail]   = useState(estimate.customer_email || "");
+    const [email, setEmail] = useState(estimate.customer_email || "");
     const [sending, setSending] = useState(false);
-    const [sent,    setSent]    = useState(false);
+    const [sent, setSent] = useState(false);
     const send = async () => {
         if (!email) return; setSending(true);
         try { await sendByEmail({ ...estimate, customer_email: email }, contractorInfo); setSent(true); }
@@ -311,7 +313,7 @@ function SendEmailModal({ show, estimate, contractorInfo, onClose }) {
                                     <p className="text-muted mb-3" style={{ fontSize: 14 }}>A professional PDF will be generated and emailed to your client.</p>
                                     <label className="form-label fw-medium small">Client email <span className="text-danger">*</span></label>
                                     <input type="email" className="form-control mb-3" value={email}
-                                           onChange={e => setEmail(e.target.value)} placeholder="client@email.com" />
+                                        onChange={e => setEmail(e.target.value)} placeholder="client@email.com" />
                                     {estimate.quoted_amount && (
                                         <div className="alert alert-success d-flex align-items-center gap-2 py-2">
                                             <span>💰</span><span>Quoted: <strong>{money(estimate.quoted_amount)}</strong> included</span>
@@ -326,7 +328,7 @@ function SendEmailModal({ show, estimate, contractorInfo, onClose }) {
                             </button>
                             {!sent && (
                                 <button type="button" className="btn btn-dark fw-semibold flex-fill"
-                                        onClick={send} disabled={sending || !email}>
+                                    onClick={send} disabled={sending || !email}>
                                     {sending ? <><span className="spinner-border spinner-border-sm me-2" />Sending…</> : "📧 Send PDF estimate"}
                                 </button>
                             )}
@@ -343,14 +345,31 @@ function RoomRow({ room, estimateId, onUpdate }) {
     const [editing, setEditing] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [form, setForm] = useState({ name: room.name, length_ft: room.length_ft || "", width_ft: room.width_ft || "", height_ft: room.height_ft || "" });
+
+    const [form, setForm] = useState({
+        name: room.name,
+        length_ft: room.length_ft || 10, // Default to a standard baseline 
+        width_ft: room.width_ft || 10,
+        height_ft: room.height_ft || 8
+    });
+
     const sqft = form.length_ft && form.width_ft ? (parseFloat(form.length_ft) * parseFloat(form.width_ft)).toFixed(0) : null;
+
+    // Helper function to handle increments safely without typing
+    const adjustValue = (field, amount) => {
+        setForm(prev => ({
+            ...prev,
+            [field]: Math.max(0, parseFloat(prev[field] || 0) + amount)
+        }));
+    };
+
     const handleDelete = async () => {
         if (!window.confirm(`Delete "${room.name}"?`)) return;
         setDeleting(true);
         try { await deleteRoom(estimateId, room.id); await onUpdate(); }
         catch (e) { alert(e.message); } finally { setDeleting(false); }
     };
+
     const handleSave = async () => {
         if (!form.name.trim()) return; setSaving(true);
         try {
@@ -365,40 +384,89 @@ function RoomRow({ room, estimateId, onUpdate }) {
             await onUpdate(); setEditing(false);
         } catch (e) { alert(e.message); } finally { setSaving(false); }
     };
+
+    // --- MOBILE-FIRST STEPPER UI (EDITING MODE) ---
     if (editing) return (
-        <div className="border rounded-3 p-2 mb-2 bg-light">
-            <input className="form-control form-control-sm mb-2 fw-medium" value={form.name}
-                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Room name" />
-            <div className="row g-2 mb-2">
-                {[["length_ft","Length (ft)"],["width_ft","Width (ft)"],["height_ft","Height (ft)"]].map(([k,l]) => (
-                    <div key={k} className="col-4">
-                        <input type="number" inputMode="decimal" className="form-control form-control-sm"
-                               placeholder={l} value={form[k]} onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))} />
+        <div className="border rounded-3 p-3 mb-3 bg-light shadow-sm">
+            {/* Room Name Selection Header */}
+            <label className="form-label fw-bold small text-muted text-uppercase mb-1" style={{ fontSize: 11 }}>Room Type / Name</label>
+            <input className="form-control form-control-lg mb-3 fw-semibold" value={form.name}
+                onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Master Bedroom" />
+
+            {/* Dimension Stepper Grid */}
+            <div className="space-y-3">
+                {[
+                    { key: "length_ft", label: "Length (Feet)", step: 1 },
+                    { key: "width_ft", label: "Width (Feet)", step: 1 },
+                    { key: "height_ft", label: "Height (Feet)", step: 1 }
+                ].map((dim) => (
+                    <div key={dim.key} className="p-2 bg-white rounded-3 border d-flex align-items-center justify-content-between mb-2">
+                        <span className="fw-semibold text-secondary small ps-1">{dim.label}</span>
+
+                        {/* THE STEPPER CONTROL BLOCK */}
+                        <div className="d-flex align-items-center gap-1">
+                            {/* Big Minus Target */}
+                            <button
+                                type="button"
+                                className="btn btn-outline-secondary d-flex align-items-center justify-content-center fw-bold"
+                                style={{ width: 44, height: 44, fontSize: 18 }}
+                                onClick={() => adjustValue(dim.key, -dim.step)}
+                            >
+                                −
+                            </button>
+
+                            {/* Display Window */}
+                            <div className="text-center fw-bold font-monospace bg-light rounded border text-dark"
+                                style={{ width: 60, py: 10, lineHeight: "42px", height: 44, fontSize: 16 }}>
+                                {form[dim.key]}
+                            </div>
+
+                            {/* Big Plus Target */}
+                            <button
+                                type="button"
+                                className="btn btn-outline-secondary d-flex align-items-center justify-content-center fw-bold"
+                                style={{ width: 44, height: 44, fontSize: 18 }}
+                                onClick={() => adjustValue(dim.key, dim.step)}
+                            >
+                                +
+                            </button>
+                        </div>
                     </div>
                 ))}
             </div>
-            {sqft && <p className="text-success mb-2" style={{ fontSize: 12 }}>≈ {sqft} sq ft</p>}
-            <div className="d-flex gap-2">
-                <button className="btn btn-outline-secondary btn-sm" onClick={() => setEditing(false)}>Cancel</button>
-                <button className="btn btn-dark btn-sm flex-fill fw-semibold" onClick={handleSave} disabled={saving}>
-                    {saving ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</> : "✓ Save"}
+
+            {/* Calculated Area Preview Indicator */}
+            {sqft && (
+                <div className="alert alert-success py-2 px-3 my-2 d-flex justify-content-between align-items-center">
+                    <span className="small fw-semibold text-success">Calculated Surface Area:</span>
+                    <span className="fw-bold font-monospace">{sqft} SQ FT</span>
+                </div>
+            )}
+
+            {/* Action Save Bar */}
+            <div className="d-flex gap-2 mt-3">
+                <button className="btn btn-outline-secondary px-3" style={{ height: 44 }} onClick={() => setEditing(false)}>Cancel</button>
+                <button className="btn btn-dark flex-fill fw-bold" style={{ height: 44 }} onClick={handleSave} disabled={saving}>
+                    {saving ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</> : "✓ Save Changes"}
                 </button>
             </div>
         </div>
     );
+
+    // --- STANDARD DISPLAY VIEW ---
     return (
-        <div className="d-flex align-items-center justify-content-between border-bottom py-2 gap-2">
+        <div className="d-flex align-items-center justify-content-between border-bottom py-3 gap-2">
             <div>
-                <span className="fw-medium" style={{ fontSize: 13 }}>{room.name}</span>
+                <span className="fw-bold text-dark d-block" style={{ fontSize: 14 }}>{room.name}</span>
                 {room.floor_sqft > 0 && (
-                    <span className="text-muted ms-2" style={{ fontSize: 12 }}>
-                        {room.floor_sqft.toFixed(0)} sq ft{room.wall_sqft > 0 ? ` · ${room.wall_sqft.toFixed(0)} wall` : ""}
+                    <span className="text-muted small">
+                        {room.floor_sqft.toFixed(0)} sq ft{room.wall_sqft > 0 ? ` · ${room.wall_sqft.toFixed(0)} wall area` : ""}
                     </span>
                 )}
             </div>
-            <div className="d-flex gap-1 flex-shrink-0">
-                <button className="btn btn-outline-secondary btn-sm px-2 py-1" style={{ fontSize: 12 }} onClick={() => setEditing(true)}>✏️</button>
-                <button className="btn btn-outline-danger btn-sm px-2 py-1" style={{ fontSize: 12 }} onClick={handleDelete} disabled={deleting}>
+            <div className="d-flex gap-2 flex-shrink-0">
+                <button className="btn btn-light border btn-md d-flex align-items-center justify-content-center" style={{ width: 40, height: 40 }} onClick={() => setEditing(true)}>✏️</button>
+                <button className="btn btn-outline-danger btn-md d-flex align-items-center justify-content-center" style={{ width: 40, height: 40 }} onClick={handleDelete} disabled={deleting}>
                     {deleting ? <span className="spinner-border spinner-border-sm" /> : "🗑"}
                 </button>
             </div>
@@ -413,7 +481,7 @@ export default function EstimateDetailPage() {
 
     // convertToInvoice is now real — comes from updated Estimatecontext.jsx
     const { fetchEstimate, updateStatus, deleteEstimate, uploadPhoto, deletePhoto,
-            convertToJob, convertToInvoice, addRoom } = useEstimate();
+        convertToJob, convertToInvoice, addRoom } = useEstimate();
     const { downloadPDF, previewPDF } = useEstimatePDF();
 
     const [estimate, setEstimate] = useState(null);
@@ -471,8 +539,21 @@ export default function EstimateDetailPage() {
     const handleAddRoom = async () => {
         if (!newRoom.name.trim()) return;
         setAddingRoom(true);
-        try { await addRoom(id, newRoom); await refresh(); setNewRoom({ name: "", length_ft: "", width_ft: "", height_ft: "" }); setShowAddRoom(false); }
-        catch (err) { alert(err.message); } finally { setAddingRoom(false); }
+        try {
+            await addRoom(id, {
+                name: newRoom.name.trim(),
+                length_ft: parseFloat(newRoom.length_ft) || 0,
+                width_ft: parseFloat(newRoom.width_ft) || 0,
+                height_ft: parseFloat(newRoom.height_ft) || 0,
+            });
+            await refresh();
+            setNewRoom({ name: "", length_ft: "10", width_ft: "10", height_ft: "8" });
+            setShowAddRoom(false);
+        } catch (err) {
+            alert(err.message);
+        } finally {
+            setAddingRoom(false);
+        }
     };
 
     const handlePhotoUpload = async e => {
@@ -556,36 +637,138 @@ export default function EstimateDetailPage() {
                         <InfoRow label="Preferred date" value={estimate.preferred_date ? new Date(estimate.preferred_date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }) : null} />
                     </SectionCard>
 
+                    {/* --- ROOMS / AREAS SECTION CARD --- */}
                     <SectionCard title="Rooms / Areas" icon="📐">
-                        {estimate.rooms?.length === 0 && <p className="text-muted mb-2" style={{ fontSize: 13 }}>No rooms added yet.</p>}
-                        {estimate.rooms?.map(r => <RoomRow key={r.id} room={r} estimateId={id} onUpdate={refresh} />)}
+                        {estimate.rooms?.length === 0 && (
+                            <p className="text-muted mb-2" style={{ fontSize: 13 }}>No rooms added yet.</p>
+                        )}
+
+                        {estimate.rooms?.map(room => (
+                            <RoomRow key={room.id} room={room} estimateId={id} onUpdate={refresh} />
+                        ))}
+
                         {estimate.rooms?.length > 0 && (
-                            <div className="d-flex justify-content-between pt-2 fw-semibold border-top mt-1">
-                                <span style={{ fontSize: 13 }}>Total floor area</span>
-                                <span className="text-success" style={{ fontSize: 13 }}>{Number(estimate.computed_sqft).toFixed(0)} sq ft</span>
+                            <div className="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+                                <span className="fw-bold text-dark small">Total floor area</span>
+                                <span className="fw-bold text-success font-monospace">
+                                    {estimate.rooms.reduce((acc, r) => acc + (r.floor_sqft || 0), 0).toFixed(0)} sq ft
+                                </span>
                             </div>
                         )}
-                        {showAddRoom ? (
-                            <div className="mt-3 p-3 border rounded-3 bg-light">
-                                <p className="fw-semibold mb-2" style={{ fontSize: 13 }}>New room</p>
-                                <input className="form-control form-control-sm mb-2" placeholder="Room name (e.g. Kitchen)" value={newRoom.name} onChange={e => setNewRoom(r => ({ ...r, name: e.target.value }))} />
-                                <div className="row g-2 mb-2">
-                                    {[["length_ft","Length (ft)"],["width_ft","Width (ft)"],["height_ft","Height (ft)"]].map(([k,l]) => (
-                                        <div key={k} className="col-4">
-                                            <input type="number" inputMode="decimal" className="form-control form-control-sm" placeholder={l} value={newRoom[k]} onChange={e => setNewRoom(r => ({ ...r, [k]: e.target.value }))} />
+
+                        <hr className="my-3 opacity-25" />
+
+                        {!showAddRoom ? (
+                            <button
+                                type="button"
+                                className="btn btn-outline-secondary w-100 py-2 fw-medium"
+                                style={{ borderStyle: "dashed" }}
+                                onClick={() => {
+                                    setNewRoom({ name: "", length_ft: "10", width_ft: "10", height_ft: "8" });
+                                    setShowAddRoom(true);
+                                }}
+                            >
+                                + Add room
+                            </button>
+                        ) : (
+                            <div className="border rounded-3 p-3 bg-light shadow-sm mt-2">
+                                <label className="form-label fw-bold small text-muted text-uppercase mb-1"
+                                    style={{ fontSize: 11 }}>
+                                    Room name <span className="text-danger">*</span>
+                                </label>
+                                <input
+                                    className="form-control form-control-lg mb-1 fw-semibold bg-white"
+                                    placeholder="e.g. Living Room, Kitchen"
+                                    value={newRoom.name}
+                                    onChange={e => setNewRoom(prev => ({ ...prev, name: e.target.value }))}
+                                    autoFocus
+                                />
+                                {/* FIX: show validation hint so user knows why button is disabled */}
+                                {!newRoom.name.trim() && (
+                                    <p className="text-danger mb-2" style={{ fontSize: 12 }}>
+                                        ⚠ Room name is required
+                                    </p>
+                                )}
+
+                                <div className="mt-3">
+                                    {[
+                                        { key: "length_ft", label: "Length (ft)", step: 1 },
+                                        { key: "width_ft", label: "Width (ft)", step: 1 },
+                                        { key: "height_ft", label: "Height (ft)", step: 1 },
+                                    ].map((dim) => (
+                                        <div key={dim.key}
+                                            className="p-2 bg-white rounded-3 border d-flex align-items-center justify-content-between mb-2">
+                                            <span className="fw-semibold text-secondary small ps-1">{dim.label}</span>
+                                            <div className="d-flex align-items-center gap-1">
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-outline-secondary d-flex align-items-center justify-content-center fw-bold"
+                                                    style={{ width: 44, height: 44, fontSize: 18 }}
+                                                    onClick={() =>
+                                                        setNewRoom(prev => ({
+                                                            ...prev,
+                                                            // FIX: always use parseFloat so math works on string state
+                                                            [dim.key]: String(Math.max(0, parseFloat(prev[dim.key] || 0) - dim.step))
+                                                        }))
+                                                    }
+                                                >−</button>
+
+                                                <div className="text-center fw-bold font-monospace bg-light rounded border text-dark"
+                                                    style={{ width: 60, height: 44, lineHeight: "42px", fontSize: 16 }}>
+                                                    {newRoom[dim.key] || 0}
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-outline-secondary d-flex align-items-center justify-content-center fw-bold"
+                                                    style={{ width: 44, height: 44, fontSize: 18 }}
+                                                    onClick={() =>
+                                                        setNewRoom(prev => ({
+                                                            ...prev,
+                                                            [dim.key]: String(parseFloat(prev[dim.key] || 0) + dim.step)
+                                                        }))
+                                                    }
+                                                >+</button>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
-                                {newRoom.length_ft && newRoom.width_ft && <p className="text-success mb-2" style={{ fontSize: 12 }}>≈ {(parseFloat(newRoom.length_ft) * parseFloat(newRoom.width_ft)).toFixed(0)} sq ft</p>}
-                                <div className="d-flex gap-2">
-                                    <button className="btn btn-outline-secondary btn-sm" onClick={() => { setShowAddRoom(false); setNewRoom({ name: "", length_ft: "", width_ft: "", height_ft: "" }); }}>Cancel</button>
-                                    <button className="btn btn-success btn-sm flex-fill fw-semibold" onClick={handleAddRoom} disabled={addingRoom || !newRoom.name.trim()}>
-                                        {addingRoom ? <><span className="spinner-border spinner-border-sm me-2" />Adding…</> : "✓ Add room"}
+
+                                {/* Live area preview */}
+                                {newRoom.length_ft && newRoom.width_ft && parseFloat(newRoom.length_ft) > 0 && parseFloat(newRoom.width_ft) > 0 && (
+                                    <div className="alert alert-success py-2 px-3 my-2 d-flex justify-content-between align-items-center border-0 small">
+                                        <span className="fw-semibold text-success">Est. Surface Area:</span>
+                                        <span className="fw-bold font-monospace">
+                                            {(parseFloat(newRoom.length_ft) * parseFloat(newRoom.width_ft)).toFixed(0)} sq ft
+                                        </span>
+                                    </div>
+                                )}
+
+                                <div className="d-flex gap-2 mt-3">
+                                    <button
+                                        type="button"
+                                        className="btn btn-outline-secondary px-3"
+                                        style={{ height: 44 }}
+                                        onClick={() => {
+                                            setShowAddRoom(false);
+                                            setNewRoom({ name: "", length_ft: "10", width_ft: "10", height_ft: "8" });
+                                        }}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-dark flex-fill fw-bold"
+                                        style={{ height: 44 }}
+                                        onClick={handleAddRoom}
+                                        disabled={addingRoom || !newRoom.name.trim()}
+                                    >
+                                        {addingRoom
+                                            ? <><span className="spinner-border spinner-border-sm me-2" />Adding…</>
+                                            : "✓ Add room"}
                                     </button>
                                 </div>
                             </div>
-                        ) : (
-                            <button className="btn btn-outline-secondary w-100 mt-2" style={{ borderStyle: "dashed" }} onClick={() => setShowAddRoom(true)}>+ Add room</button>
                         )}
                     </SectionCard>
 
@@ -663,8 +846,8 @@ export default function EstimateDetailPage() {
                                     <div key={photo.id} className="col-4" style={{ position: "relative" }}>
                                         <img src={photo.image_url} alt={photo.caption || "site photo"} className="img-fluid rounded" style={{ width: "100%", aspectRatio: "1", objectFit: "cover" }} />
                                         <button onClick={() => handleDeletePhoto(photo.id)} className="btn btn-dark btn-sm d-flex align-items-center justify-content-center p-0"
-                                                style={{ position: "absolute", top: 6, right: 10, width: 22, height: 22, borderRadius: "50%", fontSize: 14, background: "rgba(0,0,0,0.65)", border: "none" }}
-                                                aria-label="Delete photo">×</button>
+                                            style={{ position: "absolute", top: 6, right: 10, width: 22, height: 22, borderRadius: "50%", fontSize: 14, background: "rgba(0,0,0,0.65)", border: "none" }}
+                                            aria-label="Delete photo">×</button>
                                     </div>
                                 ))}
                             </div>

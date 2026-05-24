@@ -741,6 +741,7 @@ def convert_estimate_to_invoice(estimate_id):
             ),
             quantity=1,
             unit_price=subtotal,
+            updated_at=datetime.utcnow(),
         )
         db.session.add(item)
 
