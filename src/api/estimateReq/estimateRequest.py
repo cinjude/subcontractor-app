@@ -13,7 +13,7 @@ from api.models import (
     EstimateStatus, EstimateType,
     PaintSurfaceCondition, PaintType, PaintFinish, PaintCoats,
     FlooringMaterial, FlooringCurrentState, FlooringPattern, SubfloorCondition,
-    InvoiceItem, Invoice, InvoiceStatus, Job, JobStatus, JobPriority
+    InvoiceItem, Invoice, InvoiceStatus, Job, JobStatus, JobPriority, ContractorRates
 )
 from api.utils import APIException
 
@@ -761,11 +761,62 @@ def convert_estimate_to_invoice(estimate_id):
         db.session.rollback()
         return jsonify({'error': f'Error converting estimate to invoice: {str(e)}'}), 500
 
+@api.route('/contractor/rates', methods=['GET'])
+@jwt_required()
+def get_contractor_rates():
+    try:
+        contractor_id = get_current_contractor_id()
+ 
+        rates = ContractorRates.query.filter_by(contractor_id=contractor_id).first()
+ 
+        if not rates:
+            rates = ContractorRates(contractor_id=contractor_id)
+            db.session.add(rates)
+            db.session.commit()
+ 
+        return jsonify({'rates': rates.serialize()}), 200
+ 
+    except Exception as e:
+        return jsonify({'error': f'Failed to fetch rates: {str(e)}'}), 500
 
-            
-
-                
-
-
-
-
+@api.route('/contractor/rates', methods=['PUT'])
+@jwt_required()
+def update_contractor_rates():
+    try:
+        contractor_id = get_current_contractor_id()
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+ 
+        rates = ContractorRates.query.filter_by(contractor_id=contractor_id).first()
+        if not rates:
+            rates = ContractorRates(contractor_id=contractor_id)
+            db.session.add(rates)
+ 
+        all_fields = [
+            'paint_base_per_sqft', 'paint_extra_coat_sqft', 'paint_ceiling_sqft',
+            'paint_trim_sqft', 'paint_door_each', 'paint_window_each',
+            'paint_repair_surcharge', 'paint_color_change_pct', 'paint_dark_to_light_pct',
+            'paint_removal_per_sqft', 'paint_baseboard_lft', 'paint_stair_each',
+            'floor_hardwood_sqft', 'floor_engineered_sqft', 'floor_laminate_sqft',
+            'floor_vinyl_sqft', 'floor_tile_ceramic_sqft', 'floor_tile_porcelain_sqft',
+            'floor_carpet_sqft', 'floor_concrete_sqft',
+            'floor_removal_sqft', 'floor_baseboard_lft', 'floor_stair_each',
+            'floor_transition_each', 'floor_diagonal_pct', 'floor_herringbone_pct',
+            'minimum_job_fee', 'travel_fee_per_mile', 'travel_fee_flat',
+            'furniture_moving_room', 'furniture_moving_heavy',
+            'moisture_barrier_sqft', 'floor_leveling_sqft',
+            'floor_leveling_bag', 'heavy_demo_sqft',
+            'backsplash_tile_sqft', 'shower_tile_sqft', 'shower_pan_each',
+        ]
+ 
+        for field in all_fields:
+            if field in data and data[field] is not None:
+                setattr(rates, field, float(data[field]))
+ 
+        db.session.commit()
+        return jsonify({'msg': 'Rates updated successfully', 'rates': rates.serialize()}), 200
+ 
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to update rates: {str(e)}'}), 500

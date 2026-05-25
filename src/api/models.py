@@ -191,6 +191,7 @@ class Contractor(db.Model):
 
     customer: Mapped[list['Customer']] = relationship(
         back_populates='contractor_customer')
+    rates: Mapped['ContractorRates'] = relationship(back_populates='contractor', uselist=False)
     contractor_invoice: Mapped[list['Invoice']] = relationship(
         back_populates='invoice_contractor')
     user: Mapped['User'] = relationship(back_populates='provider')
@@ -205,6 +206,100 @@ class Contractor(db.Model):
 
     __table_args__ = (db.Index('idx_contractor_verified',
                                'is_verified', 'subscription_status', 'plan_type'),)
+
+class ContractorRates(db.Model):
+    __tablename__ = 'contractor_rates'
+ 
+    id            : Mapped[int]     = mapped_column(Integer, primary_key=True)
+    contractor_id : Mapped[int]     = mapped_column(
+        ForeignKey('contractor.id'), nullable=False, unique=True)
+    paint_base_per_sqft     : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=2.50)
+    paint_extra_coat_sqft   : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=0.50)
+    paint_ceiling_sqft      : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=0.75)
+    paint_trim_sqft         : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=0.60)
+    paint_door_each         : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=45.00)
+    paint_window_each       : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=25.00)
+    paint_repair_surcharge  : Mapped[Numeric] = mapped_column(Numeric(5,2), nullable=True, default=25.00)
+    paint_color_change_pct  : Mapped[Numeric] = mapped_column(Numeric(5,2), nullable=True, default=20.00)
+    paint_dark_to_light_pct : Mapped[Numeric] = mapped_column(Numeric(5,2), nullable=True, default=35.00)
+    paint_removal_sqft      : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=1.50)
+    floor_hardwood_sqft       : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=8.00)
+    floor_engineered_sqft     : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=6.50)
+    floor_laminate_sqft       : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=4.50)
+    floor_vinyl_sqft          : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=4.00)
+    floor_tile_ceramic_sqft   : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=7.00)
+    floor_tile_porcelain_sqft : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=9.00)
+    floor_carpet_sqft         : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=3.50)
+    floor_concrete_sqft       : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=5.00)
+
+    floor_removal_sqft      : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=1.50)
+    floor_baseboard_lft     : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=3.00)
+    floor_stair_each        : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=35.00)
+    floor_transition_each   : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=20.00)
+    floor_diagonal_pct      : Mapped[Numeric] = mapped_column(Numeric(5,2), nullable=True, default=15.00)
+    floor_herringbone_pct   : Mapped[Numeric] = mapped_column(Numeric(5,2), nullable=True, default=25.00)
+    minimum_job_fee         : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=250.00)
+    travel_fee_per_mile     : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=1.50)
+    travel_fee_flat         : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=75.00)
+ 
+    furniture_moving_room   : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=75.00)
+    furniture_moving_heavy  : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=150.00)
+    moisture_barrier_sqft   : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=0.65)
+    floor_leveling_sqft     : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=2.00)
+    floor_leveling_bag      : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=65.00)
+    heavy_demo_sqft         : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=3.50)
+    backsplash_tile_sqft    : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=15.00)
+    shower_tile_sqft        : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=25.00)
+    shower_pan_each         : Mapped[Numeric] = mapped_column(Numeric(8,2), nullable=True, default=900.00)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=True)
+ 
+    contractor: Mapped['Contractor'] = relationship(back_populates='rates')
+ 
+    def serialize(self):
+        def f(v, default):
+            return float(v) if v is not None else default
+        return {
+            'id'                      : self.id,
+            'contractor_id'           : self.contractor_id,
+            'paint_base_per_sqft'     : f(self.paint_base_per_sqft,     2.50),
+            'paint_extra_coat_sqft'   : f(self.paint_extra_coat_sqft,   0.50),
+            'paint_ceiling_sqft'      : f(self.paint_ceiling_sqft,      0.75),
+            'paint_trim_sqft'         : f(self.paint_trim_sqft,         0.60),
+            'paint_door_each'         : f(self.paint_door_each,        45.00),
+            'paint_window_each'       : f(self.paint_window_each,      25.00),
+            'paint_repair_surcharge'  : f(self.paint_repair_surcharge,  25.00),
+            'paint_color_change_pct'  : f(self.paint_color_change_pct,  20.00),
+            'paint_dark_to_light_pct' : f(self.paint_dark_to_light_pct, 35.00),
+            'paint_removal_sqft'      : f(self.paint_removal_sqft,      1.50),
+            'floor_hardwood_sqft'       : f(self.floor_hardwood_sqft,        8.00),
+            'floor_engineered_sqft'     : f(self.floor_engineered_sqft,      6.50),
+            'floor_laminate_sqft'       : f(self.floor_laminate_sqft,        4.50),
+            'floor_vinyl_sqft'          : f(self.floor_vinyl_sqft,           4.00),
+            'floor_tile_ceramic_sqft'   : f(self.floor_tile_ceramic_sqft,    7.00),
+            'floor_tile_porcelain_sqft' : f(self.floor_tile_porcelain_sqft,  9.00),
+            'floor_carpet_sqft'         : f(self.floor_carpet_sqft,          3.50),
+            'floor_concrete_sqft'       : f(self.floor_concrete_sqft,        5.00),
+            'floor_removal_sqft'      : f(self.floor_removal_sqft,     1.50),
+            'floor_baseboard_lft'     : f(self.floor_baseboard_lft,    3.00),
+            'floor_stair_each'        : f(self.floor_stair_each,      35.00),
+            'floor_transition_each'   : f(self.floor_transition_each,  20.00),
+            'floor_diagonal_pct'      : f(self.floor_diagonal_pct,     15.00),
+            'floor_herringbone_pct'   : f(self.floor_herringbone_pct,  25.00),
+            'minimum_job_fee'         : f(self.minimum_job_fee,       250.00),
+            'travel_fee_per_mile'     : f(self.travel_fee_per_mile,     1.50),
+            'travel_fee_flat'         : f(self.travel_fee_flat,        75.00),
+            'furniture_moving_room'   : f(self.furniture_moving_room,  75.00),
+            'furniture_moving_heavy'  : f(self.furniture_moving_heavy, 150.00),
+            'moisture_barrier_sqft'   : f(self.moisture_barrier_sqft,   0.65),
+            'floor_leveling_sqft'     : f(self.floor_leveling_sqft,    2.00),
+            'floor_leveling_bag'      : f(self.floor_leveling_bag,    65.00),
+            'heavy_demo_sqft'         : f(self.heavy_demo_sqft,        3.50),
+            'backsplash_tile_sqft'    : f(self.backsplash_tile_sqft,  15.00),
+            'shower_tile_sqft'        : f(self.shower_tile_sqft,      25.00),
+            'shower_pan_each'         : f(self.shower_pan_each,      900.00),
+            'updated_at'              : self.updated_at.isoformat() if self.updated_at else None,
+        }
 
 
 class Customer(db.Model):
