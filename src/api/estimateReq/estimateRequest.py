@@ -60,12 +60,16 @@ def _parse_estimate_fields(data, estimate):
         'customer_name', 'customer_email', 'customer_phone',
         'customer_address', 'description', 'budget_range',
         'desired_colors', 'repairs_detail', 'contractor_notes',
+        'floor_leveling_mode', 'price_breakdown_json'
     ]
     for f in str_fields:
         if f in data:
             setattr(estimate, f, data[f])
  
-    int_fields = ['door_count', 'window_count', 'transition_strips', 'stair_count']
+    int_fields = [
+        'door_count', 'window_count', 'transition_strips', 'stair_count',
+        'furniture_rooms', 'furniture_heavy', 'floor_leveling_bags', 'travel_miles'
+    ]
     for f in int_fields:
         if f in data:
             setattr(estimate, f, int(data[f]) if data[f] is not None else 0)
@@ -74,7 +78,13 @@ def _parse_estimate_fields(data, estimate):
         'include_ceiling', 'include_trim', 'include_doors',
         'client_provides_paint', 'repairs_needed',
         'include_removal', 'include_baseboards', 'include_stairs',
+        'moisture_barrier', 'floor_leveling', 'heavy_demo', 'use_flat_travel'
     ]
+    if 'floor_leveling_mode' in data:
+        estimate.floor_leveling_mode = data['floor_leveling_mode']
+    if 'price_breakdown_json' in data:
+        estimate.price_breakdown_json = data['price_breakdown_json']
+
     for f in bool_fields:
         if f in data:
             setattr(estimate, f, bool(data[f]))

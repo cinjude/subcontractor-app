@@ -747,7 +747,6 @@ class EstimateRequest(db.Model):
     customer_email  : Mapped[str]      = mapped_column(String(120), nullable=False)
     customer_phone  : Mapped[str]      = mapped_column(String(20),  nullable=False)
     customer_address: Mapped[str]      = mapped_column(String(255), nullable=True)   
- 
     estimate_type   : Mapped[str]      = mapped_column(
                         Enum(EstimateType, native_enum=False), nullable=False, server_default="painting")
     service_id      : Mapped[int]      = mapped_column(ForeignKey('services.id'), nullable=True)
@@ -784,6 +783,16 @@ class EstimateRequest(db.Model):
     transition_strips   : Mapped[int]  = mapped_column(Integer, nullable=True, default=0)
     include_stairs      : Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
     stair_count         : Mapped[int]  = mapped_column(Integer, nullable=True, default=0)
+    furniture_rooms     : Mapped[int]  = mapped_column(Integer, nullable=True, default=0)
+    furniture_heavy     : Mapped[int]  = mapped_column(Integer, nullable=True, default=0)
+    moisture_barrier    : Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
+    floor_leveling      : Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
+    floor_leveling_mode : Mapped[str]  = mapped_column(String(10), nullable=True, default='sqft')  # 'sqft' or 'bag'
+    floor_leveling_bags : Mapped[int]  = mapped_column(Integer, nullable=True, default=1)
+    heavy_demo          : Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
+    travel_miles        : Mapped[int]  = mapped_column(Integer, nullable=True, default=0)
+    use_flat_travel     : Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
+    price_breakdown_json: Mapped[str]  = mapped_column(Text(), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
     create_at : Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
@@ -848,6 +857,16 @@ class EstimateRequest(db.Model):
             'stair_count'           : self.stair_count,
             'rooms'                 : [r.serialize() for r in self.rooms],
             'photos'                : [p.serialize() for p in self.photos],
+            'furniture_rooms'       : self.furniture_rooms or 0,
+            'furniture_heavy'       : self.furniture_heavy or 0,
+            'moisture_barrier'      : self.moisture_barrier or False,
+            'floor_leveling'        : self.floor_leveling or False,
+            'floor_leveling_mode'   : self.floor_leveling_mode or 'sqft',
+            'floor_leveling_bags'   : self.floor_leveling_bags or 1,
+            'heavy_demo'            : self.heavy_demo or False,
+            'travel_miles'          : self.travel_miles or 0,
+            'use_flat_travel'       : self.use_flat_travel or False,
+            'price_breakdown_json'  : self.price_breakdown_json,
             'service_id'            : self.service_id,
             'create_at'             : self.create_at.isoformat() if self.create_at else None,
             'updated_at'            : self.updated_at.isoformat() if self.updated_at else None,

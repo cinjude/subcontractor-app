@@ -107,7 +107,7 @@ function RoomRow({ room, index, onChange, onRemove }) {
 }
 
 /* ─── Step progress bar ──────────────────────────────────────────────────── */
-const STEPS = ["Type", "Client", "Rooms", "Details", "Review"];
+const STEPS = ["Type", "Client", "Rooms", "Details", "Extras", "Review"];
 
 function StepBar({ step }) {
     return (
@@ -237,6 +237,15 @@ export default function NewEstimateForm() {
         subfloor_condition: "unknown", flooring_pattern: "straight",
         include_baseboards: false, transition_strips: 0,
         include_stairs: false, stair_count: 0,
+        furniture_rooms: 0,
+        furniture_heavy: 0,
+        moisture_barrier: false,
+        floor_leveling: false,
+        floor_leveling_mode: "sqft",
+        floor_leveling_bags: 1,
+        heavy_demo: false,
+        travel_miles: 0,
+        use_flat_travel: false,
     });
 
     const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -538,8 +547,150 @@ export default function NewEstimateForm() {
                 </div>
             )}
 
-            {/* ── STEP 4 — REVIEW ─────────────────────────────────────────────── */}
             {step === 4 && (
+                <div>
+                    <h6 className="fw-semibold mb-1">Job extras</h6>
+                    <p className="text-muted mb-4" style={{ fontSize: 13 }}>
+                        These are the details most contractors forget to charge for.
+                        Check everything that applies to this job — the price calculator will include them automatically.
+                    </p>
+
+                    {/* ── FURNITURE MOVING ── */}
+                    <div className="card border bg-light mb-3">
+                        <div className="card-header bg-light py-2 px-3 fw-semibold small border-bottom">
+                            🪑 Furniture moving
+                            <span className="text-muted fw-normal ms-2" style={{ fontSize: 11 }}>
+                                — workers tire before install even starts
+                            </span>
+                        </div>
+                        <div className="card-body py-1 px-3">
+                            <Counter
+                                label="Standard rooms"
+                                sub="Sofa, bed, dresser — charged per room"
+                                value={form.furniture_rooms}
+                                onChange={v => set("furniture_rooms", v)}
+                            />
+                            <Counter
+                                label="Heavy items"
+                                sub="Refrigerator, piano, pool table, safe — charged per item"
+                                value={form.furniture_heavy}
+                                onChange={v => set("furniture_heavy", v)}
+                            />
+                        </div>
+                    </div>
+
+                    {/* ── PREP WORK ── */}
+                    {isFlooring && (
+                        <div className="card border bg-light mb-3">
+                            <div className="card-header bg-light py-2 px-3 fw-semibold small border-bottom">
+                                🔧 Prep work
+                                <span className="text-muted fw-normal ms-2" style={{ fontSize: 11 }}>
+                                    — where profit is won or lost
+                                </span>
+                            </div>
+                            <div className="card-body py-1 px-3">
+
+                                {/* Heavy demo — only show if removal is selected */}
+                                {form.include_removal && (
+                                    <Toggle
+                                        id="x_heavydemo"
+                                        label="Heavy demo"
+                                        sub="Tile, glued hardwood, thinset grinding — much harder than carpet tearout"
+                                        value={form.heavy_demo}
+                                        onChange={v => set("heavy_demo", v)}
+                                    />
+                                )}
+
+                                {/* Moisture barrier */}
+                                <Toggle
+                                    id="x_moisture"
+                                    label="Moisture barrier needed"
+                                    sub="Required for LVP, laminate, engineered on concrete — floor fails without it"
+                                    value={form.moisture_barrier}
+                                    onChange={v => set("moisture_barrier", v)}
+                                />
+
+                                {/* Floor leveling */}
+                                <Toggle
+                                    id="x_leveling"
+                                    label="Floor leveling needed"
+                                    sub="Uneven subfloor — self-leveler material + extra labor hours"
+                                    value={form.floor_leveling}
+                                    onChange={v => set("floor_leveling", v)}
+                                />
+                                {form.floor_leveling && (
+                                    <div className="py-2 ps-2">
+                                        <p className="text-muted mb-2" style={{ fontSize: 12 }}>
+                                            How do you charge for leveling?
+                                        </p>
+                                        <div className="d-flex gap-2 mb-2">
+                                            {[
+                                                { value: "sqft", label: "Per sq ft" },
+                                                { value: "bag", label: "Per bag" },
+                                            ].map(o => (
+                                                <button key={o.value} type="button"
+                                                    onClick={() => set("floor_leveling_mode", o.value)}
+                                                    className={`btn btn-sm ${form.floor_leveling_mode === o.value ? "btn-dark" : "btn-outline-secondary"}`}>
+                                                    {o.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {form.floor_leveling_mode === "bag" && (
+                                            <Counter
+                                                label="Estimated bags"
+                                                sub="Each bag of self-leveler covers ~50 sq ft at 1/8 inch depth"
+                                                value={form.floor_leveling_bags}
+                                                onChange={v => set("floor_leveling_bags", v)}
+                                                min={1}
+                                            />
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── TRAVEL ── */}
+                    <div className="card border bg-light mb-3">
+                        <div className="card-header bg-light py-2 px-3 fw-semibold small border-bottom">
+                            🚗 Travel
+                            <span className="text-muted fw-normal ms-2" style={{ fontSize: 11 }}>
+                                — far jobs become unprofitable without this
+                            </span>
+                        </div>
+                        <div className="card-body py-1 px-3">
+                            <Counter
+                                label="One-way miles"
+                                sub="Leave at 0 for local jobs — enter miles for distant jobs"
+                                value={form.travel_miles}
+                                onChange={v => set("travel_miles", v)}
+                                min={0}
+                            />
+                            {form.travel_miles > 0 && (
+                                <Toggle
+                                    id="x_flattravel"
+                                    label="Charge flat travel fee instead of per-mile"
+                                    sub="Use flat rate if you prefer a fixed trip charge"
+                                    value={form.use_flat_travel}
+                                    onChange={v => set("use_flat_travel", v)}
+                                />
+                            )}
+                        </div>
+                    </div>
+
+                    {/* ── MINIMUM JOB FEE INFO ── */}
+                    <div className="alert alert-info d-flex gap-2 align-items-start" style={{ fontSize: 13 }}>
+                        <span>🛡️</span>
+                        <div>
+                            <strong>Minimum job fee</strong> is applied automatically by the calculator
+                            if the total falls below your set minimum. You don't need to enter it here —
+                            it's set once in <strong>Settings → My rates</strong>.
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {step === 5 && (
                 <div>
                     <h6 className="fw-semibold mb-1">Review before creating</h6>
                     <p className="text-muted mb-4" style={{ fontSize: 13 }}>Double-check everything is correct</p>
@@ -624,6 +775,41 @@ export default function NewEstimateForm() {
                             </div>
                         </div>
                     )}
+                    {(form.furniture_rooms > 0 || form.furniture_heavy > 0 ||
+                        form.moisture_barrier || form.floor_leveling ||
+                        form.heavy_demo || form.travel_miles > 0) && (
+                            <div className="card border mb-3">
+                                <div className="card-header bg-light py-2 fw-semibold small">🔧 Extras</div>
+                                <div className="card-body py-2 px-3">
+                                    {form.furniture_rooms > 0 && (
+                                        <RevRow label="Furniture rooms" value={`${form.furniture_rooms} room${form.furniture_rooms > 1 ? "s" : ""}`} />
+                                    )}
+                                    {form.furniture_heavy > 0 && (
+                                        <RevRow label="Heavy items" value={`${form.furniture_heavy} item${form.furniture_heavy > 1 ? "s" : ""}`} />
+                                    )}
+                                    {form.moisture_barrier && (
+                                        <RevRow label="Moisture barrier" value="Yes — included" />
+                                    )}
+                                    {form.floor_leveling && (
+                                        <RevRow label="Floor leveling" value={
+                                            form.floor_leveling_mode === "bag"
+                                                ? `Yes — ${form.floor_leveling_bags} bag${form.floor_leveling_bags > 1 ? "s" : ""}`
+                                                : "Yes — per sq ft"
+                                        } />
+                                    )}
+                                    {form.heavy_demo && (
+                                        <RevRow label="Heavy demo" value="Yes — tile/glued hardwood rate" />
+                                    )}
+                                    {form.travel_miles > 0 && (
+                                        <RevRow label="Travel" value={
+                                            form.use_flat_travel
+                                                ? `Flat fee — ${form.travel_miles} miles`
+                                                : `${form.travel_miles} miles × per-mile rate`
+                                        } />
+                                    )}
+                                </div>
+                            </div>
+                        )}
                 </div>
             )}
 

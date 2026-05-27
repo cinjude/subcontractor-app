@@ -1,15 +1,9 @@
-// src/pages/Estimates/EstimateDetailPage.jsx
-// FINAL VERSION — all three files wired together
-// Only changes from previous version:
-//   1. Destructures convertToInvoice from useEstimate()
-//   2. handleConvertConfirm invoice path calls convertToInvoice() for real
-//   3. navigate paths use your actual route structure
-
 import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEstimate } from "./Estimatecontext.jsx";
 import { useEstimatePDF } from "./Useestimatepdf.js";
 import useGlobalReducer from "../../hooks/useGlobalReducer.jsx";
+import PriceCalculatorModal from "./PriceCalculatorModal.jsx";
 
 const fmt = v => (v ? String(v).replace(/_/g, " ") : null);
 const money = v => v != null ? `$${Number(v).toLocaleString("en-US", { minimumFractionDigits: 2 })}` : null;
@@ -233,50 +227,162 @@ function ConvertModal({ show, type, estimate, onClose, onConfirm }) {
     );
 }
 
-function QuoteModal({ show, estimate, onClose, onSave }) {
-    const [amount, setAmount] = useState(estimate.quoted_amount || "");
-    const [notes, setNotes] = useState(estimate.contractor_notes || "");
-    const [saving, setSaving] = useState(false);
-    const save = async () => {
-        if (!amount) return; setSaving(true);
-        try { await onSave(parseFloat(amount), notes); onClose(); }
-        catch (e) { alert(e.message); } finally { setSaving(false); }
+function QuoteSection({ estimate, onEditQuote }) {
+    const money = v => v != null
+        ? `$${Number(v).toLocaleString("en-US", { minimumFractionDigits: 2 })}`
+        : null;
+
+    // Parse stored breakdown if it exists
+    let breakdown = [];
+    if (estimate.price_breakdown_json) {
+        try { breakdown = JSON.parse(estimate.price_breakdown_json); } catch (e) { }
+    }
+
+    // Group by section
+    const sections = ["Installation", "Prep & extras", "Protection fees"];
+    const grouped = sections.reduce((acc, s) => {
+        acc[s] = breakdown.filter(l => l.section === s);
+        return acc;
+    }, {});
+    const hasBreakdown = breakdown.length > 0;
+
+    // Section colors
+    const sectionIcon = {
+        "Installation": "🔨",
+        "Prep & extras": "🔧",
+        "Protection fees": "🛡️",
     };
-    if (!show) return null;
+
+    if (!estimate.quoted_amount) {
+        return (
+            <div>
+                <button
+                    className="btn btn-outline-success w-100 py-3 fw-semibold"
+                    onClick={onEditQuote}
+                >
+                    💰 Calculate & set quoted price
+                </button>
+                <p className="text-muted text-center mt-2 mb-0" style={{ fontSize: 12 }}>
+                    ⚠ A quoted price is required before converting to job or invoice
+                </p>
+            </div>
+        );
+    }
+
     return (
-        <>
-            <div className="modal-backdrop fade show" onClick={onClose} style={{ zIndex: 1040 }} />
-            <div className="modal fade show d-block" tabIndex="-1" style={{ zIndex: 1050 }}>
-                <div className="modal-dialog modal-dialog-centered">
-                    <div className="modal-content">
-                        <div className="modal-header border-0 pb-0">
-                            <h5 className="modal-title fw-bold">💰 Set quoted price</h5>
-                            <button type="button" className="btn-close" onClick={onClose} />
-                        </div>
-                        <div className="modal-body">
-                            <label className="form-label fw-medium small">Amount ($)</label>
-                            <div className="input-group input-group-lg mb-3">
-                                <span className="input-group-text">$</span>
-                                <input type="number" inputMode="decimal" className="form-control fw-bold text-success"
-                                    style={{ fontSize: 24 }} value={amount}
-                                    onChange={e => setAmount(e.target.value)} placeholder="0.00" autoFocus />
+        <div>
+            {/* Total hero */}
+            <div className="rounded-3 p-3 mb-3"
+                style={{
+                    background: "linear-gradient(135deg,#f0fdf4,#dcfce7)",
+                    border: "1.5px solid #86efac",
+                }}>
+                <div className="d-flex align-items-center justify-content-between mb-1">
+                    <p className="text-success fw-medium small mb-0">Quoted price</p>
+                    <button
+                        className="btn btn-sm btn-outline-success py-0 px-2"
+                        style={{ fontSize: 12 }}
+                        onClick={onEditQuote}
+                    >
+                        ✏️ Edit
+                    </button>
+                </div>
+                <p className="fw-bold text-success mb-0 text-center"
+                    style={{ fontSize: 36, lineHeight: 1 }}>
+                    {money(estimate.quoted_amount)}
+                </p>
+                {estimate.computed_sqft > 0 && (
+                    <p className="text-muted text-center mt-1 mb-0" style={{ fontSize: 12 }}>
+                        ${(estimate.quoted_amount / estimate.computed_sqft).toFixed(2)} per sq ft
+                    </p>
+                )}
+            </div>
+
+            {/* Full breakdown — shown inline if available */}
+            {hasBreakdown ? (
+                <div className="rounded-3 overflow-hidden"
+                    style={{ border: "1px solid #dee2e6" }}>
+                    {sections.map(section => {
+                        const lines = grouped[section];
+                        if (!lines || lines.length === 0) return null;
+                        return (
+                            <div key={section}>
+                                {/* Section header */}
+                                <div className="d-flex align-items-center gap-2 px-3 py-2"
+                                    style={{
+                                        background: "#f8f9fa",
+                                        borderBottom: "1px solid #dee2e6",
+                                        fontSize: 11,
+                                        fontWeight: 600,
+                                        textTransform: "uppercase",
+                                        letterSpacing: ".05em",
+                                        color: "#6c757d",
+                                    }}>
+                                    <span>{sectionIcon[section]}</span>
+                                    <span>{section}</span>
+                                </div>
+
+                                {/* Line items */}
+                                {lines.map((line, i) => (
+                                    <div key={i}
+                                        className="d-flex justify-content-between align-items-center px-3"
+                                        style={{
+                                            padding: "7px 16px",
+                                            borderBottom: i < lines.length - 1
+                                                ? "1px solid #f1f5f9" : "1px solid #dee2e6",
+                                            fontSize: 13,
+                                        }}>
+                                        <span className={line.warn ? "text-warning fw-medium" : "text-muted"}>
+                                            {line.warn ? "⚠ " : ""}{line.description}
+                                        </span>
+                                        <span className={`fw-medium ${line.amount < 0 ? "text-danger" : "text-dark"}`}>
+                                            {line.amount < 0 ? "-" : ""}
+                                            ${Math.abs(Math.round(line.amount)).toLocaleString()}
+                                        </span>
+                                    </div>
+                                ))}
                             </div>
-                            <label className="form-label fw-medium small">Notes for client (included in PDF)</label>
-                            <textarea className="form-control" rows={3}
-                                placeholder="e.g. Includes 2 coats premium paint, labor, cleanup…"
-                                value={notes} onChange={e => setNotes(e.target.value)} />
-                        </div>
-                        <div className="modal-footer border-0 pt-0 gap-2">
-                            <button type="button" className="btn btn-outline-secondary" onClick={onClose}>Cancel</button>
-                            <button type="button" className="btn btn-success fw-semibold flex-fill"
-                                onClick={save} disabled={saving || !amount}>
-                                {saving ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</> : "Save quote"}
-                            </button>
-                        </div>
+                        );
+                    })}
+
+                    {/* Grand total row */}
+                    <div className="d-flex justify-content-between align-items-center px-3 py-3"
+                        style={{ background: "#f0fdf4", borderTop: "1.5px solid #86efac" }}>
+                        <span className="fw-bold" style={{ fontSize: 14 }}>Total quote</span>
+                        <span className="fw-bold text-success" style={{ fontSize: 16 }}>
+                            {money(estimate.quoted_amount)}
+                        </span>
                     </div>
                 </div>
-            </div>
-        </>
+            ) : (
+                /* No breakdown stored yet — show minimal info */
+                <div className="rounded-3 p-3"
+                    style={{ background: "#f8f9fa", border: "1px solid #dee2e6" }}>
+                    <p className="text-muted mb-2" style={{ fontSize: 13 }}>
+                        No breakdown recorded. Open the calculator to generate a detailed breakdown.
+                    </p>
+                    {estimate.contractor_notes && (
+                        <p className="mb-0" style={{ fontSize: 13 }}>
+                            <strong>Notes:</strong> {estimate.contractor_notes}
+                        </p>
+                    )}
+                    <button
+                        className="btn btn-outline-success btn-sm w-100 mt-2"
+                        onClick={onEditQuote}
+                    >
+                        💰 Open price calculator
+                    </button>
+                </div>
+            )}
+
+            {/* Contractor notes below breakdown */}
+            {estimate.contractor_notes && hasBreakdown && (
+                <div className="mt-2 p-3 rounded-3"
+                    style={{ background: "#f8f9fa", border: "1px solid #dee2e6", fontSize: 13 }}>
+                    <strong>Included in quote:</strong> {estimate.contractor_notes}
+                </div>
+            )}
+        </div>
     );
 }
 
@@ -511,11 +617,22 @@ export default function EstimateDetailPage() {
 
     const refresh = () => fetchEstimate(id).then(data => { setEstimate(data.estimate ?? data); });
 
-    const handleQuoteSave = async (amount, notes) => {
-        await updateStatus(id, "new", { quoted_amount: amount, contractor_notes: notes });
+    const handleQuoteSave = async (amount, notes, lines = []) => {
+        const breakdownJson = lines.length > 0 ? JSON.stringify(
+            lines.map(l => ({
+                section: l.section,
+                description: l.label,
+                amount: l.amount,
+                warn: l.warn || false,
+            }))
+        ) : null;
+        await updateStatus(id, "new", {
+            quoted_amount: amount,
+            contractor_notes: notes,
+            price_breakdown_json: breakdownJson,
+        });
         await refresh();
     };
-
     const openConvert = (type = "job") => { setConvertType(type); setShowConvert(true); };
 
     const handleConvertConfirm = async ({ type, jobName, startDate, crew, dueDate, terms }) => {
@@ -615,18 +732,10 @@ export default function EstimateDetailPage() {
                                 {estimate.computed_sqft > 0 && <span className="badge bg-secondary bg-opacity-10 text-secondary border fs-6 px-3 py-2">📐 {Number(estimate.computed_sqft).toFixed(0)} sq ft</span>}
                                 {estimate.budget_range && <span className="badge bg-light text-muted border fs-6 px-3 py-2">💰 {estimate.budget_range.replace(/_/g, " ")}</span>}
                             </div>
-                            {estimate.quoted_amount ? (
-                                <div className="rounded-3 p-3 text-center" style={{ background: "linear-gradient(135deg,#f0fdf4,#dcfce7)", border: "1.5px solid #86efac" }}>
-                                    <p className="text-success mb-1 fw-medium small">Quoted price</p>
-                                    <p className="fw-bold text-success mb-0" style={{ fontSize: 36, lineHeight: 1 }}>{money(estimate.quoted_amount)}</p>
-                                    {estimate.contractor_notes && <p className="text-muted mt-2 mb-0" style={{ fontSize: 13 }}>{estimate.contractor_notes}</p>}
-                                </div>
-                            ) : (
-                                <div>
-                                    <button className="btn btn-outline-success w-100 py-3 fw-semibold" onClick={() => setShowQuote(true)}>💰 Add quoted price</button>
-                                    <p className="text-muted text-center mt-2 mb-0" style={{ fontSize: 12 }}>⚠ A quoted price is required before converting</p>
-                                </div>
-                            )}
+                            <QuoteSection
+                                estimate={estimate}
+                                onEditQuote={() => setShowQuote(true)}
+                            />
                         </div>
                     </div>
 
@@ -870,7 +979,12 @@ export default function EstimateDetailPage() {
                 <div style={{ height: 72 }} />
             </div>
 
-            <QuoteModal show={showQuote} estimate={estimate} onClose={() => setShowQuote(false)} onSave={handleQuoteSave} />
+            <PriceCalculatorModal
+                show={showQuote}
+                estimate={estimate}
+                onClose={() => setShowQuote(false)}
+                onSave={handleQuoteSave}
+            />
             <SendEmailModal show={showEmail} estimate={estimate} contractorInfo={contractorInfo} onClose={() => setShowEmail(false)} />
             <ConvertModal show={showConvert} type={convertType} estimate={estimate} onClose={() => setShowConvert(false)} onConfirm={handleConvertConfirm} />
         </div>
