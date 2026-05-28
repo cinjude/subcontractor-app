@@ -633,6 +633,7 @@ export default function EstimateDetailPage() {
         });
         await refresh();
     };
+
     const openConvert = (type = "job") => { setConvertType(type); setShowConvert(true); };
 
     const handleConvertConfirm = async ({ type, jobName, startDate, crew, dueDate, terms }) => {
@@ -909,6 +910,54 @@ export default function EstimateDetailPage() {
                             <InfoRow label="Stairs" value={estimate.include_stairs ? `${estimate.stair_count} steps` : null} />
                         </SectionCard>
                     )}
+
+                    {(estimate.furniture_rooms > 0 ||
+                        estimate.furniture_heavy > 0 ||
+                        estimate.moisture_barrier ||
+                        estimate.floor_leveling ||
+                        estimate.heavy_demo ||
+                        estimate.travel_miles > 0) && (
+                            <SectionCard title="Job extras" icon="🔧">
+                                {estimate.furniture_rooms > 0 && (
+                                    <InfoRow
+                                        label="Furniture moving"
+                                        value={`${estimate.furniture_rooms} room${estimate.furniture_rooms > 1 ? "s" : ""}`}
+                                    />
+                                )}
+                                {estimate.furniture_heavy > 0 && (
+                                    <InfoRow
+                                        label="Heavy items"
+                                        value={`${estimate.furniture_heavy} item${estimate.furniture_heavy > 1 ? "s" : ""} — fridge / piano / pool table`}
+                                    />
+                                )}
+                                {estimate.moisture_barrier && (
+                                    <InfoRow label="Moisture barrier" value="Yes — included in price" />
+                                )}
+                                {estimate.floor_leveling && (
+                                    <InfoRow
+                                        label="Floor leveling"
+                                        value={
+                                            estimate.floor_leveling_mode === "bag"
+                                                ? `${estimate.floor_leveling_bags || 1} bag${(estimate.floor_leveling_bags || 1) > 1 ? "s" : ""} of self-leveler`
+                                                : "Per sq ft rate"
+                                        }
+                                    />
+                                )}
+                                {estimate.heavy_demo && (
+                                    <InfoRow label="Heavy demo" value="Yes — tile / glued hardwood rate" />
+                                )}
+                                {estimate.travel_miles > 0 && (
+                                    <InfoRow
+                                        label="Travel"
+                                        value={
+                                            estimate.use_flat_travel
+                                                ? `Flat fee — ${estimate.travel_miles} miles`
+                                                : `${estimate.travel_miles} miles × per-mile rate`
+                                        }
+                                    />
+                                )}
+                            </SectionCard>
+                        )}
 
                     {estimate.description && (
                         <SectionCard title="Notes / Special instructions" icon="💬">

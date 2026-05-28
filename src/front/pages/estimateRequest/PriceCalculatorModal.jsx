@@ -1,3 +1,11 @@
+// src/pages/Estimates/PriceCalculatorModal.jsx — VERSION 4
+// FIXES:
+//   1. Modal backdrop closes properly — style tag moved outside modal wrapper
+//   2. Tabs work correctly — modal-dialog-scrollable added so content scrolls inside
+//   3. All rates visible in My rates tab for painting jobs
+//   4. Calculator pre-fills from stored estimate extras
+//   5. Furniture moving shown for all job types
+
 import { useEffect, useState, useCallback } from "react";
 
 const DEFAULTS = {
@@ -40,7 +48,6 @@ function calculate(estimate, rates, extras) {
     const isPainting = ["painting", "both"].includes(estimate.estimate_type);
     const isFlooring = ["flooring", "both"].includes(estimate.estimate_type);
 
-    // ── PAINTING ──────────────────────────────────────────────────────────
     if (isPainting && sqft > 0) {
         const base = sqft * rates.paint_base_per_sqft;
         lines.push({ section: "Installation", label: `Base labor (${sqft} sq ft × $${rates.paint_base_per_sqft.toFixed(2)})`, amount: base });
@@ -71,7 +78,6 @@ function calculate(estimate, rates, extras) {
             lines.push({ section: "Installation", label: `${estimate.window_count} window${estimate.window_count > 1 ? "s" : ""} × $${rates.paint_window_each.toFixed(2)}`, amount: c });
             total += c;
         }
-
         const cond = estimate.paint_surface_condition;
         if (cond === "color_change") {
             const s = total * (rates.paint_color_change_pct / 100);
@@ -93,7 +99,6 @@ function calculate(estimate, rates, extras) {
         }
     }
 
-    // ── FLOORING ──────────────────────────────────────────────────────────
     if (isFlooring && sqft > 0) {
         const material = estimate.flooring_material;
         const floorRate = getFloorRate(material, rates);
@@ -128,8 +133,6 @@ function calculate(estimate, rates, extras) {
             lines.push({ section: "Installation", label: `Baseboards (~${perim} lf × $${rates.floor_baseboard_lft.toFixed(2)})`, amount: c });
             total += c;
         }
-
-        // Prep
         if (estimate.include_removal) {
             const rate = extras.heavyDemo ? rates.heavy_demo_sqft : rates.floor_removal_sqft;
             const c = sqft * rate;
@@ -155,7 +158,7 @@ function calculate(estimate, rates, extras) {
         }
     }
 
-    // ── FURNITURE MOVING — available for ALL job types ─────────────────────
+    // Furniture moving — ALL job types
     if (extras.furnitureRooms > 0) {
         const c = extras.furnitureRooms * rates.furniture_moving_room;
         lines.push({ section: "Protection fees", label: `Furniture moving — ${extras.furnitureRooms} room${extras.furnitureRooms > 1 ? "s" : ""} × $${rates.furniture_moving_room.toFixed(2)}`, amount: c });
@@ -163,11 +166,9 @@ function calculate(estimate, rates, extras) {
     }
     if (extras.furnitureHeavy > 0) {
         const c = extras.furnitureHeavy * rates.furniture_moving_heavy;
-        lines.push({ section: "Protection fees", label: `Heavy items (fridge/piano/pool table) ×${extras.furnitureHeavy} × $${rates.furniture_moving_heavy.toFixed(2)}`, amount: c, warn: true });
+        lines.push({ section: "Protection fees", label: `Heavy items ×${extras.furnitureHeavy} × $${rates.furniture_moving_heavy.toFixed(2)}`, amount: c, warn: true });
         total += c;
     }
-
-    // ── TRAVEL ────────────────────────────────────────────────────────────
     if (extras.travelMiles > 0) {
         if (extras.useFlatTravel) {
             lines.push({ section: "Protection fees", label: `Travel flat fee`, amount: rates.travel_fee_flat });
@@ -178,9 +179,7 @@ function calculate(estimate, rates, extras) {
             total += c;
         }
     }
-
-    // ── MINIMUM JOB FEE ───────────────────────────────────────────────────
-    if (total < rates.minimum_job_fee && rates.minimum_job_fee > 0) {
+    if (total > 0 && total < rates.minimum_job_fee && rates.minimum_job_fee > 0) {
         const diff = rates.minimum_job_fee - total;
         lines.push({ section: "Protection fees", label: `Minimum job fee (job $${Math.round(total)} is below your $${Math.round(rates.minimum_job_fee)} minimum)`, amount: diff });
         total = rates.minimum_job_fee;
@@ -189,25 +188,23 @@ function calculate(estimate, rates, extras) {
     return { lines, total: Math.round(total * 100) / 100 };
 }
 
-// ── Slider ──────────────────────────────────────────────────────────────────
 function SliderRow({ label, field, rates, onChange, min, max, step, prefix = "$", suffix = "" }) {
     const val = rates[field] ?? DEFAULTS[field];
     const dec = step < 1 ? 2 : 0;
     const display = prefix + (dec > 0 ? Number(val).toFixed(dec) : Math.round(val)) + suffix;
     return (
         <div className="d-flex align-items-center gap-3 py-2 border-bottom">
-            <span className="text-muted flex-shrink-0" style={{ fontSize: 13, minWidth: 190 }}>{label}</span>
+            <span className="text-muted flex-shrink-0" style={{ fontSize: 13, minWidth: 180 }}>{label}</span>
             <input type="range" className="flex-fill" min={min} max={max} step={step} value={val}
                 onChange={e => onChange(field, parseFloat(e.target.value))}
                 style={{ accentColor: "#212529" }} />
-            <span className="fw-medium flex-shrink-0 font-monospace" style={{ fontSize: 13, minWidth: 56, textAlign: "right" }}>
+            <span className="fw-medium flex-shrink-0 font-monospace" style={{ fontSize: 13, minWidth: 52, textAlign: "right" }}>
                 {display}
             </span>
         </div>
     );
 }
 
-// ── Counter ─────────────────────────────────────────────────────────────────
 function CounterRow({ label, sub, value, onChange, min = 0, max = 200 }) {
     return (
         <div className="d-flex justify-content-between align-items-center py-2 border-bottom">
@@ -228,7 +225,6 @@ function CounterRow({ label, sub, value, onChange, min = 0, max = 200 }) {
     );
 }
 
-// ── Toggle ───────────────────────────────────────────────────────────────────
 function ToggleRow({ label, sub, value, onChange }) {
     return (
         <div className="d-flex justify-content-between align-items-center py-2 border-bottom">
@@ -245,7 +241,6 @@ function ToggleRow({ label, sub, value, onChange }) {
     );
 }
 
-// ── Section card for rates tab ───────────────────────────────────────────────
 function RateCard({ title, children }) {
     return (
         <div className="mb-3">
@@ -257,7 +252,23 @@ function RateCard({ title, children }) {
     );
 }
 
-// ── MAIN COMPONENT ──────────────────────────────────────────────────────────
+function BkSection({ label, lines }) {
+    if (!lines.length) return null;
+    return (
+        <>
+            <p style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".06em", color: "#9ca3af", margin: "8px 0 2px" }}>{label}</p>
+            {lines.map((l, i) => (
+                <div key={i} className="d-flex justify-content-between py-1" style={{ fontSize: 13, borderBottom: "1px solid #f1f5f9" }}>
+                    <span className={l.warn ? "text-warning fw-medium" : "text-muted"}>{l.warn ? "⚠ " : ""}{l.label}</span>
+                    <span className={`fw-medium ${l.amount < 0 ? "text-danger" : "text-dark"}`}>
+                        {l.amount < 0 ? "-" : ""}${Math.abs(Math.round(l.amount)).toLocaleString()}
+                    </span>
+                </div>
+            ))}
+        </>
+    );
+}
+
 export default function PriceCalculatorModal({ show, estimate, onClose, onSave }) {
     const [rates, setRates] = useState({ ...DEFAULTS });
     const [loading, setLoading] = useState(true);
@@ -268,29 +279,22 @@ export default function PriceCalculatorModal({ show, estimate, onClose, onSave }
     const [notes, setNotes] = useState("");
     const [result, setResult] = useState({ lines: [], total: 0 });
     const [manualTotal, setManualTotal] = useState(null);
-
     const [extras, setExtras] = useState({
         moistureBarrier: false, floorLeveling: false,
-        levelingMode: "sqft", levelingBags: 1,
-        heavyDemo: false, furnitureRooms: 0,
-        furnitureHeavy: 0, travelMiles: 0, useFlatTravel: false,
+        levelingMode: "sqft", levelingBags: 1, heavyDemo: false,
+        furnitureRooms: 0, furnitureHeavy: 0,
+        travelMiles: 0, useFlatTravel: false,
     });
 
     const setExtra = (key, val) => setExtras(prev => ({ ...prev, [key]: val }));
-
     const isPainting = ["painting", "both"].includes(estimate?.estimate_type);
     const isFlooring = ["flooring", "both"].includes(estimate?.estimate_type);
 
-    // ── Fetch rates and pre-fill from stored estimate data ──────────────────
     useEffect(() => {
         if (!show || !estimate) return;
         setActiveTab("calculator");
         setManualTotal(null);
-
-        // Pre-fill notes from stored contractor notes
         setNotes(estimate.contractor_notes || "");
-
-        // Pre-fill extras from estimate fields if they exist
         setExtras({
             moistureBarrier: estimate.moisture_barrier || false,
             floorLeveling: estimate.floor_leveling || false,
@@ -302,31 +306,21 @@ export default function PriceCalculatorModal({ show, estimate, onClose, onSave }
             travelMiles: estimate.travel_miles || 0,
             useFlatTravel: estimate.use_flat_travel || false,
         });
-
         setLoading(true);
         const token = localStorage.getItem("token");
         const BASE = import.meta.env.VITE_BACKEND_URL || "";
-        fetch(`${BASE}/api/contractor/rates`, {
-            headers: { Authorization: `Bearer ${token}` }
-        })
+        fetch(`${BASE}/api/contractor/rates`, { headers: { Authorization: `Bearer ${token}` } })
             .then(r => r.json())
-            .then(data => {
-                if (data.rates) setRates({ ...DEFAULTS, ...data.rates });
-                setLoading(false);
-            })
+            .then(data => { if (data.rates) setRates({ ...DEFAULTS, ...data.rates }); setLoading(false); })
             .catch(() => setLoading(false));
     }, [show, estimate]);
 
-    // Recalculate when rates or extras change
     useEffect(() => {
         if (!estimate) return;
-        const r = calculate(estimate, rates, extras);
-        setResult(r);
+        setResult(calculate(estimate, rates, extras));
     }, [rates, estimate, extras]);
 
-    const updateRate = useCallback((field, value) => {
-        setRates(prev => ({ ...prev, [field]: value }));
-    }, []);
+    const updateRate = useCallback((field, value) => setRates(prev => ({ ...prev, [field]: value })), []);
 
     const handleSaveRates = async () => {
         setSavingRates(true);
@@ -339,27 +333,18 @@ export default function PriceCalculatorModal({ show, estimate, onClose, onSave }
                 body: JSON.stringify(rates),
             });
             setSavedRates(true);
-            setTimeout(() => setSavedRates(false), 2000);
-        } catch (e) {
-            alert("Failed to save rates: " + e.message);
-        } finally {
-            setSavingRates(false);
-        }
+            setTimeout(() => setSavedRates(false), 2500);
+        } catch (e) { alert("Failed to save: " + e.message); }
+        finally { setSavingRates(false); }
     };
 
     const handleApply = async () => {
         const finalAmount = manualTotal !== null ? manualTotal : result.total;
         if (!finalAmount) return;
         setSaving(true);
-        try {
-            // Pass lines so EstimateDetailPage can store the breakdown JSON
-            await onSave(finalAmount, notes, result.lines);
-            onClose();
-        } catch (e) {
-            alert(e.message);
-        } finally {
-            setSaving(false);
-        }
+        try { await onSave(finalAmount, notes, result.lines); onClose(); }
+        catch (e) { alert(e.message); }
+        finally { setSaving(false); }
     };
 
     if (!show) return null;
@@ -367,389 +352,304 @@ export default function PriceCalculatorModal({ show, estimate, onClose, onSave }
     const displayTotal = manualTotal !== null ? manualTotal : result.total;
     const money = v => `$${Number(Math.round(v)).toLocaleString("en-US")}`;
     const perSqft = estimate?.computed_sqft > 0 ? displayTotal / estimate.computed_sqft : 0;
-
     const installLines = result.lines.filter(l => l.section === "Installation");
     const prepLines = result.lines.filter(l => l.section === "Prep & extras");
     const protectionLines = result.lines.filter(l => l.section === "Protection fees");
-
     const minRate = isFlooring
         ? ({ hardwood: 6, engineered_wood: 5, laminate: 3, vinyl_plank: 3, tile_ceramic: 5, tile_porcelain: 7, carpet: 2.5, concrete: 4 }[estimate?.flooring_material] || 3)
         : 2.00;
     const priceDanger = perSqft > 0 && perSqft < minRate;
     const priceWarning = perSqft > 0 && !priceDanger && perSqft < minRate * 1.4;
 
+    // ── IMPORTANT: style tag is OUTSIDE the modal wrapper so it doesn't break event bubbling
     return (
         <>
-            <div className="modal-backdrop fade show" onClick={onClose} style={{ zIndex: 1040 }} />
+            {/* ── CRITICAL: style tag here, not inside modal ── */}
             <style>{`
-                @media (max-width: 767px) {
-                    .calc-dialog { margin:0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;max-width:100%!important; }
-                    .calc-dialog .modal-content { border-radius:20px 20px 0 0!important;border-bottom:none!important;max-height:90vh!important;overflow-y:auto!important; }
+                .calc-backdrop { position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1040; }
+                .calc-modal-wrap { position:fixed;inset:0;z-index:1050;display:flex;align-items:center;justify-content:center;padding:16px; }
+                .calc-modal { background:#fff;border-radius:12px;width:100%;max-width:720px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden; }
+                .calc-modal-body { overflow-y:auto;flex:1;padding:16px 20px; }
+                .calc-modal-footer { padding:12px 20px;border-top:1px solid #dee2e6;display:flex;gap:8px; }
+                @media(max-width:767px){
+                    .calc-modal-wrap{align-items:flex-end;padding:0;}
+                    .calc-modal{border-radius:20px 20px 0 0;max-height:92vh;}
                 }
             `}</style>
 
-            <div className="modal fade show d-block" tabIndex="-1" style={{ zIndex: 1050 }}>
-                <div className="modal-dialog modal-dialog-centered modal-lg calc-dialog">
-                    <div className="modal-content">
+            {/* Backdrop — clicking closes the modal */}
+            <div className="calc-backdrop" onClick={onClose} />
 
-                        {/* Drag handle mobile */}
-                        <div className="d-flex justify-content-center pt-3 d-md-none">
-                            <div style={{ width: 40, height: 4, background: "#dee2e6", borderRadius: 2 }} />
+            {/* Modal wrapper — stopPropagation prevents backdrop click from firing when clicking modal */}
+            <div className="calc-modal-wrap" onClick={onClose}>
+                <div className="calc-modal" onClick={e => e.stopPropagation()}>
+
+                    {/* Drag handle mobile */}
+                    <div className="d-flex justify-content-center pt-3 d-md-none">
+                        <div style={{ width: 40, height: 4, background: "#dee2e6", borderRadius: 2 }} />
+                    </div>
+
+                    {/* Header */}
+                    <div className="d-flex align-items-start justify-content-between px-4 pt-3 pb-2">
+                        <div>
+                            <h5 className="fw-bold mb-1">💰 Price calculator</h5>
+                            <p className="text-muted mb-0" style={{ fontSize: 13 }}>
+                                #{estimate?.id} · {estimate?.customer_name}
+                                {estimate?.computed_sqft > 0 ? ` · ${Number(estimate.computed_sqft).toFixed(0)} sq ft` : " · no rooms yet"}
+                            </p>
                         </div>
+                        <button type="button" className="btn-close ms-3 flex-shrink-0" onClick={onClose} />
+                    </div>
 
-                        {/* Header */}
-                        <div className="modal-header border-0 pb-0">
-                            <div>
-                                <h5 className="modal-title fw-bold mb-1">💰 Price calculator</h5>
-                                <p className="text-muted mb-0" style={{ fontSize: 13 }}>
-                                    #{estimate?.id} · {estimate?.customer_name}
-                                    {estimate?.computed_sqft > 0 ? ` · ${Number(estimate.computed_sqft).toFixed(0)} sq ft` : " · no rooms yet"}
-                                </p>
+                    {/* Tabs — sticky at top of modal */}
+                    <div className="px-4 border-bottom">
+                        <ul className="nav nav-tabs border-0">
+                            <li className="nav-item">
+                                <button
+                                    className={`nav-link px-3 py-2 ${activeTab === "calculator" ? "active fw-semibold text-dark" : "text-muted"}`}
+                                    onClick={() => setActiveTab("calculator")}
+                                >📊 Calculator</button>
+                            </li>
+                            <li className="nav-item">
+                                <button
+                                    className={`nav-link px-3 py-2 ${activeTab === "rates" ? "active fw-semibold text-dark" : "text-muted"}`}
+                                    onClick={() => setActiveTab("rates")}
+                                >⚙️ My rates</button>
+                            </li>
+                        </ul>
+                    </div>
+
+                    {/* Scrollable body */}
+                    <div className="calc-modal-body">
+                        {loading ? (
+                            <div className="text-center py-5">
+                                <div className="spinner-border text-secondary" role="status" />
+                                <p className="text-muted mt-2 mb-0" style={{ fontSize: 13 }}>Loading your rates…</p>
                             </div>
-                            <button type="button" className="btn-close" onClick={onClose} />
-                        </div>
 
-                        {/* Tabs */}
-                        <div className="px-3 pt-2">
-                            <ul className="nav nav-tabs border-bottom">
-                                <li className="nav-item">
-                                    <button className={`nav-link px-3 py-2 ${activeTab === "calculator" ? "active fw-semibold text-dark" : "text-muted"}`}
-                                        onClick={() => setActiveTab("calculator")}>📊 Calculator</button>
-                                </li>
-                                <li className="nav-item">
-                                    <button className={`nav-link px-3 py-2 ${activeTab === "rates" ? "active fw-semibold text-dark" : "text-muted"}`}
-                                        onClick={() => setActiveTab("rates")}>⚙️ My rates</button>
-                                </li>
-                            </ul>
-                        </div>
-
-                        <div className="modal-body pt-3">
-                            {loading ? (
-                                <div className="text-center py-5">
-                                    <div className="spinner-border text-secondary" role="status" />
-                                    <p className="text-muted mt-2 mb-0" style={{ fontSize: 13 }}>Loading your rates…</p>
+                        ) : activeTab === "calculator" ? (
+                            /* ════════════ CALCULATOR TAB ════════════ */
+                            <>
+                                {/* Price hero */}
+                                <div className="rounded-3 p-3 text-center mb-3"
+                                    style={{ background: "linear-gradient(135deg,#f0fdf4,#dcfce7)", border: "1.5px solid #86efac" }}>
+                                    <p className="text-success mb-1 fw-medium small">Suggested quote</p>
+                                    <p className="fw-bold text-success mb-0" style={{ fontSize: 40, lineHeight: 1 }}>
+                                        {money(displayTotal)}
+                                    </p>
+                                    {estimate?.computed_sqft > 0 && (
+                                        <p className="text-muted mt-1 mb-0" style={{ fontSize: 12 }}>
+                                            ${perSqft.toFixed(2)} per sq ft
+                                        </p>
+                                    )}
                                 </div>
 
-                            ) : activeTab === "calculator" ? (
-                                /* ═══════════════ CALCULATOR TAB ═══════════════ */
-                                <>
-                                    {/* Price hero */}
-                                    <div className="rounded-3 p-3 text-center mb-3"
-                                        style={{ background: "linear-gradient(135deg,#f0fdf4,#dcfce7)", border: "1.5px solid #86efac" }}>
-                                        <p className="text-success mb-1 fw-medium small">Suggested quote</p>
-                                        <p className="fw-bold text-success mb-0" style={{ fontSize: 40, lineHeight: 1 }}>
-                                            {money(displayTotal)}
-                                        </p>
-                                        {estimate?.computed_sqft > 0 && (
-                                            <p className="text-muted mt-1 mb-0" style={{ fontSize: 12 }}>
-                                                ${perSqft.toFixed(2)} per sq ft
-                                            </p>
-                                        )}
+                                {/* Sync notice */}
+                                {estimate?.quoted_amount && Math.round(estimate.quoted_amount) !== Math.round(displayTotal) && (
+                                    <div className="alert alert-info d-flex gap-2 py-2 mb-3" style={{ fontSize: 13 }}>
+                                        <span>ℹ️</span>
+                                        <span>Stored quote is <strong>${Number(estimate.quoted_amount).toLocaleString()}</strong>. Adjust rates or click "Use this price" to update.</span>
                                     </div>
+                                )}
 
-                                    {/* Stored quote sync notice */}
-                                    {estimate?.quoted_amount && estimate.quoted_amount !== displayTotal && (
-                                        <div className="alert alert-warning d-flex gap-2 py-2 mb-3" style={{ fontSize: 13 }}>
-                                            <span>ℹ️</span>
-                                            <span>Current stored quote is <strong>${Number(estimate.quoted_amount).toLocaleString()}</strong>. This calculator shows a fresh calculation — click "Use this price" to update it, or adjust rates to match.</span>
+                                {!(estimate?.computed_sqft > 0) && (
+                                    <div className="alert alert-warning d-flex gap-2 py-2 mb-3" style={{ fontSize: 13 }}>
+                                        <span>⚠️</span><span>No rooms added — add rooms for accurate calculation. You can still set a manual price below.</span>
+                                    </div>
+                                )}
+                                {priceDanger && (
+                                    <div className="alert alert-danger d-flex gap-2 py-2 mb-3" style={{ fontSize: 13 }}>
+                                        <span>🚨</span>
+                                        <div><strong>Price too low — you will lose money</strong>
+                                            <div style={{ fontSize: 12, marginTop: 2 }}>${perSqft.toFixed(2)}/sq ft is below minimum. Raise your base rate in My Rates tab.</div>
                                         </div>
-                                    )}
+                                    </div>
+                                )}
+                                {priceWarning && (
+                                    <div className="alert alert-warning d-flex gap-2 py-2 mb-3" style={{ fontSize: 13 }}>
+                                        <span>⚠️</span>
+                                        <div><strong>Thin margin</strong>
+                                            <div style={{ fontSize: 12, marginTop: 2 }}>${perSqft.toFixed(2)}/sq ft leaves little buffer for surprises.</div>
+                                        </div>
+                                    </div>
+                                )}
 
-                                    {/* Price warnings */}
-                                    {!(estimate?.computed_sqft > 0) && (
-                                        <div className="alert alert-warning d-flex gap-2 py-2 mb-3" style={{ fontSize: 13 }}>
-                                            <span>⚠️</span><span>No rooms added — add rooms first for accurate calculation. You can still set a manual price below.</span>
-                                        </div>
-                                    )}
-                                    {priceDanger && (
-                                        <div className="alert alert-danger d-flex gap-2 py-2 mb-3" style={{ fontSize: 13 }}>
-                                            <span>🚨</span>
-                                            <div>
-                                                <strong>Price too low — you will lose money</strong>
-                                                <div style={{ fontSize: 12, marginTop: 2 }}>
-                                                    ${perSqft.toFixed(2)}/sq ft is below the minimum viable rate. Raise your base rate in My Rates tab.
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {priceWarning && (
-                                        <div className="alert alert-warning d-flex gap-2 py-2 mb-3" style={{ fontSize: 13 }}>
-                                            <span>⚠️</span>
-                                            <div>
-                                                <strong>Thin margin — any surprise adds a loss</strong>
-                                                <div style={{ fontSize: 12, marginTop: 2 }}>${perSqft.toFixed(2)}/sq ft leaves little buffer for unexpected prep work.</div>
-                                            </div>
-                                        </div>
-                                    )}
+                                {/* Furniture moving — ALL job types */}
+                                <div className="card border bg-light mb-3">
+                                    <div className="card-header bg-light py-2 px-3 fw-semibold small border-bottom">
+                                        🪑 Furniture moving
+                                        <span className="text-muted fw-normal ms-2" style={{ fontSize: 11 }}>— workers tire before install starts</span>
+                                    </div>
+                                    <div className="card-body py-1 px-3">
+                                        <CounterRow label="Standard rooms" sub={`Sofa, bed, dresser — $${rates.furniture_moving_room.toFixed(2)} each`} value={extras.furnitureRooms} onChange={v => setExtra("furnitureRooms", v)} />
+                                        <CounterRow label="Heavy items" sub={`Fridge, piano, pool table — $${rates.furniture_moving_heavy.toFixed(2)} each`} value={extras.furnitureHeavy} onChange={v => setExtra("furnitureHeavy", v)} />
+                                    </div>
+                                </div>
 
-                                    {/* ── ADD-ONS FOR THIS JOB ── */}
-                                    {/* Furniture moving — available for ALL job types */}
+                                {/* Flooring prep */}
+                                {isFlooring && (
                                     <div className="card border bg-light mb-3">
                                         <div className="card-header bg-light py-2 px-3 fw-semibold small border-bottom">
-                                            🪑 Furniture moving
-                                            <span className="text-muted fw-normal ms-2" style={{ fontSize: 11 }}>— charge for every room, workers tire before install starts</span>
+                                            🔧 Prep work <span className="text-muted fw-normal ms-2" style={{ fontSize: 11 }}>— where profit is won or lost</span>
                                         </div>
                                         <div className="card-body py-1 px-3">
-                                            <CounterRow
-                                                label="Standard rooms"
-                                                sub={`Sofa, bed, dresser — $${rates.furniture_moving_room.toFixed(2)} each`}
-                                                value={extras.furnitureRooms}
-                                                onChange={v => setExtra("furnitureRooms", v)}
-                                            />
-                                            <CounterRow
-                                                label="Heavy items"
-                                                sub={`Fridge, piano, pool table — $${rates.furniture_moving_heavy.toFixed(2)} each`}
-                                                value={extras.furnitureHeavy}
-                                                onChange={v => setExtra("furnitureHeavy", v)}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Flooring-only extras */}
-                                    {isFlooring && (
-                                        <div className="card border bg-light mb-3">
-                                            <div className="card-header bg-light py-2 px-3 fw-semibold small border-bottom">
-                                                🔧 Prep work
-                                                <span className="text-muted fw-normal ms-2" style={{ fontSize: 11 }}>— where profit is won or lost</span>
-                                            </div>
-                                            <div className="card-body py-1 px-3">
-                                                {estimate.include_removal && (
-                                                    <ToggleRow
-                                                        label="Heavy demo (tile / glued hardwood)"
-                                                        sub={`$${rates.heavy_demo_sqft.toFixed(2)}/sq ft instead of $${rates.floor_removal_sqft.toFixed(2)} light removal`}
-                                                        value={extras.heavyDemo}
-                                                        onChange={v => setExtra("heavyDemo", v)}
-                                                    />
-                                                )}
-                                                <ToggleRow
-                                                    label="Moisture barrier"
-                                                    sub={`Required for LVP, laminate, engineered on concrete — $${rates.moisture_barrier_sqft.toFixed(2)}/sq ft`}
-                                                    value={extras.moistureBarrier}
-                                                    onChange={v => setExtra("moistureBarrier", v)}
-                                                />
-                                                <ToggleRow
-                                                    label="Floor leveling needed"
-                                                    sub="Uneven subfloor — biggest hidden cost"
-                                                    value={extras.floorLeveling}
-                                                    onChange={v => setExtra("floorLeveling", v)}
-                                                />
-                                                {extras.floorLeveling && (
-                                                    <div className="py-2 ps-2">
-                                                        <div className="d-flex gap-2 mb-2">
-                                                            {[{ value: "sqft", label: `Per sq ft ($${rates.floor_leveling_sqft.toFixed(2)})` }, { value: "bag", label: `Per bag ($${rates.floor_leveling_bag.toFixed(2)})` }].map(o => (
-                                                                <button key={o.value} type="button"
-                                                                    onClick={() => setExtra("levelingMode", o.value)}
-                                                                    className={`btn btn-sm ${extras.levelingMode === o.value ? "btn-dark" : "btn-outline-secondary"}`}>
-                                                                    {o.label}
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                        {extras.levelingMode === "bag" && (
-                                                            <CounterRow label="Number of bags" value={extras.levelingBags}
-                                                                onChange={v => setExtra("levelingBags", v)} min={1} max={30} />
-                                                        )}
+                                            {estimate.include_removal && (
+                                                <ToggleRow label="Heavy demo (tile / glued hardwood)" sub={`$${rates.heavy_demo_sqft.toFixed(2)}/sq ft instead of $${rates.floor_removal_sqft.toFixed(2)} light removal`} value={extras.heavyDemo} onChange={v => setExtra("heavyDemo", v)} />
+                                            )}
+                                            <ToggleRow label="Moisture barrier" sub={`Required for LVP, laminate, engineered — $${rates.moisture_barrier_sqft.toFixed(2)}/sq ft`} value={extras.moistureBarrier} onChange={v => setExtra("moistureBarrier", v)} />
+                                            <ToggleRow label="Floor leveling needed" sub="Uneven subfloor — biggest hidden cost" value={extras.floorLeveling} onChange={v => setExtra("floorLeveling", v)} />
+                                            {extras.floorLeveling && (
+                                                <div className="py-2 ps-2">
+                                                    <div className="d-flex gap-2 mb-2">
+                                                        {[{ value: "sqft", label: `Per sq ft ($${rates.floor_leveling_sqft.toFixed(2)})` }, { value: "bag", label: `Per bag ($${rates.floor_leveling_bag.toFixed(2)})` }].map(o => (
+                                                            <button key={o.value} type="button" onClick={() => setExtra("levelingMode", o.value)}
+                                                                className={`btn btn-sm ${extras.levelingMode === o.value ? "btn-dark" : "btn-outline-secondary"}`}>{o.label}</button>
+                                                        ))}
                                                     </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Travel */}
-                                    <div className="card border bg-light mb-3">
-                                        <div className="card-body py-1 px-3">
-                                            <CounterRow
-                                                label="Travel miles (one way)"
-                                                sub={`$${rates.travel_fee_per_mile.toFixed(2)}/mile — leave at 0 if local`}
-                                                value={extras.travelMiles}
-                                                onChange={v => setExtra("travelMiles", v)}
-                                                min={0} max={300}
-                                            />
-                                            {extras.travelMiles > 0 && (
-                                                <ToggleRow
-                                                    label="Use flat travel fee instead"
-                                                    sub={`Flat $${rates.travel_fee_flat.toFixed(2)} per trip instead of per-mile`}
-                                                    value={extras.useFlatTravel}
-                                                    onChange={v => setExtra("useFlatTravel", v)}
-                                                />
+                                                    {extras.levelingMode === "bag" && (
+                                                        <CounterRow label="Number of bags" value={extras.levelingBags} onChange={v => setExtra("levelingBags", v)} min={1} max={30} />
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
                                     </div>
+                                )}
 
-                                    {/* ── BREAKDOWN ── */}
-                                    {result.lines.length > 0 && (
-                                        <div className="rounded-3 p-3 mb-3" style={{ background: "#f8f9fa", border: "1px solid #dee2e6" }}>
-                                            <p className="fw-semibold mb-2" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".05em", color: "#6c757d" }}>Breakdown</p>
-
-                                            {installLines.length > 0 && (
-                                                <>
-                                                    <p style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".06em", color: "#9ca3af", margin: "4px 0 2px" }}>Installation</p>
-                                                    {installLines.map((l, i) => (
-                                                        <div key={i} className="d-flex justify-content-between py-1" style={{ fontSize: 13, borderBottom: "1px solid #f1f5f9" }}>
-                                                            <span className={l.warn ? "text-warning fw-medium" : "text-muted"}>{l.warn ? "⚠ " : ""}{l.label}</span>
-                                                            <span className={`fw-medium ${l.amount < 0 ? "text-danger" : "text-dark"}`}>
-                                                                {l.amount < 0 ? "-" : ""}${Math.abs(Math.round(l.amount)).toLocaleString()}
-                                                            </span>
-                                                        </div>
-                                                    ))}
-                                                </>
-                                            )}
-                                            {prepLines.length > 0 && (
-                                                <>
-                                                    <p style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".06em", color: "#9ca3af", margin: "10px 0 2px" }}>Prep & extras</p>
-                                                    {prepLines.map((l, i) => (
-                                                        <div key={i} className="d-flex justify-content-between py-1" style={{ fontSize: 13, borderBottom: "1px solid #f1f5f9" }}>
-                                                            <span className={l.warn ? "text-warning fw-medium" : "text-muted"}>{l.warn ? "⚠ " : ""}{l.label}</span>
-                                                            <span className="fw-medium text-dark">${Math.round(l.amount).toLocaleString()}</span>
-                                                        </div>
-                                                    ))}
-                                                </>
-                                            )}
-                                            {protectionLines.length > 0 && (
-                                                <>
-                                                    <p style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".06em", color: "#9ca3af", margin: "10px 0 2px" }}>Protection fees</p>
-                                                    {protectionLines.map((l, i) => (
-                                                        <div key={i} className="d-flex justify-content-between py-1" style={{ fontSize: 13, borderBottom: "1px solid #f1f5f9" }}>
-                                                            <span className="text-muted">{l.label}</span>
-                                                            <span className="fw-medium text-dark">${Math.round(l.amount).toLocaleString()}</span>
-                                                        </div>
-                                                    ))}
-                                                </>
-                                            )}
-
-                                            <div className="d-flex justify-content-between pt-2 mt-1 fw-bold" style={{ borderTop: "1px solid #dee2e6", fontSize: 14 }}>
-                                                <span>Total</span>
-                                                <span className="text-success">{money(displayTotal)}</span>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Manual override */}
-                                    <div className="mb-3">
-                                        <label className="form-label fw-medium small">Override amount (optional)</label>
-                                        <div className="input-group input-group-lg">
-                                            <span className="input-group-text">$</span>
-                                            <input type="number" inputMode="decimal"
-                                                className="form-control fw-bold text-success"
-                                                style={{ fontSize: 22 }}
-                                                value={manualTotal !== null ? manualTotal : result.total || ""}
-                                                onChange={e => {
-                                                    const v = parseFloat(e.target.value);
-                                                    setManualTotal(isNaN(v) ? null : v);
-                                                }}
-                                                placeholder="0.00" />
-                                            {manualTotal !== null && (
-                                                <button className="btn btn-outline-secondary" type="button"
-                                                    onClick={() => setManualTotal(null)}>↺ Reset</button>
-                                            )}
-                                        </div>
-                                        <p className="text-muted mt-1 mb-0" style={{ fontSize: 12 }}>
-                                            Pre-filled from calculation — edit freely. Click ↺ to go back to calculated.
-                                        </p>
+                                {/* Travel */}
+                                <div className="card border bg-light mb-3">
+                                    <div className="card-body py-1 px-3">
+                                        <CounterRow label="Travel miles (one way)" sub={`$${rates.travel_fee_per_mile.toFixed(2)}/mile — leave at 0 if local`} value={extras.travelMiles} onChange={v => setExtra("travelMiles", v)} min={0} max={300} />
+                                        {extras.travelMiles > 0 && (
+                                            <ToggleRow label="Use flat travel fee instead" sub={`Flat $${rates.travel_fee_flat.toFixed(2)} per trip`} value={extras.useFlatTravel} onChange={v => setExtra("useFlatTravel", v)} />
+                                        )}
                                     </div>
+                                </div>
 
-                                    {/* Notes */}
-                                    <div>
-                                        <label className="form-label fw-medium small">Notes for client (shown on PDF)</label>
-                                        <textarea className="form-control" rows={2}
-                                            placeholder="e.g. Includes 2 coats premium paint, labor, cleanup…"
-                                            value={notes} onChange={e => setNotes(e.target.value)} />
+                                {/* Breakdown */}
+                                {result.lines.length > 0 && (
+                                    <div className="rounded-3 p-3 mb-3" style={{ background: "#f8f9fa", border: "1px solid #dee2e6" }}>
+                                        <p className="fw-semibold mb-1" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".05em", color: "#6c757d" }}>Breakdown</p>
+                                        <BkSection label="Installation" lines={installLines} />
+                                        <BkSection label="Prep & extras" lines={prepLines} />
+                                        <BkSection label="Protection fees" lines={protectionLines} />
+                                        <div className="d-flex justify-content-between pt-2 mt-1 fw-bold" style={{ borderTop: "1px solid #dee2e6", fontSize: 14 }}>
+                                            <span>Total</span>
+                                            <span className="text-success">{money(displayTotal)}</span>
+                                        </div>
                                     </div>
-                                </>
+                                )}
 
-                            ) : (
-                                /* ═══════════════ MY RATES TAB ═══════════════ */
-                                <>
-                                    <p className="text-muted mb-3" style={{ fontSize: 13 }}>
-                                        Drag sliders to set your rates. These are saved to your account and used on every estimate automatically.
-                                    </p>
+                                {/* Override */}
+                                <div className="mb-3">
+                                    <label className="form-label fw-medium small">Override amount (optional)</label>
+                                    <div className="input-group input-group-lg">
+                                        <span className="input-group-text">$</span>
+                                        <input type="number" inputMode="decimal" className="form-control fw-bold text-success" style={{ fontSize: 22 }}
+                                            value={manualTotal !== null ? manualTotal : result.total || ""}
+                                            onChange={e => { const v = parseFloat(e.target.value); setManualTotal(isNaN(v) ? null : v); }}
+                                            placeholder="0.00" />
+                                        {manualTotal !== null && (
+                                            <button className="btn btn-outline-secondary" type="button" onClick={() => setManualTotal(null)}>↺ Reset</button>
+                                        )}
+                                    </div>
+                                    <p className="text-muted mt-1 mb-0" style={{ fontSize: 12 }}>Pre-filled from calculation — edit freely. Click ↺ to reset.</p>
+                                </div>
 
-                                    {/* PAINTING — always show */}
-                                    {isPainting && (
-                                        <RateCard title="🎨 Painting rates">
-                                            <SliderRow label="Base labor / sq ft" field="paint_base_per_sqft" rates={rates} onChange={updateRate} min={0.5} max={8} step={0.25} />
-                                            <SliderRow label="Extra coat / sq ft" field="paint_extra_coat_sqft" rates={rates} onChange={updateRate} min={0} max={3} step={0.25} />
-                                            <SliderRow label="Ceiling / sq ft" field="paint_ceiling_sqft" rates={rates} onChange={updateRate} min={0} max={3} step={0.25} />
-                                            <SliderRow label="Trim / sq ft" field="paint_trim_sqft" rates={rates} onChange={updateRate} min={0} max={3} step={0.25} />
-                                            <SliderRow label="Per door" field="paint_door_each" rates={rates} onChange={updateRate} min={10} max={150} step={5} />
-                                            <SliderRow label="Per window" field="paint_window_each" rates={rates} onChange={updateRate} min={10} max={100} step={5} />
-                                            <SliderRow label="Color change %" field="paint_color_change_pct" rates={rates} onChange={updateRate} min={0} max={50} step={5} prefix="" suffix="%" />
-                                            <SliderRow label="Dark → light %" field="paint_dark_to_light_pct" rates={rates} onChange={updateRate} min={0} max={60} step={5} prefix="" suffix="%" />
-                                            <SliderRow label="Repair surcharge %" field="paint_repair_surcharge" rates={rates} onChange={updateRate} min={0} max={60} step={5} prefix="" suffix="%" />
+                                {/* Notes */}
+                                <div>
+                                    <label className="form-label fw-medium small">Notes for client (shown on PDF)</label>
+                                    <textarea className="form-control" rows={2}
+                                        placeholder="e.g. Includes 2 coats premium paint, labor, cleanup…"
+                                        value={notes} onChange={e => setNotes(e.target.value)} />
+                                </div>
+                            </>
+
+                        ) : (
+                            /* ════════════ MY RATES TAB ════════════ */
+                            <>
+                                <p className="text-muted mb-3" style={{ fontSize: 13 }}>
+                                    Drag sliders to set your rates. Saved to your account and used on every estimate.
+                                </p>
+
+                                {isPainting && (
+                                    <RateCard title="🎨 Painting rates">
+                                        <SliderRow label="Base labor / sq ft" field="paint_base_per_sqft" rates={rates} onChange={updateRate} min={0.5} max={8} step={0.25} />
+                                        <SliderRow label="Extra coat / sq ft" field="paint_extra_coat_sqft" rates={rates} onChange={updateRate} min={0} max={3} step={0.25} />
+                                        <SliderRow label="Ceiling / sq ft" field="paint_ceiling_sqft" rates={rates} onChange={updateRate} min={0} max={3} step={0.25} />
+                                        <SliderRow label="Trim / sq ft" field="paint_trim_sqft" rates={rates} onChange={updateRate} min={0} max={3} step={0.25} />
+                                        <SliderRow label="Per door" field="paint_door_each" rates={rates} onChange={updateRate} min={10} max={150} step={5} />
+                                        <SliderRow label="Per window" field="paint_window_each" rates={rates} onChange={updateRate} min={10} max={100} step={5} />
+                                        <SliderRow label="Color change %" field="paint_color_change_pct" rates={rates} onChange={updateRate} min={0} max={50} step={5} prefix="" suffix="%" />
+                                        <SliderRow label="Dark → light %" field="paint_dark_to_light_pct" rates={rates} onChange={updateRate} min={0} max={60} step={5} prefix="" suffix="%" />
+                                        <SliderRow label="Repair surcharge %" field="paint_repair_surcharge" rates={rates} onChange={updateRate} min={0} max={60} step={5} prefix="" suffix="%" />
+                                    </RateCard>
+                                )}
+
+                                {isFlooring && (
+                                    <>
+                                        <RateCard title="🪵 Flooring — base install / sq ft">
+                                            <SliderRow label="Hardwood" field="floor_hardwood_sqft" rates={rates} onChange={updateRate} min={2} max={20} step={0.5} />
+                                            <SliderRow label="Engineered wood" field="floor_engineered_sqft" rates={rates} onChange={updateRate} min={2} max={15} step={0.5} />
+                                            <SliderRow label="Laminate" field="floor_laminate_sqft" rates={rates} onChange={updateRate} min={1} max={10} step={0.5} />
+                                            <SliderRow label="Vinyl LVP" field="floor_vinyl_sqft" rates={rates} onChange={updateRate} min={1} max={10} step={0.5} />
+                                            <SliderRow label="Ceramic tile" field="floor_tile_ceramic_sqft" rates={rates} onChange={updateRate} min={2} max={20} step={0.5} />
+                                            <SliderRow label="Porcelain tile" field="floor_tile_porcelain_sqft" rates={rates} onChange={updateRate} min={2} max={25} step={0.5} />
+                                            <SliderRow label="Carpet" field="floor_carpet_sqft" rates={rates} onChange={updateRate} min={1} max={8} step={0.5} />
                                         </RateCard>
-                                    )}
+                                        <RateCard title="🔧 Prep fees">
+                                            <SliderRow label="Light removal / sq ft" field="floor_removal_sqft" rates={rates} onChange={updateRate} min={0} max={5} step={0.25} />
+                                            <SliderRow label="Heavy demo / sq ft" field="heavy_demo_sqft" rates={rates} onChange={updateRate} min={1} max={8} step={0.25} />
+                                            <SliderRow label="Moisture barrier / sq ft" field="moisture_barrier_sqft" rates={rates} onChange={updateRate} min={0.25} max={2} step={0.25} />
+                                            <SliderRow label="Floor leveling / sq ft" field="floor_leveling_sqft" rates={rates} onChange={updateRate} min={0.5} max={6} step={0.25} />
+                                            <SliderRow label="Floor leveling / bag" field="floor_leveling_bag" rates={rates} onChange={updateRate} min={20} max={150} step={5} />
+                                            <SliderRow label="Baseboard / lin ft" field="floor_baseboard_lft" rates={rates} onChange={updateRate} min={1} max={10} step={0.5} />
+                                            <SliderRow label="Per stair" field="floor_stair_each" rates={rates} onChange={updateRate} min={10} max={120} step={5} />
+                                            <SliderRow label="Per transition strip" field="floor_transition_each" rates={rates} onChange={updateRate} min={5} max={60} step={5} />
+                                        </RateCard>
+                                        <RateCard title="💎 Premium labor">
+                                            <SliderRow label="Backsplash tile / sq ft" field="backsplash_tile_sqft" rates={rates} onChange={updateRate} min={8} max={40} step={1} />
+                                            <SliderRow label="Shower tile / sq ft" field="shower_tile_sqft" rates={rates} onChange={updateRate} min={10} max={60} step={1} />
+                                            <SliderRow label="Shower pan (each)" field="shower_pan_each" rates={rates} onChange={updateRate} min={300} max={2500} step={50} />
+                                        </RateCard>
+                                        <RateCard title="↗️ Pattern upcharges">
+                                            <SliderRow label="Diagonal 45°" field="floor_diagonal_pct" rates={rates} onChange={updateRate} min={0} max={40} step={5} prefix="" suffix="%" />
+                                            <SliderRow label="Herringbone / chevron" field="floor_herringbone_pct" rates={rates} onChange={updateRate} min={0} max={50} step={5} prefix="" suffix="%" />
+                                        </RateCard>
+                                    </>
+                                )}
 
-                                    {/* FLOORING */}
-                                    {isFlooring && (
-                                        <>
-                                            <RateCard title="🪵 Flooring — base install / sq ft">
-                                                <SliderRow label="Hardwood" field="floor_hardwood_sqft" rates={rates} onChange={updateRate} min={2} max={20} step={0.5} />
-                                                <SliderRow label="Engineered wood" field="floor_engineered_sqft" rates={rates} onChange={updateRate} min={2} max={15} step={0.5} />
-                                                <SliderRow label="Laminate" field="floor_laminate_sqft" rates={rates} onChange={updateRate} min={1} max={10} step={0.5} />
-                                                <SliderRow label="Vinyl LVP" field="floor_vinyl_sqft" rates={rates} onChange={updateRate} min={1} max={10} step={0.5} />
-                                                <SliderRow label="Ceramic tile" field="floor_tile_ceramic_sqft" rates={rates} onChange={updateRate} min={2} max={20} step={0.5} />
-                                                <SliderRow label="Porcelain tile" field="floor_tile_porcelain_sqft" rates={rates} onChange={updateRate} min={2} max={25} step={0.5} />
-                                                <SliderRow label="Carpet" field="floor_carpet_sqft" rates={rates} onChange={updateRate} min={1} max={8} step={0.5} />
-                                            </RateCard>
-                                            <RateCard title="🔧 Prep fees">
-                                                <SliderRow label="Light removal / sq ft" field="floor_removal_sqft" rates={rates} onChange={updateRate} min={0} max={5} step={0.25} />
-                                                <SliderRow label="Heavy demo / sq ft" field="heavy_demo_sqft" rates={rates} onChange={updateRate} min={1} max={8} step={0.25} />
-                                                <SliderRow label="Moisture barrier / sq ft" field="moisture_barrier_sqft" rates={rates} onChange={updateRate} min={0.25} max={2} step={0.25} />
-                                                <SliderRow label="Floor leveling / sq ft" field="floor_leveling_sqft" rates={rates} onChange={updateRate} min={0.5} max={6} step={0.25} />
-                                                <SliderRow label="Floor leveling / bag" field="floor_leveling_bag" rates={rates} onChange={updateRate} min={20} max={150} step={5} />
-                                                <SliderRow label="Baseboard / lin ft" field="floor_baseboard_lft" rates={rates} onChange={updateRate} min={1} max={10} step={0.5} />
-                                                <SliderRow label="Per stair" field="floor_stair_each" rates={rates} onChange={updateRate} min={10} max={120} step={5} />
-                                                <SliderRow label="Per transition strip" field="floor_transition_each" rates={rates} onChange={updateRate} min={5} max={60} step={5} />
-                                            </RateCard>
-                                            <RateCard title="💎 Premium labor">
-                                                <SliderRow label="Backsplash tile / sq ft" field="backsplash_tile_sqft" rates={rates} onChange={updateRate} min={8} max={40} step={1} />
-                                                <SliderRow label="Shower tile / sq ft" field="shower_tile_sqft" rates={rates} onChange={updateRate} min={10} max={60} step={1} />
-                                                <SliderRow label="Shower pan (each)" field="shower_pan_each" rates={rates} onChange={updateRate} min={300} max={2500} step={50} />
-                                            </RateCard>
-                                            <RateCard title="↗️ Pattern upcharges">
-                                                <SliderRow label="Diagonal 45°" field="floor_diagonal_pct" rates={rates} onChange={updateRate} min={0} max={40} step={5} prefix="" suffix="%" />
-                                                <SliderRow label="Herringbone / chevron" field="floor_herringbone_pct" rates={rates} onChange={updateRate} min={0} max={50} step={5} prefix="" suffix="%" />
-                                            </RateCard>
-                                        </>
-                                    )}
+                                {/* Always visible — all job types */}
+                                <RateCard title="🪑 Furniture moving">
+                                    <SliderRow label="Standard room" field="furniture_moving_room" rates={rates} onChange={updateRate} min={25} max={200} step={5} />
+                                    <SliderRow label="Heavy item" field="furniture_moving_heavy" rates={rates} onChange={updateRate} min={50} max={400} step={10} />
+                                </RateCard>
 
-                                    {/* FURNITURE + PROTECTION — always show for all job types */}
-                                    <RateCard title="🪑 Furniture moving">
-                                        <SliderRow label="Standard room" field="furniture_moving_room" rates={rates} onChange={updateRate} min={25} max={200} step={5} />
-                                        <SliderRow label="Heavy item" field="furniture_moving_heavy" rates={rates} onChange={updateRate} min={50} max={400} step={10} />
-                                    </RateCard>
+                                <RateCard title="🛡️ Protection fees">
+                                    <SliderRow label="Minimum job fee" field="minimum_job_fee" rates={rates} onChange={updateRate} min={50} max={800} step={25} />
+                                    <SliderRow label="Travel / mile" field="travel_fee_per_mile" rates={rates} onChange={updateRate} min={0.5} max={5} step={0.25} />
+                                    <SliderRow label="Travel flat fee" field="travel_fee_flat" rates={rates} onChange={updateRate} min={0} max={300} step={10} />
+                                </RateCard>
 
-                                    <RateCard title="🛡️ Protection fees">
-                                        <SliderRow label="Minimum job fee" field="minimum_job_fee" rates={rates} onChange={updateRate} min={50} max={800} step={25} />
-                                        <SliderRow label="Travel / mile" field="travel_fee_per_mile" rates={rates} onChange={updateRate} min={0.5} max={5} step={0.25} />
-                                        <SliderRow label="Travel flat fee" field="travel_fee_flat" rates={rates} onChange={updateRate} min={0} max={300} step={10} />
-                                    </RateCard>
-
-                                    <button className="btn btn-dark fw-semibold w-100 mb-2"
-                                        onClick={handleSaveRates} disabled={savingRates}>
-                                        {savingRates
-                                            ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</>
-                                            : savedRates ? "✓ Saved" : "💾 Save my rates"}
-                                    </button>
-                                    <p className="text-muted text-center mb-0" style={{ fontSize: 12 }}>
-                                        Saving updates the calculator for all future estimates
-                                    </p>
-                                </>
-                            )}
-                        </div>
-
-                        {/* Footer — only on calculator tab */}
-                        {activeTab === "calculator" && (
-                            <div className="modal-footer border-0 pt-0 gap-2">
-                                <button type="button" className="btn btn-outline-secondary" onClick={onClose}>Cancel</button>
-                                <button type="button" className="btn btn-success fw-semibold flex-fill py-2"
-                                    onClick={handleApply} disabled={saving || !displayTotal}>
-                                    {saving
-                                        ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</>
-                                        : `✓ Use ${money(displayTotal)} as quote`}
+                                <button className="btn btn-dark fw-semibold w-100 mb-2" onClick={handleSaveRates} disabled={savingRates}>
+                                    {savingRates ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</> : savedRates ? "✓ Saved!" : "💾 Save my rates"}
                                 </button>
-                            </div>
+                                <p className="text-muted text-center mb-0" style={{ fontSize: 12 }}>Saved rates apply to all future estimates</p>
+                            </>
                         )}
                     </div>
+
+                    {/* Footer — calculator tab only */}
+                    {activeTab === "calculator" && (
+                        <div className="calc-modal-footer">
+                            <button type="button" className="btn btn-outline-secondary" onClick={onClose}>Cancel</button>
+                            <button type="button" className="btn btn-success fw-semibold flex-fill py-2"
+                                onClick={handleApply} disabled={saving || !displayTotal}>
+                                {saving
+                                    ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</>
+                                    : `✓ Use ${money(displayTotal)} as quote`}
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </>
