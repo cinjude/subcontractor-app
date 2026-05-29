@@ -342,9 +342,16 @@ export default function PriceCalculatorModal({ show, estimate, onClose, onSave }
         const finalAmount = manualTotal !== null ? manualTotal : result.total;
         if (!finalAmount) return;
         setSaving(true);
-        try { await onSave(finalAmount, notes, result.lines); onClose(); }
-        catch (e) { alert(e.message); }
-        finally { setSaving(false); }
+        try {
+            // Pass extras as 4th argument so EstimateDetailPage can save them back
+            // to the estimate record — this is what makes them show in the detail page
+            await onSave(finalAmount, notes, result.lines, extras);
+            onClose();
+        } catch (e) {
+            alert(e.message);
+        } finally {
+            setSaving(false);
+        }
     };
 
     if (!show) return null;

@@ -617,19 +617,35 @@ export default function EstimateDetailPage() {
 
     const refresh = () => fetchEstimate(id).then(data => { setEstimate(data.estimate ?? data); });
 
-    const handleQuoteSave = async (amount, notes, lines = []) => {
-        const breakdownJson = lines.length > 0 ? JSON.stringify(
-            lines.map(l => ({
-                section: l.section,
-                description: l.label,
-                amount: l.amount,
-                warn: l.warn || false,
-            }))
-        ) : null;
+    const handleQuoteSave = async (amount, notes, lines = [], extrasFromModal = {}) => {
+        // Build the breakdown JSON from the lines the calculator produced
+        const breakdownJson = lines.length > 0
+            ? JSON.stringify(
+                lines.map(l => ({
+                    section: l.section,
+                    description: l.label,
+                    amount: l.amount,
+                    warn: l.warn || false,
+                }))
+            )
+            : null;
+
+        // Save quoted amount + notes + breakdown + all extras back to the estimate
         await updateStatus(id, "new", {
             quoted_amount: amount,
             contractor_notes: notes,
             price_breakdown_json: breakdownJson,
+            // Sync extras from the modal back to the estimate record
+            // so they show in the detail page and are saved for next time
+            furniture_rooms: extrasFromModal.furnitureRooms ?? estimate.furniture_rooms ?? 0,
+            furniture_heavy: extrasFromModal.furnitureHeavy ?? estimate.furniture_heavy ?? 0,
+            moisture_barrier: extrasFromModal.moistureBarrier ?? estimate.moisture_barrier ?? false,
+            floor_leveling: extrasFromModal.floorLeveling ?? estimate.floor_leveling ?? false,
+            floor_leveling_mode: extrasFromModal.levelingMode ?? estimate.floor_leveling_mode ?? "sqft",
+            floor_leveling_bags: extrasFromModal.levelingBags ?? estimate.floor_leveling_bags ?? 1,
+            heavy_demo: extrasFromModal.heavyDemo ?? estimate.heavy_demo ?? false,
+            travel_miles: extrasFromModal.travelMiles ?? estimate.travel_miles ?? 0,
+            use_flat_travel: extrasFromModal.useFlatTravel ?? estimate.use_flat_travel ?? false,
         });
         await refresh();
     };
@@ -911,12 +927,14 @@ export default function EstimateDetailPage() {
                         </SectionCard>
                     )}
 
-                    {(estimate.furniture_rooms > 0 ||
-                        estimate.furniture_heavy > 0 ||
-                        estimate.moisture_barrier ||
-                        estimate.floor_leveling ||
-                        estimate.heavy_demo ||
-                        estimate.travel_miles > 0) && (
+                    {(
+                        (estimate.furniture_rooms > 0) ||
+                        (estimate.furniture_heavy > 0) ||
+                        estimate.moisture_barrier === true ||
+                        estimate.floor_leveling === true ||
+                        estimate.heavy_demo === true ||
+                        (estimate.travel_miles > 0)
+                    ) && (
                             <SectionCard title="Job extras" icon="🔧">
                                 {estimate.furniture_rooms > 0 && (
                                     <InfoRow
@@ -930,10 +948,10 @@ export default function EstimateDetailPage() {
                                         value={`${estimate.furniture_heavy} item${estimate.furniture_heavy > 1 ? "s" : ""} — fridge / piano / pool table`}
                                     />
                                 )}
-                                {estimate.moisture_barrier && (
+                                {estimate.moisture_barrier === true && (
                                     <InfoRow label="Moisture barrier" value="Yes — included in price" />
                                 )}
-                                {estimate.floor_leveling && (
+                                {estimate.floor_leveling === true && (
                                     <InfoRow
                                         label="Floor leveling"
                                         value={
@@ -943,7 +961,7 @@ export default function EstimateDetailPage() {
                                         }
                                     />
                                 )}
-                                {estimate.heavy_demo && (
+                                {estimate.heavy_demo === true && (
                                     <InfoRow label="Heavy demo" value="Yes — tile / glued hardwood rate" />
                                 )}
                                 {estimate.travel_miles > 0 && (

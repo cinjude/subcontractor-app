@@ -339,34 +339,69 @@ def update_estimate(estimate_id):
 def update_estimate_status(estimate_id):
     try:
         contractor_id = get_current_contractor_id()
-        estimate = EstimateRequest.query.filter_by(id=estimate_id, contractor_id=contractor_id).first()
-
+        estimate = EstimateRequest.query.filter_by(
+            id=estimate_id, contractor_id=contractor_id
+        ).first()
+ 
         if not estimate:
             return jsonify({'error': 'Estimate not found or unauthorized'}), 404
-
+ 
         data = request.get_json()
-        new_status = data['status']
-
+        new_status = data.get('status')
+ 
         if not new_status:
             return jsonify({'error': 'No status provided'}), 400
-
+ 
         try:
             estimate.status = EstimateStatus(new_status)
         except ValueError:
-            return jsonify({'error': f'Invalid status: {new_status}. Valid: new, converted, rejected '}), 400
+            return jsonify({'error': f'Invalid status: {new_status}'}), 400
 
         if 'quoted_amount' in data and data['quoted_amount'] is not None:
             estimate.quoted_amount = float(data['quoted_amount'])
+ 
         if 'contractor_notes' in data:
             estimate.contractor_notes = data['contractor_notes']
-        
+
+        int_extra_fields = ['furniture_rooms', 'furniture_heavy', 'floor_leveling_bags', 'travel_miles']
+        for f in int_extra_fields:
+            if f in data and data[f] is not None:
+                setattr(estimate, f, int(data[f]))
+ 
+        bool_extra_fields = ['moisture_barrier', 'floor_leveling', 'heavy_demo', 'use_flat_travel']
+        for f in bool_extra_fields:
+            if f in data:
+                setattr(estimate, f, bool(data[f]))
+
+        if 'price_breakdown_json' in data:
+            estimate.price_breakdown_json = data['price_breakdown_json']
+ 
+        int_extra_fields = [
+            'furniture_rooms', 'furniture_heavy',
+            'floor_leveling_bags', 'travel_miles'
+        ]
+        for f in int_extra_fields:
+            if f in data and data[f] is not None:
+                setattr(estimate, f, int(data[f]))
+ 
+        bool_extra_fields = [
+            'moisture_barrier', 'floor_leveling',
+            'heavy_demo', 'use_flat_travel'
+        ]
+        for f in bool_extra_fields:
+            if f in data:
+                setattr(estimate, f, bool(data[f]))
+ 
+        if 'floor_leveling_mode' in data:
+            estimate.floor_leveling_mode = data['floor_leveling_mode']
+ 
         db.session.commit()
-        
+ 
         return jsonify({
             'msg': 'Estimate status updated successfully',
             'estimate': estimate.serialize()
         }), 200
-        
+ 
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Failed to update estimate status: {str(e)}'}), 500
