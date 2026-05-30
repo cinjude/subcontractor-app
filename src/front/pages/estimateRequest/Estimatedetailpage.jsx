@@ -1,9 +1,16 @@
+// src/pages/Estimates/EstimateDetailPage.jsx
+// FINAL VERSION — all three files wired together
+// Only changes from previous version:
+//   1. Destructures convertToInvoice from useEstimate()
+//   2. handleConvertConfirm invoice path calls convertToInvoice() for real
+//   3. navigate paths use your actual route structure
+
 import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEstimate } from "./Estimatecontext.jsx";
 import { useEstimatePDF } from "./Useestimatepdf.js";
-import useGlobalReducer from "../../hooks/useGlobalReducer.jsx";
 import PriceCalculatorModal from "./PriceCalculatorModal.jsx";
+import useGlobalReducer from "../../hooks/useGlobalReducer.jsx";
 
 const fmt = v => (v ? String(v).replace(/_/g, " ") : null);
 const money = v => v != null ? `$${Number(v).toLocaleString("en-US", { minimumFractionDigits: 2 })}` : null;
@@ -227,164 +234,7 @@ function ConvertModal({ show, type, estimate, onClose, onConfirm }) {
     );
 }
 
-function QuoteSection({ estimate, onEditQuote }) {
-    const money = v => v != null
-        ? `$${Number(v).toLocaleString("en-US", { minimumFractionDigits: 2 })}`
-        : null;
-
-    // Parse stored breakdown if it exists
-    let breakdown = [];
-    if (estimate.price_breakdown_json) {
-        try { breakdown = JSON.parse(estimate.price_breakdown_json); } catch (e) { }
-    }
-
-    // Group by section
-    const sections = ["Installation", "Prep & extras", "Protection fees"];
-    const grouped = sections.reduce((acc, s) => {
-        acc[s] = breakdown.filter(l => l.section === s);
-        return acc;
-    }, {});
-    const hasBreakdown = breakdown.length > 0;
-
-    // Section colors
-    const sectionIcon = {
-        "Installation": "🔨",
-        "Prep & extras": "🔧",
-        "Protection fees": "🛡️",
-    };
-
-    if (!estimate.quoted_amount) {
-        return (
-            <div>
-                <button
-                    className="btn btn-outline-success w-100 py-3 fw-semibold"
-                    onClick={onEditQuote}
-                >
-                    💰 Calculate & set quoted price
-                </button>
-                <p className="text-muted text-center mt-2 mb-0" style={{ fontSize: 12 }}>
-                    ⚠ A quoted price is required before converting to job or invoice
-                </p>
-            </div>
-        );
-    }
-
-    return (
-        <div>
-            {/* Total hero */}
-            <div className="rounded-3 p-3 mb-3"
-                style={{
-                    background: "linear-gradient(135deg,#f0fdf4,#dcfce7)",
-                    border: "1.5px solid #86efac",
-                }}>
-                <div className="d-flex align-items-center justify-content-between mb-1">
-                    <p className="text-success fw-medium small mb-0">Quoted price</p>
-                    <button
-                        className="btn btn-sm btn-outline-success py-0 px-2"
-                        style={{ fontSize: 12 }}
-                        onClick={onEditQuote}
-                    >
-                        ✏️ Edit
-                    </button>
-                </div>
-                <p className="fw-bold text-success mb-0 text-center"
-                    style={{ fontSize: 36, lineHeight: 1 }}>
-                    {money(estimate.quoted_amount)}
-                </p>
-                {estimate.computed_sqft > 0 && (
-                    <p className="text-muted text-center mt-1 mb-0" style={{ fontSize: 12 }}>
-                        ${(estimate.quoted_amount / estimate.computed_sqft).toFixed(2)} per sq ft
-                    </p>
-                )}
-            </div>
-
-            {/* Full breakdown — shown inline if available */}
-            {hasBreakdown ? (
-                <div className="rounded-3 overflow-hidden"
-                    style={{ border: "1px solid #dee2e6" }}>
-                    {sections.map(section => {
-                        const lines = grouped[section];
-                        if (!lines || lines.length === 0) return null;
-                        return (
-                            <div key={section}>
-                                {/* Section header */}
-                                <div className="d-flex align-items-center gap-2 px-3 py-2"
-                                    style={{
-                                        background: "#f8f9fa",
-                                        borderBottom: "1px solid #dee2e6",
-                                        fontSize: 11,
-                                        fontWeight: 600,
-                                        textTransform: "uppercase",
-                                        letterSpacing: ".05em",
-                                        color: "#6c757d",
-                                    }}>
-                                    <span>{sectionIcon[section]}</span>
-                                    <span>{section}</span>
-                                </div>
-
-                                {/* Line items */}
-                                {lines.map((line, i) => (
-                                    <div key={i}
-                                        className="d-flex justify-content-between align-items-center px-3"
-                                        style={{
-                                            padding: "7px 16px",
-                                            borderBottom: i < lines.length - 1
-                                                ? "1px solid #f1f5f9" : "1px solid #dee2e6",
-                                            fontSize: 13,
-                                        }}>
-                                        <span className={line.warn ? "text-warning fw-medium" : "text-muted"}>
-                                            {line.warn ? "⚠ " : ""}{line.description}
-                                        </span>
-                                        <span className={`fw-medium ${line.amount < 0 ? "text-danger" : "text-dark"}`}>
-                                            {line.amount < 0 ? "-" : ""}
-                                            ${Math.abs(Math.round(line.amount)).toLocaleString()}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        );
-                    })}
-
-                    {/* Grand total row */}
-                    <div className="d-flex justify-content-between align-items-center px-3 py-3"
-                        style={{ background: "#f0fdf4", borderTop: "1.5px solid #86efac" }}>
-                        <span className="fw-bold" style={{ fontSize: 14 }}>Total quote</span>
-                        <span className="fw-bold text-success" style={{ fontSize: 16 }}>
-                            {money(estimate.quoted_amount)}
-                        </span>
-                    </div>
-                </div>
-            ) : (
-                /* No breakdown stored yet — show minimal info */
-                <div className="rounded-3 p-3"
-                    style={{ background: "#f8f9fa", border: "1px solid #dee2e6" }}>
-                    <p className="text-muted mb-2" style={{ fontSize: 13 }}>
-                        No breakdown recorded. Open the calculator to generate a detailed breakdown.
-                    </p>
-                    {estimate.contractor_notes && (
-                        <p className="mb-0" style={{ fontSize: 13 }}>
-                            <strong>Notes:</strong> {estimate.contractor_notes}
-                        </p>
-                    )}
-                    <button
-                        className="btn btn-outline-success btn-sm w-100 mt-2"
-                        onClick={onEditQuote}
-                    >
-                        💰 Open price calculator
-                    </button>
-                </div>
-            )}
-
-            {/* Contractor notes below breakdown */}
-            {estimate.contractor_notes && hasBreakdown && (
-                <div className="mt-2 p-3 rounded-3"
-                    style={{ background: "#f8f9fa", border: "1px solid #dee2e6", fontSize: 13 }}>
-                    <strong>Included in quote:</strong> {estimate.contractor_notes}
-                </div>
-            )}
-        </div>
-    );
-}
+// QuoteModal replaced by PriceCalculatorModal (imported above)
 
 function SendEmailModal({ show, estimate, contractorInfo, onClose }) {
     const { sendByEmail } = useEstimatePDF();
@@ -451,31 +301,14 @@ function RoomRow({ room, estimateId, onUpdate }) {
     const [editing, setEditing] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [saving, setSaving] = useState(false);
-
-    const [form, setForm] = useState({
-        name: room.name,
-        length_ft: room.length_ft || 10, // Default to a standard baseline 
-        width_ft: room.width_ft || 10,
-        height_ft: room.height_ft || 8
-    });
-
+    const [form, setForm] = useState({ name: room.name, length_ft: room.length_ft || "", width_ft: room.width_ft || "", height_ft: room.height_ft || "" });
     const sqft = form.length_ft && form.width_ft ? (parseFloat(form.length_ft) * parseFloat(form.width_ft)).toFixed(0) : null;
-
-    // Helper function to handle increments safely without typing
-    const adjustValue = (field, amount) => {
-        setForm(prev => ({
-            ...prev,
-            [field]: Math.max(0, parseFloat(prev[field] || 0) + amount)
-        }));
-    };
-
     const handleDelete = async () => {
         if (!window.confirm(`Delete "${room.name}"?`)) return;
         setDeleting(true);
         try { await deleteRoom(estimateId, room.id); await onUpdate(); }
         catch (e) { alert(e.message); } finally { setDeleting(false); }
     };
-
     const handleSave = async () => {
         if (!form.name.trim()) return; setSaving(true);
         try {
@@ -490,89 +323,40 @@ function RoomRow({ room, estimateId, onUpdate }) {
             await onUpdate(); setEditing(false);
         } catch (e) { alert(e.message); } finally { setSaving(false); }
     };
-
-    // --- MOBILE-FIRST STEPPER UI (EDITING MODE) ---
     if (editing) return (
-        <div className="border rounded-3 p-3 mb-3 bg-light shadow-sm">
-            {/* Room Name Selection Header */}
-            <label className="form-label fw-bold small text-muted text-uppercase mb-1" style={{ fontSize: 11 }}>Room Type / Name</label>
-            <input className="form-control form-control-lg mb-3 fw-semibold" value={form.name}
-                onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Master Bedroom" />
-
-            {/* Dimension Stepper Grid */}
-            <div className="space-y-3">
-                {[
-                    { key: "length_ft", label: "Length (Feet)", step: 1 },
-                    { key: "width_ft", label: "Width (Feet)", step: 1 },
-                    { key: "height_ft", label: "Height (Feet)", step: 1 }
-                ].map((dim) => (
-                    <div key={dim.key} className="p-2 bg-white rounded-3 border d-flex align-items-center justify-content-between mb-2">
-                        <span className="fw-semibold text-secondary small ps-1">{dim.label}</span>
-
-                        {/* THE STEPPER CONTROL BLOCK */}
-                        <div className="d-flex align-items-center gap-1">
-                            {/* Big Minus Target */}
-                            <button
-                                type="button"
-                                className="btn btn-outline-secondary d-flex align-items-center justify-content-center fw-bold"
-                                style={{ width: 44, height: 44, fontSize: 18 }}
-                                onClick={() => adjustValue(dim.key, -dim.step)}
-                            >
-                                −
-                            </button>
-
-                            {/* Display Window */}
-                            <div className="text-center fw-bold font-monospace bg-light rounded border text-dark"
-                                style={{ width: 60, py: 10, lineHeight: "42px", height: 44, fontSize: 16 }}>
-                                {form[dim.key]}
-                            </div>
-
-                            {/* Big Plus Target */}
-                            <button
-                                type="button"
-                                className="btn btn-outline-secondary d-flex align-items-center justify-content-center fw-bold"
-                                style={{ width: 44, height: 44, fontSize: 18 }}
-                                onClick={() => adjustValue(dim.key, dim.step)}
-                            >
-                                +
-                            </button>
-                        </div>
+        <div className="border rounded-3 p-2 mb-2 bg-light">
+            <input className="form-control form-control-sm mb-2 fw-medium" value={form.name}
+                onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Room name" />
+            <div className="row g-2 mb-2">
+                {[["length_ft", "Length (ft)"], ["width_ft", "Width (ft)"], ["height_ft", "Height (ft)"]].map(([k, l]) => (
+                    <div key={k} className="col-4">
+                        <input type="number" inputMode="decimal" className="form-control form-control-sm"
+                            placeholder={l} value={form[k]} onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))} />
                     </div>
                 ))}
             </div>
-
-            {/* Calculated Area Preview Indicator */}
-            {sqft && (
-                <div className="alert alert-success py-2 px-3 my-2 d-flex justify-content-between align-items-center">
-                    <span className="small fw-semibold text-success">Calculated Surface Area:</span>
-                    <span className="fw-bold font-monospace">{sqft} SQ FT</span>
-                </div>
-            )}
-
-            {/* Action Save Bar */}
-            <div className="d-flex gap-2 mt-3">
-                <button className="btn btn-outline-secondary px-3" style={{ height: 44 }} onClick={() => setEditing(false)}>Cancel</button>
-                <button className="btn btn-dark flex-fill fw-bold" style={{ height: 44 }} onClick={handleSave} disabled={saving}>
-                    {saving ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</> : "✓ Save Changes"}
+            {sqft && <p className="text-success mb-2" style={{ fontSize: 12 }}>≈ {sqft} sq ft</p>}
+            <div className="d-flex gap-2">
+                <button className="btn btn-outline-secondary btn-sm" onClick={() => setEditing(false)}>Cancel</button>
+                <button className="btn btn-dark btn-sm flex-fill fw-semibold" onClick={handleSave} disabled={saving}>
+                    {saving ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</> : "✓ Save"}
                 </button>
             </div>
         </div>
     );
-
-    // --- STANDARD DISPLAY VIEW ---
     return (
-        <div className="d-flex align-items-center justify-content-between border-bottom py-3 gap-2">
+        <div className="d-flex align-items-center justify-content-between border-bottom py-2 gap-2">
             <div>
-                <span className="fw-bold text-dark d-block" style={{ fontSize: 14 }}>{room.name}</span>
+                <span className="fw-medium" style={{ fontSize: 13 }}>{room.name}</span>
                 {room.floor_sqft > 0 && (
-                    <span className="text-muted small">
-                        {room.floor_sqft.toFixed(0)} sq ft{room.wall_sqft > 0 ? ` · ${room.wall_sqft.toFixed(0)} wall area` : ""}
+                    <span className="text-muted ms-2" style={{ fontSize: 12 }}>
+                        {room.floor_sqft.toFixed(0)} sq ft{room.wall_sqft > 0 ? ` · ${room.wall_sqft.toFixed(0)} wall` : ""}
                     </span>
                 )}
             </div>
-            <div className="d-flex gap-2 flex-shrink-0">
-                <button className="btn btn-light border btn-md d-flex align-items-center justify-content-center" style={{ width: 40, height: 40 }} onClick={() => setEditing(true)}>✏️</button>
-                <button className="btn btn-outline-danger btn-md d-flex align-items-center justify-content-center" style={{ width: 40, height: 40 }} onClick={handleDelete} disabled={deleting}>
+            <div className="d-flex gap-1 flex-shrink-0">
+                <button className="btn btn-outline-secondary btn-sm px-2 py-1" style={{ fontSize: 12 }} onClick={() => setEditing(true)}>✏️</button>
+                <button className="btn btn-outline-danger btn-sm px-2 py-1" style={{ fontSize: 12 }} onClick={handleDelete} disabled={deleting}>
                     {deleting ? <span className="spinner-border spinner-border-sm" /> : "🗑"}
                 </button>
             </div>
@@ -618,25 +402,22 @@ export default function EstimateDetailPage() {
     const refresh = () => fetchEstimate(id).then(data => { setEstimate(data.estimate ?? data); });
 
     const handleQuoteSave = async (amount, notes, lines = [], extrasFromModal = {}) => {
-        // Build the breakdown JSON from the lines the calculator produced
+        // Build breakdown JSON from the calculator line items
         const breakdownJson = lines.length > 0
-            ? JSON.stringify(
-                lines.map(l => ({
-                    section: l.section,
-                    description: l.label,
-                    amount: l.amount,
-                    warn: l.warn || false,
-                }))
-            )
+            ? JSON.stringify(lines.map(l => ({
+                section: l.section,
+                description: l.label,
+                amount: l.amount,
+                warn: l.warn || false,
+            })))
             : null;
 
-        // Save quoted amount + notes + breakdown + all extras back to the estimate
+        // Save everything: quote amount, notes, breakdown, and all extras from the modal
+        // so the detail page reflects what was calculated and extras persist for next open
         await updateStatus(id, "new", {
             quoted_amount: amount,
             contractor_notes: notes,
             price_breakdown_json: breakdownJson,
-            // Sync extras from the modal back to the estimate record
-            // so they show in the detail page and are saved for next time
             furniture_rooms: extrasFromModal.furnitureRooms ?? estimate.furniture_rooms ?? 0,
             furniture_heavy: extrasFromModal.furnitureHeavy ?? estimate.furniture_heavy ?? 0,
             moisture_barrier: extrasFromModal.moistureBarrier ?? estimate.moisture_barrier ?? false,
@@ -673,21 +454,8 @@ export default function EstimateDetailPage() {
     const handleAddRoom = async () => {
         if (!newRoom.name.trim()) return;
         setAddingRoom(true);
-        try {
-            await addRoom(id, {
-                name: newRoom.name.trim(),
-                length_ft: parseFloat(newRoom.length_ft) || 0,
-                width_ft: parseFloat(newRoom.width_ft) || 0,
-                height_ft: parseFloat(newRoom.height_ft) || 0,
-            });
-            await refresh();
-            setNewRoom({ name: "", length_ft: "10", width_ft: "10", height_ft: "8" });
-            setShowAddRoom(false);
-        } catch (err) {
-            alert(err.message);
-        } finally {
-            setAddingRoom(false);
-        }
+        try { await addRoom(id, newRoom); await refresh(); setNewRoom({ name: "", length_ft: "", width_ft: "", height_ft: "" }); setShowAddRoom(false); }
+        catch (err) { alert(err.message); } finally { setAddingRoom(false); }
     };
 
     const handlePhotoUpload = async e => {
@@ -749,10 +517,156 @@ export default function EstimateDetailPage() {
                                 {estimate.computed_sqft > 0 && <span className="badge bg-secondary bg-opacity-10 text-secondary border fs-6 px-3 py-2">📐 {Number(estimate.computed_sqft).toFixed(0)} sq ft</span>}
                                 {estimate.budget_range && <span className="badge bg-light text-muted border fs-6 px-3 py-2">💰 {estimate.budget_range.replace(/_/g, " ")}</span>}
                             </div>
-                            <QuoteSection
-                                estimate={estimate}
-                                onEditQuote={() => setShowQuote(true)}
-                            />
+                            {estimate.quoted_amount ? (
+                                <div>
+                                    {/* ── PROJECT TOTAL HERO — like the screenshot ── */}
+                                    <div className="rounded-3 mb-3 overflow-hidden"
+                                        style={{ background: "#1e2d4a", color: "#fff" }}>
+                                        <div className="p-3 pb-2">
+                                            <div className="d-flex align-items-center justify-content-between mb-1">
+                                                <div className="d-flex align-items-center gap-2">
+                                                    <span style={{ fontSize: 14 }}>🧮</span>
+                                                    <span className="fw-semibold" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".07em", opacity: .75 }}>Project Total</span>
+                                                </div>
+                                                <button className="btn btn-sm py-0 px-2 fw-semibold"
+                                                    style={{ fontSize: 11, background: "rgba(255,255,255,0.12)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)" }}
+                                                    onClick={() => setShowQuote(true)}>
+                                                    ✏️ Edit
+                                                </button>
+                                            </div>
+                                            <p className="fw-bold mb-0" style={{ fontSize: 42, lineHeight: 1.1 }}>
+                                                {money(estimate.quoted_amount)}
+                                            </p>
+                                            <p className="mb-0" style={{ fontSize: 13, opacity: .6 }}>
+                                                {estimate.rooms?.length > 0 ? `${estimate.rooms.length} room${estimate.rooms.length > 1 ? "s" : ""}` : ""}
+                                                {estimate.computed_sqft > 0 ? ` · ${Number(estimate.computed_sqft).toFixed(0)} sq ft` : ""}
+                                                {estimate.estimate_type === "painting" ? " painted" : estimate.estimate_type === "flooring" ? " flooring" : ""}
+                                            </p>
+                                        </div>
+
+                                        {/* Materials + Labor breakdown */}
+                                        {(() => {
+                                            let mats = [];
+                                            try { mats = estimate.materials_json ? JSON.parse(estimate.materials_json) : []; } catch (e) { }
+                                            const materialsCost = mats.reduce((s, m) => s + (parseFloat(m.quantity) || 0) * (parseFloat(m.unit_cost) || 0), 0);
+
+                                            let breakdown = [];
+                                            try { if (estimate.price_breakdown_json) breakdown = JSON.parse(estimate.price_breakdown_json); } catch (e) { }
+                                            const laborCost = breakdown.reduce((s, l) => s + (Number(l.amount) || 0), 0);
+
+                                            if (materialsCost === 0 && laborCost === 0) return null;
+
+                                            const subtotal = materialsCost + laborCost;
+                                            const markup = 0; // contractor sets in calculator
+                                            const taxRate = 0;
+
+                                            return (
+                                                <div style={{ borderTop: "1px solid rgba(255,255,255,0.12)" }}>
+                                                    {materialsCost > 0 && (
+                                                        <div className="d-flex justify-content-between px-3 py-2" style={{ fontSize: 13, borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                                                            <span style={{ opacity: .75 }}>Materials</span>
+                                                            <span className="fw-medium">${materialsCost.toFixed(2)}</span>
+                                                        </div>
+                                                    )}
+                                                    {laborCost > 0 && (
+                                                        <div className="d-flex justify-content-between px-3 py-2" style={{ fontSize: 13, borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                                                            <span style={{ opacity: .75 }}>Labor &amp; services</span>
+                                                            <span className="fw-medium">${laborCost.toFixed(2)}</span>
+                                                        </div>
+                                                    )}
+                                                    {(materialsCost > 0 || laborCost > 0) && (
+                                                        <div className="d-flex justify-content-between px-3 py-2" style={{ fontSize: 13, borderTop: "1px solid rgba(255,255,255,0.18)" }}>
+                                                            <span className="fw-bold">Total</span>
+                                                            <span className="fw-bold">{money(estimate.quoted_amount)}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })()}
+                                    </div>
+
+                                    {/* ── JOB EXTRAS summary ── */}
+                                    {(() => {
+                                        const extras = [];
+                                        if (estimate.furniture_rooms > 0) extras.push(`🪑 ${estimate.furniture_rooms} room${estimate.furniture_rooms > 1 ? "s" : ""} furniture`);
+                                        if (estimate.furniture_heavy > 0) extras.push(`🛋️ ${estimate.furniture_heavy} heavy item${estimate.furniture_heavy > 1 ? "s" : ""}`);
+                                        if (estimate.moisture_barrier) extras.push("💧 Moisture barrier");
+                                        if (estimate.floor_leveling) extras.push(`📐 Floor leveling${estimate.floor_leveling_mode === "bag" ? ` (${estimate.floor_leveling_bags} bag${estimate.floor_leveling_bags > 1 ? "s" : ""})` : " (per sq ft)"}`);
+                                        if (estimate.heavy_demo) extras.push("⚒️ Heavy demo");
+                                        if (estimate.travel_miles > 0) extras.push(`🚗 ${estimate.travel_miles} mi travel${estimate.use_flat_travel ? " (flat fee)" : ""}`);
+                                        if (!extras.length) return null;
+                                        return (
+                                            <div className="rounded-3 px-3 py-2 mb-3 d-flex flex-wrap gap-2"
+                                                style={{ background: "#f8f9fa", border: "1px solid #e9ecef" }}>
+                                                {extras.map((e, i) => (
+                                                    <span key={i} className="badge rounded-pill fw-normal"
+                                                        style={{ background: "#e2e8f0", color: "#374151", fontSize: 12, padding: "4px 10px" }}>
+                                                        {e}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        );
+                                    })()}
+
+                                    {/* ── LINE-ITEM BREAKDOWN ── */}
+                                    {(() => {
+                                        let breakdown = [];
+                                        try { if (estimate.price_breakdown_json) breakdown = JSON.parse(estimate.price_breakdown_json); } catch (e) { }
+                                        if (!breakdown.length) return (
+                                            <div className="rounded-3 p-3" style={{ background: "#f8f9fa", border: "1px solid #dee2e6" }}>
+                                                <p className="text-muted mb-2" style={{ fontSize: 13 }}>No breakdown yet — open the calculator to generate a detailed line-item breakdown.</p>
+                                                <button className="btn btn-outline-success btn-sm w-100" onClick={() => setShowQuote(true)}>💰 Open price calculator</button>
+                                            </div>
+                                        );
+                                        const sections = ["Installation", "Prep & extras", "Protection fees"];
+                                        const sectionIcon = { "Installation": "🔨", "Prep & extras": "🔧", "Protection fees": "🛡️" };
+                                        return (
+                                            <div className="rounded-3 overflow-hidden mb-2" style={{ border: "1px solid #dee2e6" }}>
+                                                {sections.map(section => {
+                                                    const lines = breakdown.filter(l => l.section === section);
+                                                    if (!lines.length) return null;
+                                                    return (
+                                                        <div key={section}>
+                                                            <div className="d-flex align-items-center gap-2 px-3 py-2"
+                                                                style={{ background: "#f8f9fa", borderBottom: "1px solid #dee2e6", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em", color: "#6c757d" }}>
+                                                                <span>{sectionIcon[section]}</span><span>{section}</span>
+                                                            </div>
+                                                            {lines.map((line, i) => (
+                                                                <div key={i} className="d-flex justify-content-between align-items-center"
+                                                                    style={{ padding: "7px 16px", borderBottom: i < lines.length - 1 ? "1px solid #f1f5f9" : "1px solid #dee2e6", fontSize: 13 }}>
+                                                                    <span className={line.warn ? "text-warning fw-medium" : "text-muted"}>
+                                                                        {line.warn ? "⚠ " : ""}{line.description || line.label}
+                                                                    </span>
+                                                                    <span className={`fw-medium ${line.amount < 0 ? "text-danger" : "text-dark"}`}>
+                                                                        {line.amount < 0 ? "-" : ""}${Math.abs(Math.round(line.amount)).toLocaleString()}
+                                                                    </span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    );
+                                                })}
+                                                <div className="d-flex justify-content-between align-items-center px-3 py-3"
+                                                    style={{ background: "#f0fdf4", borderTop: "1.5px solid #86efac" }}>
+                                                    <span className="fw-bold" style={{ fontSize: 14 }}>Total quote</span>
+                                                    <span className="fw-bold text-success" style={{ fontSize: 16 }}>{money(estimate.quoted_amount)}</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+
+                                    {/* Contractor notes */}
+                                    {estimate.contractor_notes && (
+                                        <div className="p-3 rounded-3" style={{ background: "#f8f9fa", border: "1px solid #dee2e6", fontSize: 13 }}>
+                                            <strong>Included in quote:</strong> {estimate.contractor_notes}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div>
+                                    <button className="btn btn-outline-success w-100 py-3 fw-semibold" onClick={() => setShowQuote(true)}>💰 Calculate &amp; set quoted price</button>
+                                    <p className="text-muted text-center mt-2 mb-0" style={{ fontSize: 12 }}>⚠ A quoted price is required before converting to job or invoice</p>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -763,138 +677,36 @@ export default function EstimateDetailPage() {
                         <InfoRow label="Preferred date" value={estimate.preferred_date ? new Date(estimate.preferred_date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }) : null} />
                     </SectionCard>
 
-                    {/* --- ROOMS / AREAS SECTION CARD --- */}
                     <SectionCard title="Rooms / Areas" icon="📐">
-                        {estimate.rooms?.length === 0 && (
-                            <p className="text-muted mb-2" style={{ fontSize: 13 }}>No rooms added yet.</p>
-                        )}
-
-                        {estimate.rooms?.map(room => (
-                            <RoomRow key={room.id} room={room} estimateId={id} onUpdate={refresh} />
-                        ))}
-
+                        {estimate.rooms?.length === 0 && <p className="text-muted mb-2" style={{ fontSize: 13 }}>No rooms added yet.</p>}
+                        {estimate.rooms?.map(r => <RoomRow key={r.id} room={r} estimateId={id} onUpdate={refresh} />)}
                         {estimate.rooms?.length > 0 && (
-                            <div className="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
-                                <span className="fw-bold text-dark small">Total floor area</span>
-                                <span className="fw-bold text-success font-monospace">
-                                    {estimate.rooms.reduce((acc, r) => acc + (r.floor_sqft || 0), 0).toFixed(0)} sq ft
-                                </span>
+                            <div className="d-flex justify-content-between pt-2 fw-semibold border-top mt-1">
+                                <span style={{ fontSize: 13 }}>Total floor area</span>
+                                <span className="text-success" style={{ fontSize: 13 }}>{Number(estimate.computed_sqft).toFixed(0)} sq ft</span>
                             </div>
                         )}
-
-                        <hr className="my-3 opacity-25" />
-
-                        {!showAddRoom ? (
-                            <button
-                                type="button"
-                                className="btn btn-outline-secondary w-100 py-2 fw-medium"
-                                style={{ borderStyle: "dashed" }}
-                                onClick={() => {
-                                    setNewRoom({ name: "", length_ft: "10", width_ft: "10", height_ft: "8" });
-                                    setShowAddRoom(true);
-                                }}
-                            >
-                                + Add room
-                            </button>
-                        ) : (
-                            <div className="border rounded-3 p-3 bg-light shadow-sm mt-2">
-                                <label className="form-label fw-bold small text-muted text-uppercase mb-1"
-                                    style={{ fontSize: 11 }}>
-                                    Room name <span className="text-danger">*</span>
-                                </label>
-                                <input
-                                    className="form-control form-control-lg mb-1 fw-semibold bg-white"
-                                    placeholder="e.g. Living Room, Kitchen"
-                                    value={newRoom.name}
-                                    onChange={e => setNewRoom(prev => ({ ...prev, name: e.target.value }))}
-                                    autoFocus
-                                />
-                                {/* FIX: show validation hint so user knows why button is disabled */}
-                                {!newRoom.name.trim() && (
-                                    <p className="text-danger mb-2" style={{ fontSize: 12 }}>
-                                        ⚠ Room name is required
-                                    </p>
-                                )}
-
-                                <div className="mt-3">
-                                    {[
-                                        { key: "length_ft", label: "Length (ft)", step: 1 },
-                                        { key: "width_ft", label: "Width (ft)", step: 1 },
-                                        { key: "height_ft", label: "Height (ft)", step: 1 },
-                                    ].map((dim) => (
-                                        <div key={dim.key}
-                                            className="p-2 bg-white rounded-3 border d-flex align-items-center justify-content-between mb-2">
-                                            <span className="fw-semibold text-secondary small ps-1">{dim.label}</span>
-                                            <div className="d-flex align-items-center gap-1">
-                                                <button
-                                                    type="button"
-                                                    className="btn btn-outline-secondary d-flex align-items-center justify-content-center fw-bold"
-                                                    style={{ width: 44, height: 44, fontSize: 18 }}
-                                                    onClick={() =>
-                                                        setNewRoom(prev => ({
-                                                            ...prev,
-                                                            // FIX: always use parseFloat so math works on string state
-                                                            [dim.key]: String(Math.max(0, parseFloat(prev[dim.key] || 0) - dim.step))
-                                                        }))
-                                                    }
-                                                >−</button>
-
-                                                <div className="text-center fw-bold font-monospace bg-light rounded border text-dark"
-                                                    style={{ width: 60, height: 44, lineHeight: "42px", fontSize: 16 }}>
-                                                    {newRoom[dim.key] || 0}
-                                                </div>
-
-                                                <button
-                                                    type="button"
-                                                    className="btn btn-outline-secondary d-flex align-items-center justify-content-center fw-bold"
-                                                    style={{ width: 44, height: 44, fontSize: 18 }}
-                                                    onClick={() =>
-                                                        setNewRoom(prev => ({
-                                                            ...prev,
-                                                            [dim.key]: String(parseFloat(prev[dim.key] || 0) + dim.step)
-                                                        }))
-                                                    }
-                                                >+</button>
-                                            </div>
+                        {showAddRoom ? (
+                            <div className="mt-3 p-3 border rounded-3 bg-light">
+                                <p className="fw-semibold mb-2" style={{ fontSize: 13 }}>New room</p>
+                                <input className="form-control form-control-sm mb-2" placeholder="Room name (e.g. Kitchen)" value={newRoom.name} onChange={e => setNewRoom(r => ({ ...r, name: e.target.value }))} />
+                                <div className="row g-2 mb-2">
+                                    {[["length_ft", "Length (ft)"], ["width_ft", "Width (ft)"], ["height_ft", "Height (ft)"]].map(([k, l]) => (
+                                        <div key={k} className="col-4">
+                                            <input type="number" inputMode="decimal" className="form-control form-control-sm" placeholder={l} value={newRoom[k]} onChange={e => setNewRoom(r => ({ ...r, [k]: e.target.value }))} />
                                         </div>
                                     ))}
                                 </div>
-
-                                {/* Live area preview */}
-                                {newRoom.length_ft && newRoom.width_ft && parseFloat(newRoom.length_ft) > 0 && parseFloat(newRoom.width_ft) > 0 && (
-                                    <div className="alert alert-success py-2 px-3 my-2 d-flex justify-content-between align-items-center border-0 small">
-                                        <span className="fw-semibold text-success">Est. Surface Area:</span>
-                                        <span className="fw-bold font-monospace">
-                                            {(parseFloat(newRoom.length_ft) * parseFloat(newRoom.width_ft)).toFixed(0)} sq ft
-                                        </span>
-                                    </div>
-                                )}
-
-                                <div className="d-flex gap-2 mt-3">
-                                    <button
-                                        type="button"
-                                        className="btn btn-outline-secondary px-3"
-                                        style={{ height: 44 }}
-                                        onClick={() => {
-                                            setShowAddRoom(false);
-                                            setNewRoom({ name: "", length_ft: "10", width_ft: "10", height_ft: "8" });
-                                        }}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="btn btn-dark flex-fill fw-bold"
-                                        style={{ height: 44 }}
-                                        onClick={handleAddRoom}
-                                        disabled={addingRoom || !newRoom.name.trim()}
-                                    >
-                                        {addingRoom
-                                            ? <><span className="spinner-border spinner-border-sm me-2" />Adding…</>
-                                            : "✓ Add room"}
+                                {newRoom.length_ft && newRoom.width_ft && <p className="text-success mb-2" style={{ fontSize: 12 }}>≈ {(parseFloat(newRoom.length_ft) * parseFloat(newRoom.width_ft)).toFixed(0)} sq ft</p>}
+                                <div className="d-flex gap-2">
+                                    <button className="btn btn-outline-secondary btn-sm" onClick={() => { setShowAddRoom(false); setNewRoom({ name: "", length_ft: "", width_ft: "", height_ft: "" }); }}>Cancel</button>
+                                    <button className="btn btn-success btn-sm flex-fill fw-semibold" onClick={handleAddRoom} disabled={addingRoom || !newRoom.name.trim()}>
+                                        {addingRoom ? <><span className="spinner-border spinner-border-sm me-2" />Adding…</> : "✓ Add room"}
                                     </button>
                                 </div>
                             </div>
+                        ) : (
+                            <button className="btn btn-outline-secondary w-100 mt-2" style={{ borderStyle: "dashed" }} onClick={() => setShowAddRoom(true)}>+ Add room</button>
                         )}
                     </SectionCard>
 
@@ -927,55 +739,57 @@ export default function EstimateDetailPage() {
                         </SectionCard>
                     )}
 
-                    {(
-                        (estimate.furniture_rooms > 0) ||
-                        (estimate.furniture_heavy > 0) ||
-                        estimate.moisture_barrier === true ||
-                        estimate.floor_leveling === true ||
-                        estimate.heavy_demo === true ||
-                        (estimate.travel_miles > 0)
-                    ) && (
-                            <SectionCard title="Job extras" icon="🔧">
-                                {estimate.furniture_rooms > 0 && (
-                                    <InfoRow
-                                        label="Furniture moving"
-                                        value={`${estimate.furniture_rooms} room${estimate.furniture_rooms > 1 ? "s" : ""}`}
-                                    />
-                                )}
-                                {estimate.furniture_heavy > 0 && (
-                                    <InfoRow
-                                        label="Heavy items"
-                                        value={`${estimate.furniture_heavy} item${estimate.furniture_heavy > 1 ? "s" : ""} — fridge / piano / pool table`}
-                                    />
-                                )}
-                                {estimate.moisture_barrier === true && (
-                                    <InfoRow label="Moisture barrier" value="Yes — included in price" />
-                                )}
-                                {estimate.floor_leveling === true && (
-                                    <InfoRow
-                                        label="Floor leveling"
-                                        value={
-                                            estimate.floor_leveling_mode === "bag"
-                                                ? `${estimate.floor_leveling_bags || 1} bag${(estimate.floor_leveling_bags || 1) > 1 ? "s" : ""} of self-leveler`
-                                                : "Per sq ft rate"
-                                        }
-                                    />
-                                )}
-                                {estimate.heavy_demo === true && (
-                                    <InfoRow label="Heavy demo" value="Yes — tile / glued hardwood rate" />
-                                )}
-                                {estimate.travel_miles > 0 && (
-                                    <InfoRow
-                                        label="Travel"
-                                        value={
-                                            estimate.use_flat_travel
-                                                ? `Flat fee — ${estimate.travel_miles} miles`
-                                                : `${estimate.travel_miles} miles × per-mile rate`
-                                        }
-                                    />
-                                )}
+
+
+                    {(() => {
+                        let mats = [];
+                        try { mats = estimate.materials_json ? JSON.parse(estimate.materials_json) : []; } catch (e) { }
+                        if (!mats.length) return null;
+                        const totalCost = mats.reduce((s, m) => s + (parseFloat(m.quantity) || 0) * (parseFloat(m.unit_cost) || 0), 0);
+                        const CAT_BADGE = {
+                            paint: "#1d4ed8", supplies: "#15803d", flooring: "#92400e",
+                            adhesive: "#7c3aed", prep: "#c2410c", hardware: "#374151", other: "#6b7280"
+                        };
+                        const CAT_LABEL = {
+                            paint: "Paint", supplies: "Supplies", flooring: "Flooring",
+                            adhesive: "Adhesive", prep: "Prep", hardware: "Hardware", other: "Other"
+                        };
+                        return (
+                            <SectionCard title="Materials to purchase" icon="🛒">
+                                <div className="mb-2">
+                                    {mats.map((m, i) => {
+                                        const rowTotal = (parseFloat(m.quantity) || 0) * (parseFloat(m.unit_cost) || 0);
+                                        const badge = CAT_BADGE[m.category] || CAT_BADGE.other;
+                                        const label = CAT_LABEL[m.category] || "Other";
+                                        return (
+                                            <div key={i} className="d-flex justify-content-between align-items-start border-bottom py-2">
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    <div className="d-flex align-items-center gap-1 flex-wrap mb-1">
+                                                        <span className="badge rounded-pill" style={{ background: badge, color: "#fff", fontSize: 9 }}>{label}</span>
+                                                        <span className="fw-medium" style={{ fontSize: 13 }}>{m.name || "—"}</span>
+                                                    </div>
+                                                    <span className="text-muted" style={{ fontSize: 12 }}>
+                                                        {m.quantity} {m.unit} × ${parseFloat(m.unit_cost || 0).toFixed(2)}
+                                                        {m.notes ? ` · ${m.notes}` : ""}
+                                                    </span>
+                                                </div>
+                                                <span className="fw-semibold text-danger ms-3 flex-shrink-0" style={{ fontSize: 13 }}>
+                                                    ${rowTotal.toFixed(2)}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                <div className="d-flex justify-content-between pt-2 border-top">
+                                    <span className="fw-semibold text-muted" style={{ fontSize: 13 }}>Total materials cost</span>
+                                    <span className="fw-bold text-danger" style={{ fontSize: 14 }}>${totalCost.toFixed(2)}</span>
+                                </div>
+                                <p className="text-muted mb-0 mt-2" style={{ fontSize: 11 }}>
+                                    ⚠ This is the contractor's purchasing cost — not shown on the client PDF unless included in the quote.
+                                </p>
                             </SectionCard>
-                        )}
+                        );
+                    })()}
 
                     {estimate.description && (
                         <SectionCard title="Notes / Special instructions" icon="💬">

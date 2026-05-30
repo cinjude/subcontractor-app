@@ -1,7 +1,3 @@
-// src/pages/Estimates/Useestimatepdf.js — VERSION 4
-// KEY FIX: reads price_breakdown_json stored on estimate
-// and renders ALL line items in the PDF including furniture, travel, min fee
-// Compact layout — fits on ONE page for most estimates
 
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -165,30 +161,45 @@ export function buildEstimatePDF(estimate, contractorInfo = {}) {
         y = doc.lastAutoTable.finalY + 8;
     }
 
-    // Per-room materials table — shown if estimate was created with new form
-if (estimate.description?.includes("Materials:")) {
-    const lines = estimate.description.split("\n");
-    const matLine = lines.find(l => l.startsWith("Materials:"));
-    if (matLine) {
-        const matRows = matLine.replace("Materials: ", "").split(", ").map(pair => {
-            const colonIdx = pair.indexOf(": ");
-            const name = pair.slice(0, colonIdx);
-            const mat  = pair.slice(colonIdx + 2);
-            return [name || "—", (mat || "—")];
-        });
-        autoTable(doc, {
-            startY: y, margin: { left: ML, right: 40 },
-            head: [["Room", "New Material"]],
-            body: matRows,
-            styles: { fontSize: 7.5, cellPadding: 3 },
-            headStyles: { fillColor: C.dark, textColor: C.white, fontSize: 7.5 },
-            columnStyles: { 1: { fontStyle: "bold", textColor: C.green } },
-        });
-        y = doc.lastAutoTable.finalY + 8;
-    }
-}
-
     // ── NOTES ─────────────────────────────────────────────────────────────
+    // ── PURCHASED MATERIALS TABLE ─────────────────────────────────────────────────
+    if (estimate.materials_json) {
+        let mats = [];
+        try { mats = JSON.parse(estimate.materials_json); } catch(e) {}
+        if (mats.length > 0) {
+            const totalMatCost = mats.reduce((s,m) => s+(parseFloat(m.quantity)||0)*(parseFloat(m.unit_cost)||0), 0);
+            const matRows = mats.map(m => {
+                const rowTotal = (parseFloat(m.quantity)||0)*(parseFloat(m.unit_cost)||0);
+                return [
+                    m.name || "—",
+                    (m.category || "other").replace(/_/g," "),
+                    `${m.quantity} ${m.unit}`,
+                    `$${parseFloat(m.unit_cost||0).toFixed(2)}`,
+                    `$${rowTotal.toFixed(2)}`,
+                ];
+            });
+            matRows.push([
+                { content: "Total materials cost", colSpan: 4, styles: { fontStyle: "bold", halign: "right" } },
+                { content: `$${totalMatCost.toFixed(2)}`, styles: { fontStyle: "bold", textColor: [180,30,30], halign:"right" } },
+            ]);
+            autoTable(doc, {
+                startY: y, margin: { left: ML, right: 40 },
+                head: [["Material", "Category", "Qty", "Unit cost", "Total"]],
+                body: matRows,
+                styles: { fontSize: 7.5, cellPadding: 3 },
+                headStyles: { fillColor: C.dark, textColor: C.white, fontSize: 7.5 },
+                columnStyles: {
+                    0: { fontStyle: "bold" },
+                    2: { halign: "right" },
+                    3: { halign: "right" },
+                    4: { halign: "right", textColor: [180,30,30], fontStyle: "bold" },
+                },
+                alternateRowStyles: { fillColor: [250,250,250] },
+            });
+            y = doc.lastAutoTable.finalY + 8;
+        }
+    }
+
     if (estimate.description) {
         sf(7, "bold", C.gray);
         doc.text("NOTES", ML, y); y += 9;

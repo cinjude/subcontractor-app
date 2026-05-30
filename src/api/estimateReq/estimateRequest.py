@@ -60,7 +60,7 @@ def _parse_estimate_fields(data, estimate):
         'customer_name', 'customer_email', 'customer_phone',
         'customer_address', 'description', 'budget_range',
         'desired_colors', 'repairs_detail', 'contractor_notes',
-        'floor_leveling_mode', 'price_breakdown_json'
+        'floor_leveling_mode', 'materials_json', 'price_breakdown_json'
     ]
     for f in str_fields:
         if f in data:
@@ -375,6 +375,9 @@ def update_estimate_status(estimate_id):
 
         if 'price_breakdown_json' in data:
             estimate.price_breakdown_json = data['price_breakdown_json']
+
+        if 'materials_json' in data:
+            estimate.materials_json = data['materials_json']
  
         int_extra_fields = [
             'furniture_rooms', 'furniture_heavy',

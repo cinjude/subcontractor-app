@@ -792,6 +792,7 @@ class EstimateRequest(db.Model):
     heavy_demo          : Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
     travel_miles        : Mapped[int]  = mapped_column(Integer, nullable=True, default=0)
     use_flat_travel     : Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
+    materials_json: Mapped[str] = mapped_column(Text(), nullable=True)
     price_breakdown_json: Mapped[str]  = mapped_column(Text(), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
     create_at : Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -866,6 +867,7 @@ class EstimateRequest(db.Model):
             'heavy_demo'            : self.heavy_demo or False,
             'travel_miles'          : self.travel_miles or 0,
             'use_flat_travel'       : self.use_flat_travel or False,
+            'materials_json'        : self.materials_json,
             'price_breakdown_json'  : self.price_breakdown_json,
             'service_id'            : self.service_id,
             'create_at'             : self.create_at.isoformat() if self.create_at else None,

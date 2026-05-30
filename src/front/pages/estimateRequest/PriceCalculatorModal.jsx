@@ -39,7 +39,7 @@ function getFloorRate(material, rates) {
     return map[material] || rates.floor_hardwood_sqft;
 }
 
-function calculate(estimate, rates, extras) {
+function calculate(estimate, rates, extras, materialsJson = null) {
     const sqft = estimate.computed_sqft || 0;
     const coats = parseInt(estimate.paint_coats || "1");
     const lines = [];
@@ -317,7 +317,7 @@ export default function PriceCalculatorModal({ show, estimate, onClose, onSave }
 
     useEffect(() => {
         if (!estimate) return;
-        setResult(calculate(estimate, rates, extras));
+        setResult(calculate(estimate, rates, extras, estimate?.materials_json));
     }, [rates, estimate, extras]);
 
     const updateRate = useCallback((field, value) => setRates(prev => ({ ...prev, [field]: value })), []);
@@ -342,16 +342,9 @@ export default function PriceCalculatorModal({ show, estimate, onClose, onSave }
         const finalAmount = manualTotal !== null ? manualTotal : result.total;
         if (!finalAmount) return;
         setSaving(true);
-        try {
-            // Pass extras as 4th argument so EstimateDetailPage can save them back
-            // to the estimate record — this is what makes them show in the detail page
-            await onSave(finalAmount, notes, result.lines, extras);
-            onClose();
-        } catch (e) {
-            alert(e.message);
-        } finally {
-            setSaving(false);
-        }
+        try { await onSave(finalAmount, notes, result.lines); onClose(); }
+        catch (e) { alert(e.message); }
+        finally { setSaving(false); }
     };
 
     if (!show) return null;
@@ -451,7 +444,16 @@ export default function PriceCalculatorModal({ show, estimate, onClose, onSave }
                                     )}
                                 </div>
 
-                                {/* Sync notice */}
+                                {/* Materials cost note */}
+                                {materialLines.length > 0 && (
+                                    <div className="d-flex justify-content-between align-items-center px-3 py-2 mb-3 rounded-3"
+                                        style={{ background: "#fff5f5", border: "1px solid #fecaca", fontSize: 13 }}>
+                                        <span className="text-danger fw-medium">🛒 Materials cost included</span>
+                                        <span className="fw-bold text-danger">${materialLines.reduce((s, l) => s + l.amount, 0).toFixed(2)}</span>
+                                    </div>
+                                )}
+
+                                {/* Sync notice */}}
                                 {estimate?.quoted_amount && Math.round(estimate.quoted_amount) !== Math.round(displayTotal) && (
                                     <div className="alert alert-info d-flex gap-2 py-2 mb-3" style={{ fontSize: 13 }}>
                                         <span>ℹ️</span>
@@ -536,6 +538,7 @@ export default function PriceCalculatorModal({ show, estimate, onClose, onSave }
                                 {result.lines.length > 0 && (
                                     <div className="rounded-3 p-3 mb-3" style={{ background: "#f8f9fa", border: "1px solid #dee2e6" }}>
                                         <p className="fw-semibold mb-1" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".05em", color: "#6c757d" }}>Breakdown</p>
+                                        <BkSection label="Materials" lines={materialLines} />
                                         <BkSection label="Installation" lines={installLines} />
                                         <BkSection label="Prep & extras" lines={prepLines} />
                                         <BkSection label="Protection fees" lines={protectionLines} />
