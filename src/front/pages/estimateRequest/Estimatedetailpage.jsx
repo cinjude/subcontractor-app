@@ -401,8 +401,7 @@ export default function EstimateDetailPage() {
 
     const refresh = () => fetchEstimate(id).then(data => { setEstimate(data.estimate ?? data); });
 
-    const handleQuoteSave = async (amount, notes, lines = [], extrasFromModal = {}) => {
-        // Build breakdown JSON from the calculator line items
+    const handleQuoteSave = async (amount, notes, lines = [], extrasFromModal = {}, pricingMeta = {}) => {
         const breakdownJson = lines.length > 0
             ? JSON.stringify(lines.map(l => ({
                 section: l.section,
@@ -412,8 +411,6 @@ export default function EstimateDetailPage() {
             })))
             : null;
 
-        // Save everything: quote amount, notes, breakdown, and all extras from the modal
-        // so the detail page reflects what was calculated and extras persist for next open
         await updateStatus(id, "new", {
             quoted_amount: amount,
             contractor_notes: notes,
@@ -519,147 +516,111 @@ export default function EstimateDetailPage() {
                             </div>
                             {estimate.quoted_amount ? (
                                 <div>
-                                    {/* ── PROJECT TOTAL HERO — like the screenshot ── */}
-                                    <div className="rounded-3 mb-3 overflow-hidden"
-                                        style={{ background: "#1e2d4a", color: "#fff" }}>
-                                        <div className="p-3 pb-2">
-                                            <div className="d-flex align-items-center justify-content-between mb-1">
-                                                <div className="d-flex align-items-center gap-2">
-                                                    <span style={{ fontSize: 14 }}>🧮</span>
-                                                    <span className="fw-semibold" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".07em", opacity: .75 }}>Project Total</span>
-                                                </div>
-                                                <button className="btn btn-sm py-0 px-2 fw-semibold"
-                                                    style={{ fontSize: 11, background: "rgba(255,255,255,0.12)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)" }}
-                                                    onClick={() => setShowQuote(true)}>
-                                                    ✏️ Edit
-                                                </button>
-                                            </div>
-                                            <p className="fw-bold mb-0" style={{ fontSize: 42, lineHeight: 1.1 }}>
-                                                {money(estimate.quoted_amount)}
-                                            </p>
-                                            <p className="mb-0" style={{ fontSize: 13, opacity: .6 }}>
-                                                {estimate.rooms?.length > 0 ? `${estimate.rooms.length} room${estimate.rooms.length > 1 ? "s" : ""}` : ""}
-                                                {estimate.computed_sqft > 0 ? ` · ${Number(estimate.computed_sqft).toFixed(0)} sq ft` : ""}
-                                                {estimate.estimate_type === "painting" ? " painted" : estimate.estimate_type === "flooring" ? " flooring" : ""}
-                                            </p>
-                                        </div>
-
-                                        {/* Materials + Labor breakdown */}
-                                        {(() => {
-                                            let mats = [];
-                                            try { mats = estimate.materials_json ? JSON.parse(estimate.materials_json) : []; } catch (e) { }
-                                            const materialsCost = mats.reduce((s, m) => s + (parseFloat(m.quantity) || 0) * (parseFloat(m.unit_cost) || 0), 0);
-
-                                            let breakdown = [];
-                                            try { if (estimate.price_breakdown_json) breakdown = JSON.parse(estimate.price_breakdown_json); } catch (e) { }
-                                            const laborCost = breakdown.reduce((s, l) => s + (Number(l.amount) || 0), 0);
-
-                                            if (materialsCost === 0 && laborCost === 0) return null;
-
-                                            const subtotal = materialsCost + laborCost;
-                                            const markup = 0; // contractor sets in calculator
-                                            const taxRate = 0;
-
-                                            return (
-                                                <div style={{ borderTop: "1px solid rgba(255,255,255,0.12)" }}>
-                                                    {materialsCost > 0 && (
-                                                        <div className="d-flex justify-content-between px-3 py-2" style={{ fontSize: 13, borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-                                                            <span style={{ opacity: .75 }}>Materials</span>
-                                                            <span className="fw-medium">${materialsCost.toFixed(2)}</span>
-                                                        </div>
-                                                    )}
-                                                    {laborCost > 0 && (
-                                                        <div className="d-flex justify-content-between px-3 py-2" style={{ fontSize: 13, borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-                                                            <span style={{ opacity: .75 }}>Labor &amp; services</span>
-                                                            <span className="fw-medium">${laborCost.toFixed(2)}</span>
-                                                        </div>
-                                                    )}
-                                                    {(materialsCost > 0 || laborCost > 0) && (
-                                                        <div className="d-flex justify-content-between px-3 py-2" style={{ fontSize: 13, borderTop: "1px solid rgba(255,255,255,0.18)" }}>
-                                                            <span className="fw-bold">Total</span>
-                                                            <span className="fw-bold">{money(estimate.quoted_amount)}</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })()}
-                                    </div>
-
-                                    {/* ── JOB EXTRAS summary ── */}
+                                    {/* ── PROFESSIONAL PROJECT TOTAL CARD ── */}
                                     {(() => {
-                                        const extras = [];
-                                        if (estimate.furniture_rooms > 0) extras.push(`🪑 ${estimate.furniture_rooms} room${estimate.furniture_rooms > 1 ? "s" : ""} furniture`);
-                                        if (estimate.furniture_heavy > 0) extras.push(`🛋️ ${estimate.furniture_heavy} heavy item${estimate.furniture_heavy > 1 ? "s" : ""}`);
-                                        if (estimate.moisture_barrier) extras.push("💧 Moisture barrier");
-                                        if (estimate.floor_leveling) extras.push(`📐 Floor leveling${estimate.floor_leveling_mode === "bag" ? ` (${estimate.floor_leveling_bags} bag${estimate.floor_leveling_bags > 1 ? "s" : ""})` : " (per sq ft)"}`);
-                                        if (estimate.heavy_demo) extras.push("⚒️ Heavy demo");
-                                        if (estimate.travel_miles > 0) extras.push(`🚗 ${estimate.travel_miles} mi travel${estimate.use_flat_travel ? " (flat fee)" : ""}`);
-                                        if (!extras.length) return null;
+                                        let mats = [];
+                                        try { mats = estimate.materials_json ? JSON.parse(estimate.materials_json) : []; } catch (e) { }
+                                        const materialsCost = mats.reduce((s, m) => s + (parseFloat(m.quantity) || 0) * (parseFloat(m.unit_cost) || 0), 0);
+
+                                        let breakdown = [];
+                                        try { if (estimate.price_breakdown_json) breakdown = JSON.parse(estimate.price_breakdown_json); } catch (e) { }
+                                        const laborLines = breakdown.filter(l => l.section !== "Materials");
+                                        const laborCost = laborLines.reduce((s, l) => s + (Number(l.amount) || 0), 0);
+
+                                        // Tax comes from the breakdown lines — no separate meta needed
+                                        // breakdown already includes tax if contractor's tax_rate is set
+                                        const subtotal = (materialsCost + laborCost) || estimate.quoted_amount;
+                                        const taxAmt = Math.max(0, estimate.quoted_amount - subtotal);
+                                        const mDec = v => `$${Number(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
                                         return (
-                                            <div className="rounded-3 px-3 py-2 mb-3 d-flex flex-wrap gap-2"
-                                                style={{ background: "#f8f9fa", border: "1px solid #e9ecef" }}>
-                                                {extras.map((e, i) => (
-                                                    <span key={i} className="badge rounded-pill fw-normal"
-                                                        style={{ background: "#e2e8f0", color: "#374151", fontSize: 12, padding: "4px 10px" }}>
-                                                        {e}
-                                                    </span>
-                                                ))}
+                                            <div className="rounded-3 overflow-hidden mb-3" style={{ border: "1px solid #dee2e6" }}>
+                                                <div className="p-3" style={{ background: "#1e2d4a", color: "#fff" }}>
+                                                    <div className="d-flex align-items-center justify-content-between mb-1">
+                                                        <div className="d-flex align-items-center gap-2">
+                                                            <span>🧮</span>
+                                                            <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".07em", opacity: .7 }}>Project Total</span>
+                                                        </div>
+                                                        <button className="btn btn-sm py-0 px-2"
+                                                            style={{ fontSize: 11, background: "rgba(255,255,255,0.12)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)" }}
+                                                            onClick={() => setShowQuote(true)}>✏️ Edit</button>
+                                                    </div>
+                                                    <p className="fw-bold mb-0" style={{ fontSize: 40, lineHeight: 1.1 }}>{mDec(estimate.quoted_amount)}</p>
+                                                    <p style={{ fontSize: 13, opacity: .6, marginBottom: 0 }}>
+                                                        {estimate.rooms?.length > 0 && `${estimate.rooms.length} room${estimate.rooms.length > 1 ? "s" : ""} · `}
+                                                        {estimate.computed_sqft > 0 && `${Number(estimate.computed_sqft).toFixed(0)} sq ft`}
+                                                        {estimate.estimate_type === "painting" ? " painted" : estimate.estimate_type === "flooring" ? " flooring" : ""}
+                                                    </p>
+                                                </div>
+                                                {materialsCost > 0 && <div className="d-flex justify-content-between px-3 py-2" style={{ fontSize: 13, borderBottom: "1px solid #f1f5f9", background: "#fff8f0" }}><span style={{ color: "#c2410c" }}>🛒 Materials</span><span className="fw-semibold" style={{ color: "#c2410c" }}>{mDec(materialsCost)}</span></div>}
+                                                {laborCost > 0 && <div className="d-flex justify-content-between px-3 py-2" style={{ fontSize: 13, borderBottom: "1px solid #f1f5f9" }}><span className="text-muted">Labor &amp; services</span><span className="fw-semibold">{mDec(laborCost)}</span></div>}
+                                                <div className="d-flex justify-content-between px-3 py-2" style={{ fontSize: 13, borderBottom: "1px solid #dee2e6", background: "#f8f9fa" }}><span className="text-muted">Subtotal</span><span className="fw-semibold">{mDec(subtotal)}</span></div>
+                                                {taxAmt > 0 && <div className="d-flex justify-content-between px-3 py-2" style={{ fontSize: 13, borderBottom: "1px solid #dee2e6", background: "#f8f9fa" }}><span className="text-muted">Tax</span><span className="fw-semibold">{mDec(taxAmt)}</span></div>}
+                                                <div className="d-flex justify-content-between px-3 py-3" style={{ background: "#f0fdf4", borderTop: "2px solid #86efac" }}>
+                                                    <span className="fw-bold" style={{ fontSize: 15 }}>Total</span>
+                                                    <span className="fw-bold text-success" style={{ fontSize: 17 }}>{mDec(estimate.quoted_amount)}</span>
+                                                </div>
                                             </div>
                                         );
                                     })()}
 
-                                    {/* ── LINE-ITEM BREAKDOWN ── */}
+                                    {/* ── JOB EXTRAS BADGES ── */}
                                     {(() => {
-                                        let breakdown = [];
-                                        try { if (estimate.price_breakdown_json) breakdown = JSON.parse(estimate.price_breakdown_json); } catch (e) { }
-                                        if (!breakdown.length) return (
-                                            <div className="rounded-3 p-3" style={{ background: "#f8f9fa", border: "1px solid #dee2e6" }}>
-                                                <p className="text-muted mb-2" style={{ fontSize: 13 }}>No breakdown yet — open the calculator to generate a detailed line-item breakdown.</p>
+                                        const tags = [];
+                                        if (estimate.furniture_rooms > 0) tags.push(`🪑 ${estimate.furniture_rooms} room${estimate.furniture_rooms > 1 ? "s" : ""} furniture`);
+                                        if (estimate.furniture_heavy > 0) tags.push(`🛋️ ${estimate.furniture_heavy} heavy item${estimate.furniture_heavy > 1 ? "s" : ""}`);
+                                        if (estimate.moisture_barrier) tags.push("💧 Moisture barrier");
+                                        if (estimate.floor_leveling) tags.push(`📐 Floor leveling${estimate.floor_leveling_mode === "bag" ? ` (${estimate.floor_leveling_bags} bag${estimate.floor_leveling_bags > 1 ? "s" : ""})` : " (per sq ft)"}`);
+                                        if (estimate.heavy_demo) tags.push("⚒️ Heavy demo");
+                                        if (estimate.travel_miles > 0) tags.push(`🚗 ${estimate.travel_miles} mi${estimate.use_flat_travel ? " (flat fee)" : ""}`);
+                                        if (!tags.length) return null;
+                                        return <div className="d-flex flex-wrap gap-2 mb-3">{tags.map((t, i) => <span key={i} className="badge rounded-pill" style={{ background: "#e2e8f0", color: "#374151", fontSize: 12, padding: "4px 10px", fontWeight: 500 }}>{t}</span>)}</div>;
+                                    })()}
+
+                                    {/* ── FULL LINE-ITEM BREAKDOWN ── */}
+                                    {(() => {
+                                        let bd = [];
+                                        try { if (estimate.price_breakdown_json) bd = JSON.parse(estimate.price_breakdown_json); } catch (e) { }
+                                        if (!bd.length) return (
+                                            <div className="rounded-3 p-3 mb-3" style={{ background: "#f8f9fa", border: "1px solid #dee2e6" }}>
+                                                <p className="text-muted mb-2" style={{ fontSize: 13 }}>No breakdown yet — open the calculator to generate a full line-item breakdown.</p>
                                                 <button className="btn btn-outline-success btn-sm w-100" onClick={() => setShowQuote(true)}>💰 Open price calculator</button>
                                             </div>
                                         );
-                                        const sections = ["Installation", "Prep & extras", "Protection fees"];
-                                        const sectionIcon = { "Installation": "🔨", "Prep & extras": "🔧", "Protection fees": "🛡️" };
+                                        const SECS = ["Materials", "Installation", "Prep & extras", "Protection fees"];
+                                        const ICON = { "Materials": "🛒", "Installation": "🔨", "Prep & extras": "🔧", "Protection fees": "🛡️" };
+                                        const BG = { "Materials": "#fff8f0", "Installation": "#f8f9fa", "Prep & extras": "#f8f9fa", "Protection fees": "#f8f9fa" };
+                                        const COL = { "Materials": "#c2410c", "Installation": "#6c757d", "Prep & extras": "#6c757d", "Protection fees": "#6c757d" };
                                         return (
-                                            <div className="rounded-3 overflow-hidden mb-2" style={{ border: "1px solid #dee2e6" }}>
-                                                {sections.map(section => {
-                                                    const lines = breakdown.filter(l => l.section === section);
-                                                    if (!lines.length) return null;
-                                                    return (
-                                                        <div key={section}>
-                                                            <div className="d-flex align-items-center gap-2 px-3 py-2"
-                                                                style={{ background: "#f8f9fa", borderBottom: "1px solid #dee2e6", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em", color: "#6c757d" }}>
-                                                                <span>{sectionIcon[section]}</span><span>{section}</span>
-                                                            </div>
-                                                            {lines.map((line, i) => (
-                                                                <div key={i} className="d-flex justify-content-between align-items-center"
-                                                                    style={{ padding: "7px 16px", borderBottom: i < lines.length - 1 ? "1px solid #f1f5f9" : "1px solid #dee2e6", fontSize: 13 }}>
-                                                                    <span className={line.warn ? "text-warning fw-medium" : "text-muted"}>
-                                                                        {line.warn ? "⚠ " : ""}{line.description || line.label}
-                                                                    </span>
-                                                                    <span className={`fw-medium ${line.amount < 0 ? "text-danger" : "text-dark"}`}>
-                                                                        {line.amount < 0 ? "-" : ""}${Math.abs(Math.round(line.amount)).toLocaleString()}
-                                                                    </span>
-                                                                </div>
-                                                            ))}
+                                            <div className="rounded-3 overflow-hidden mb-3" style={{ border: "1px solid #dee2e6" }}>
+                                                <div className="d-flex px-3 py-2" style={{ background: "#1e2d4a" }}>
+                                                    <span className="flex-fill fw-semibold text-white" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".06em" }}>Item / Service</span>
+                                                    <span className="fw-semibold text-white" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".06em", minWidth: 80, textAlign: "right" }}>Amount</span>
+                                                </div>
+                                                {SECS.map(sec => {
+                                                    const ls = bd.filter(l => l.section === sec);
+                                                    if (!ls.length) return null;
+                                                    return (<div key={sec}>
+                                                        <div className="px-3 py-1" style={{ background: BG[sec] || "#f8f9fa", borderBottom: "1px solid #dee2e6" }}>
+                                                            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: COL[sec] || "#6c757d" }}>{ICON[sec]} {sec}</span>
                                                         </div>
-                                                    );
+                                                        {ls.map((ln, i) => (
+                                                            <div key={i} className="d-flex justify-content-between px-3" style={{ padding: "7px 16px", borderBottom: i < ls.length - 1 ? "1px solid #f1f5f9" : "1px solid #dee2e6", fontSize: 13 }}>
+                                                                <span className={ln.warn ? "text-warning fw-medium" : "text-muted"}>{ln.warn ? "⚠ " : ""}{ln.description || ln.label}</span>
+                                                                <span className={`fw-medium ${ln.amount < 0 ? "text-danger" : "text-dark"}`} style={{ minWidth: 80, textAlign: "right" }}>{ln.amount < 0 ? "-" : ""}${Math.abs(Math.round(ln.amount)).toLocaleString()}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>);
                                                 })}
-                                                <div className="d-flex justify-content-between align-items-center px-3 py-3"
-                                                    style={{ background: "#f0fdf4", borderTop: "1.5px solid #86efac" }}>
+                                                <div className="d-flex justify-content-between px-3 py-3" style={{ background: "#f0fdf4", borderTop: "1.5px solid #86efac" }}>
                                                     <span className="fw-bold" style={{ fontSize: 14 }}>Total quote</span>
-                                                    <span className="fw-bold text-success" style={{ fontSize: 16 }}>{money(estimate.quoted_amount)}</span>
+                                                    <span className="fw-bold text-success" style={{ fontSize: 16 }}>${Number(estimate.quoted_amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
                                                 </div>
                                             </div>
                                         );
                                     })()}
 
-                                    {/* Contractor notes */}
-                                    {estimate.contractor_notes && (
-                                        <div className="p-3 rounded-3" style={{ background: "#f8f9fa", border: "1px solid #dee2e6", fontSize: 13 }}>
-                                            <strong>Included in quote:</strong> {estimate.contractor_notes}
-                                        </div>
-                                    )}
+                                    {estimate.contractor_notes && <div className="p-3 rounded-3 mb-2" style={{ background: "#f8f9fa", border: "1px solid #dee2e6", fontSize: 13 }}><strong>Included in quote:</strong> {estimate.contractor_notes}</div>}
                                 </div>
                             ) : (
                                 <div>

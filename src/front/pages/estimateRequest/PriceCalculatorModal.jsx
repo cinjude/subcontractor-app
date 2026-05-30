@@ -9,6 +9,7 @@
 import { useEffect, useState, useCallback } from "react";
 
 const DEFAULTS = {
+    tax_rate: 0,  // overridden by contractor's profile tax_rate from /api/contractor/rates
     paint_base_per_sqft: 2.50, paint_extra_coat_sqft: 0.50,
     paint_ceiling_sqft: 0.75, paint_trim_sqft: 0.60,
     paint_door_each: 45.00, paint_window_each: 25.00,
@@ -338,23 +339,41 @@ export default function PriceCalculatorModal({ show, estimate, onClose, onSave }
         finally { setSavingRates(false); }
     };
 
+    // Tax comes from the contractor's saved tax_rate (loaded from /api/contractor/rates)
+    const subtotalCalc = manualTotal !== null ? manualTotal : result.total;
+    const taxRate = rates.tax_rate || 0;
+    const taxAmount = Math.round(subtotalCalc * (taxRate / 100) * 100) / 100;
+    const displayTotal = Math.round((subtotalCalc + taxAmount) * 100) / 100;
+
+    // Line filters must be defined before the early return so they're always in scope
+    const materialLines = result.lines.filter(l => l.section === "Materials");
+    const installLines = result.lines.filter(l => l.section === "Installation");
+    const prepLines = result.lines.filter(l => l.section === "Prep & extras");
+    const protectionLines = result.lines.filter(l => l.section === "Protection fees");
+
     const handleApply = async () => {
-        const finalAmount = manualTotal !== null ? manualTotal : result.total;
+        const finalAmount = displayTotal || subtotalCalc;
         if (!finalAmount) return;
         setSaving(true);
-        try { await onSave(finalAmount, notes, result.lines); onClose(); }
+        try {
+            await onSave(
+                finalAmount,
+                notes,
+                result.lines,
+                extras,
+                { taxRate, taxAmount, subtotal: subtotalCalc }
+            );
+            onClose();
+        }
         catch (e) { alert(e.message); }
         finally { setSaving(false); }
     };
 
     if (!show) return null;
 
-    const displayTotal = manualTotal !== null ? manualTotal : result.total;
     const money = v => `$${Number(Math.round(v)).toLocaleString("en-US")}`;
+    const moneyDec = v => `$${Number(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     const perSqft = estimate?.computed_sqft > 0 ? displayTotal / estimate.computed_sqft : 0;
-    const installLines = result.lines.filter(l => l.section === "Installation");
-    const prepLines = result.lines.filter(l => l.section === "Prep & extras");
-    const protectionLines = result.lines.filter(l => l.section === "Protection fees");
     const minRate = isFlooring
         ? ({ hardwood: 6, engineered_wood: 5, laminate: 3, vinyl_plank: 3, tile_ceramic: 5, tile_porcelain: 7, carpet: 2.5, concrete: 4 }[estimate?.flooring_material] || 3)
         : 2.00;
@@ -453,7 +472,7 @@ export default function PriceCalculatorModal({ show, estimate, onClose, onSave }
                                     </div>
                                 )}
 
-                                {/* Sync notice */}}
+                                {/* Sync notice */}
                                 {estimate?.quoted_amount && Math.round(estimate.quoted_amount) !== Math.round(displayTotal) && (
                                     <div className="alert alert-info d-flex gap-2 py-2 mb-3" style={{ fontSize: 13 }}>
                                         <span>ℹ️</span>
@@ -534,36 +553,116 @@ export default function PriceCalculatorModal({ show, estimate, onClose, onSave }
                                     </div>
                                 </div>
 
-                                {/* Breakdown */}
+                                {/* ── PROFESSIONAL INVOICE TABLE ── */}
                                 {result.lines.length > 0 && (
-                                    <div className="rounded-3 p-3 mb-3" style={{ background: "#f8f9fa", border: "1px solid #dee2e6" }}>
-                                        <p className="fw-semibold mb-1" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".05em", color: "#6c757d" }}>Breakdown</p>
-                                        <BkSection label="Materials" lines={materialLines} />
-                                        <BkSection label="Installation" lines={installLines} />
-                                        <BkSection label="Prep & extras" lines={prepLines} />
-                                        <BkSection label="Protection fees" lines={protectionLines} />
-                                        <div className="d-flex justify-content-between pt-2 mt-1 fw-bold" style={{ borderTop: "1px solid #dee2e6", fontSize: 14 }}>
-                                            <span>Total</span>
-                                            <span className="text-success">{money(displayTotal)}</span>
+                                    <div className="rounded-3 overflow-hidden mb-3" style={{ border: "1px solid #dee2e6" }}>
+                                        {/* Line items header */}
+                                        <div className="d-flex px-3 py-2" style={{ background: "#1e2d4a", color: "#fff" }}>
+                                            <span className="fw-semibold flex-fill" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".06em" }}>Item / Service</span>
+                                            <span className="fw-semibold text-end" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".06em", minWidth: 80 }}>Amount</span>
+                                        </div>
+
+                                        {/* Materials section */}
+                                        {materialLines.length > 0 && (
+                                            <>
+                                                <div className="px-3 py-1" style={{ background: "#fff8f0", borderBottom: "1px solid #dee2e6" }}>
+                                                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: "#c2410c" }}>🛒 Materials</span>
+                                                </div>
+                                                {materialLines.map((l, i) => (
+                                                    <div key={i} className="d-flex justify-content-between px-3 py-2" style={{ fontSize: 13, borderBottom: "1px solid #f1f5f9" }}>
+                                                        <span className="text-muted">{l.label}</span>
+                                                        <span className="fw-medium text-danger" style={{ minWidth: 80, textAlign: "right" }}>${Math.round(l.amount).toLocaleString()}</span>
+                                                    </div>
+                                                ))}
+                                            </>
+                                        )}
+
+                                        {/* Installation section */}
+                                        {installLines.length > 0 && (
+                                            <>
+                                                <div className="px-3 py-1" style={{ background: "#f8f9fa", borderBottom: "1px solid #dee2e6" }}>
+                                                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: "#6c757d" }}>🔨 Installation</span>
+                                                </div>
+                                                {installLines.map((l, i) => (
+                                                    <div key={i} className="d-flex justify-content-between px-3 py-2" style={{ fontSize: 13, borderBottom: "1px solid #f1f5f9" }}>
+                                                        <span className={l.warn ? "text-warning fw-medium" : "text-muted"}>{l.warn ? "⚠ " : ""}{l.label}</span>
+                                                        <span className={`fw-medium ${l.amount < 0 ? "text-danger" : "text-dark"}`} style={{ minWidth: 80, textAlign: "right" }}>
+                                                            {l.amount < 0 ? "-" : ""}${Math.abs(Math.round(l.amount)).toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </>
+                                        )}
+
+                                        {/* Prep & extras */}
+                                        {prepLines.length > 0 && (
+                                            <>
+                                                <div className="px-3 py-1" style={{ background: "#f8f9fa", borderBottom: "1px solid #dee2e6" }}>
+                                                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: "#6c757d" }}>🔧 Prep & extras</span>
+                                                </div>
+                                                {prepLines.map((l, i) => (
+                                                    <div key={i} className="d-flex justify-content-between px-3 py-2" style={{ fontSize: 13, borderBottom: "1px solid #f1f5f9" }}>
+                                                        <span className={l.warn ? "text-warning fw-medium" : "text-muted"}>{l.warn ? "⚠ " : ""}{l.label}</span>
+                                                        <span className="fw-medium text-dark" style={{ minWidth: 80, textAlign: "right" }}>${Math.round(l.amount).toLocaleString()}</span>
+                                                    </div>
+                                                ))}
+                                            </>
+                                        )}
+
+                                        {/* Protection fees */}
+                                        {protectionLines.length > 0 && (
+                                            <>
+                                                <div className="px-3 py-1" style={{ background: "#f8f9fa", borderBottom: "1px solid #dee2e6" }}>
+                                                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: "#6c757d" }}>🛡️ Protection fees</span>
+                                                </div>
+                                                {protectionLines.map((l, i) => (
+                                                    <div key={i} className="d-flex justify-content-between px-3 py-2" style={{ fontSize: 13, borderBottom: "1px solid #f1f5f9" }}>
+                                                        <span className={l.warn ? "text-warning fw-medium" : "text-muted"}>{l.warn ? "⚠ " : ""}{l.label}</span>
+                                                        <span className="fw-medium text-dark" style={{ minWidth: 80, textAlign: "right" }}>${Math.round(l.amount).toLocaleString()}</span>
+                                                    </div>
+                                                ))}
+                                            </>
+                                        )}
+
+                                        {/* Subtotal / Markup / Tax / Total */}
+                                        <div style={{ borderTop: "2px solid #dee2e6", background: "#f8f9fa" }}>
+                                            <div className="d-flex justify-content-between px-3 py-2 border-bottom" style={{ fontSize: 13 }}>
+                                                <span className="text-muted">Subtotal</span>
+                                                <span className="fw-medium">{moneyDec(subtotalCalc)}</span>
+                                            </div>
+
+                                            {/* Tax row — from contractor's saved tax_rate in Settings */}
+                                            {taxRate > 0 && (
+                                                <div className="d-flex justify-content-between px-3 py-2 border-bottom" style={{ fontSize: 13 }}>
+                                                    <span className="text-muted">Tax ({taxRate}%)</span>
+                                                    <span className="fw-medium text-dark">+{moneyDec(taxAmount)}</span>
+                                                </div>
+                                            )}
+
+                                            {/* TOTAL row */}
+                                            <div className="d-flex justify-content-between align-items-center px-3 py-3"
+                                                style={{ background: "#1e2d4a" }}>
+                                                <span className="fw-bold text-white" style={{ fontSize: 14 }}>TOTAL</span>
+                                                <span className="fw-bold text-white" style={{ fontSize: 18 }}>{moneyDec(displayTotal)}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 )}
 
-                                {/* Override */}
-                                <div className="mb-3">
-                                    <label className="form-label fw-medium small">Override amount (optional)</label>
-                                    <div className="input-group input-group-lg">
-                                        <span className="input-group-text">$</span>
-                                        <input type="number" inputMode="decimal" className="form-control fw-bold text-success" style={{ fontSize: 22 }}
-                                            value={manualTotal !== null ? manualTotal : result.total || ""}
-                                            onChange={e => { const v = parseFloat(e.target.value); setManualTotal(isNaN(v) ? null : v); }}
-                                            placeholder="0.00" />
-                                        {manualTotal !== null && (
-                                            <button className="btn btn-outline-secondary" type="button" onClick={() => setManualTotal(null)}>↺ Reset</button>
-                                        )}
+                                {/* Override for no-room estimates */}
+                                {result.lines.length === 0 && (
+                                    <div className="mb-3">
+                                        <label className="form-label fw-medium small">Manual amount</label>
+                                        <div className="input-group input-group-lg">
+                                            <span className="input-group-text">$</span>
+                                            <input type="number" inputMode="decimal" className="form-control fw-bold text-success" style={{ fontSize: 22 }}
+                                                value={manualTotal !== null ? manualTotal : ""}
+                                                onChange={e => { const v = parseFloat(e.target.value); setManualTotal(isNaN(v) ? null : v); }}
+                                                placeholder="0.00" />
+                                        </div>
+                                        <p className="text-muted mt-1 mb-0" style={{ fontSize: 12 }}>Enter amount manually — add rooms for automatic calculation.</p>
                                     </div>
-                                    <p className="text-muted mt-1 mb-0" style={{ fontSize: 12 }}>Pre-filled from calculation — edit freely. Click ↺ to reset.</p>
-                                </div>
+                                )}
 
                                 {/* Notes */}
                                 <div>

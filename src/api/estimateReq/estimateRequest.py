@@ -822,7 +822,10 @@ def get_contractor_rates():
             db.session.add(rates)
             db.session.commit()
  
-        return jsonify({'rates': rates.serialize()}), 200
+        rates_data = rates.serialize()
+        contractor = Contractor.query.get(contractor_id)
+        rates_data['tax_rate'] = float(contractor.tax_rate or 0)
+        return jsonify({'rates': rates_data}), 200
  
     except Exception as e:
         return jsonify({'error': f'Failed to fetch rates: {str(e)}'}), 500

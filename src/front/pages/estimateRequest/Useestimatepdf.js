@@ -1,3 +1,7 @@
+// src/pages/Estimates/Useestimatepdf.js — VERSION 4
+// KEY FIX: reads price_breakdown_json stored on estimate
+// and renders ALL line items in the PDF including furniture, travel, min fee
+// Compact layout — fits on ONE page for most estimates
 
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -162,12 +166,34 @@ export function buildEstimatePDF(estimate, contractorInfo = {}) {
     }
 
     // ── NOTES ─────────────────────────────────────────────────────────────
-    // ── PURCHASED MATERIALS TABLE ─────────────────────────────────────────────────
+    if (estimate.description) {
+        // Strip the "Materials: ..." prefix from description (internal data, not for client)
+        const cleanDesc = estimate.description
+            .split("\n")
+            .filter(l => !l.startsWith("Materials:") && !l.startsWith("Painting:") && !l.startsWith("Flooring:"))
+            .join("\n")
+            .trim();
+        if (cleanDesc) {
+            sf(7, "bold", C.gray);
+            doc.text("NOTES", ML, y); y += 9;
+            sf(7.5, "normal", C.dark);
+            const noteLines = doc.splitTextToSize(cleanDesc, W);
+            doc.text(noteLines, ML, y);
+            y += noteLines.length * 9 + 6;
+        }
+    }
+
+    // ── PURCHASED MATERIALS TABLE (contractor cost — not shown to client by default) ────
     if (estimate.materials_json) {
         let mats = [];
         try { mats = JSON.parse(estimate.materials_json); } catch(e) {}
         if (mats.length > 0) {
             const totalMatCost = mats.reduce((s,m) => s+(parseFloat(m.quantity)||0)*(parseFloat(m.unit_cost)||0), 0);
+
+            // Section label
+            sf(7, "bold", [180, 83, 9]);
+            doc.text("MATERIALS TO PURCHASE", ML, y); y += 9;
+
             const matRows = mats.map(m => {
                 const rowTotal = (parseFloat(m.quantity)||0)*(parseFloat(m.unit_cost)||0);
                 return [
@@ -179,7 +205,7 @@ export function buildEstimatePDF(estimate, contractorInfo = {}) {
                 ];
             });
             matRows.push([
-                { content: "Total materials cost", colSpan: 4, styles: { fontStyle: "bold", halign: "right" } },
+                { content: "Total materials cost", colSpan: 4, styles: { fontStyle: "bold", halign: "right", textColor: [180,83,9] } },
                 { content: `$${totalMatCost.toFixed(2)}`, styles: { fontStyle: "bold", textColor: [180,30,30], halign:"right" } },
             ]);
             autoTable(doc, {
@@ -187,27 +213,25 @@ export function buildEstimatePDF(estimate, contractorInfo = {}) {
                 head: [["Material", "Category", "Qty", "Unit cost", "Total"]],
                 body: matRows,
                 styles: { fontSize: 7.5, cellPadding: 3 },
-                headStyles: { fillColor: C.dark, textColor: C.white, fontSize: 7.5 },
+                headStyles: { fillColor: [180, 83, 9], textColor: C.white, fontSize: 7.5, fontStyle: "bold" },
                 columnStyles: {
                     0: { fontStyle: "bold" },
                     2: { halign: "right" },
                     3: { halign: "right" },
                     4: { halign: "right", textColor: [180,30,30], fontStyle: "bold" },
                 },
-                alternateRowStyles: { fillColor: [250,250,250] },
+                alternateRowStyles: { fillColor: [255, 247, 237] },
+                footStyles: { fillColor: [255, 247, 237] },
             });
             y = doc.lastAutoTable.finalY + 8;
+
+            // Small disclaimer
+            sf(6.5, "italic", C.gray);
+            doc.text("* Contractor purchasing cost — included in quoted price above.", ML, y);
+            y += 10;
         }
     }
 
-    if (estimate.description) {
-        sf(7, "bold", C.gray);
-        doc.text("NOTES", ML, y); y += 9;
-        sf(7.5, "normal", C.dark);
-        const noteLines = doc.splitTextToSize(estimate.description, W);
-        doc.text(noteLines, ML, y);
-        y += noteLines.length * 9 + 6;
-    }
 
     // ── PRICE BREAKDOWN ───────────────────────────────────────────────────
     if (estimate.quoted_amount) {
@@ -234,7 +258,7 @@ export function buildEstimatePDF(estimate, contractorInfo = {}) {
             const getSection = item => item.section || "Installation";
 
             // Collect all unique section names in order
-            const sectionOrder = ["Installation", "Prep & extras", "Protection fees"];
+            const sectionOrder = ["Materials", "Installation", "Prep & extras", "Protection fees"];
             // Also capture any sections not in the default order
             const allSections = [...new Set(lineItems.map(getSection))];
             const orderedSections = [
@@ -247,12 +271,14 @@ export function buildEstimatePDF(estimate, contractorInfo = {}) {
                 const items = lineItems.filter(l => getSection(l) === section);
                 if (!items.length) return;
 
-                // Section subheader
+                // Section subheader — Materials section gets orange accent
+                const isMatsSection = section === "Materials";
                 tableRows.push([{
                     content: section.toUpperCase(), colSpan: 2,
                     styles: {
-                        fontStyle: "bold", fontSize: 6.5, textColor: C.gray,
-                        fillColor: C.lightGray,
+                        fontStyle: "bold", fontSize: 6.5,
+                        textColor: isMatsSection ? [180, 83, 9] : C.gray,
+                        fillColor: isMatsSection ? [255, 247, 237] : C.lightGray,
                         cellPadding: { top: 4, bottom: 2, left: 6, right: 6 },
                     },
                 }]);
@@ -277,6 +303,23 @@ export function buildEstimatePDF(estimate, contractorInfo = {}) {
                     ]);
                 });
             });
+
+            // Subtotal row (sum of all line items before tax)
+            const lineItemsTotal = lineItems.reduce((s, l) => s + (Number(l.amount) || 0), 0);
+            const taxDiff = Math.max(0, (Number(estimate.quoted_amount) || 0) - lineItemsTotal);
+
+            tableRows.push([
+                { content: "Subtotal", styles: { fontStyle: "bold", textColor: C.gray, fontSize: 8, fillColor: [248,249,250] } },
+                { content: money(lineItemsTotal), styles: { halign: "right", fontStyle: "bold", fontSize: 8, fillColor: [248,249,250], textColor: C.dark } },
+            ]);
+
+            // Tax row — only shown when contractor's tax_rate produced a difference
+            if (taxDiff > 0.01) {
+                tableRows.push([
+                    { content: "Tax", styles: { fontStyle: "normal", textColor: C.gray, fontSize: 8, fillColor: [248,249,250] } },
+                    { content: money(taxDiff), styles: { halign: "right", fontSize: 8, fillColor: [248,249,250], textColor: C.dark } },
+                ]);
+            }
 
             // Grand total row
             tableRows.push([
