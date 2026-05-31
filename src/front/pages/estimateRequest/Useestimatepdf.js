@@ -263,12 +263,20 @@ export function buildEstimatePDF(estimate, contractorInfo = {}) {
             const allSections = [...new Set(lineItems.map(getSection))];
             const orderedSections = [
                 ...sectionOrder.filter(s => allSections.includes(s)),
-                ...allSections.filter(s => !sectionOrder.includes(s)),
+                ...allSections.filter(s => !sectionOrder.includes(s) && s !== "__tax_meta__"),
             ];
+
+            // Read tax from the __tax_meta__ sentinel row — MUST be before forEach
+            const taxMeta = lineItems.find(l => l.section === "__tax_meta__");
+            const pdfTaxRate = taxMeta?.taxRate || 0;
+            const pdfTaxAmt  = Number(taxMeta?.amount) || 0;
+            // Real lines exclude the sentinel — MUST be before forEach
+            const realItems = lineItems.filter(l => l.section !== "__tax_meta__");
+            const lineItemsTotal = realItems.reduce((s, l) => s + (Number(l.amount) || 0), 0);
 
             const tableRows = [];
             orderedSections.forEach(section => {
-                const items = lineItems.filter(l => getSection(l) === section);
+                const items = realItems.filter(l => getSection(l) === section);
                 if (!items.length) return;
 
                 // Section subheader — Materials section gets orange accent
@@ -304,20 +312,17 @@ export function buildEstimatePDF(estimate, contractorInfo = {}) {
                 });
             });
 
-            // Subtotal row (sum of all line items before tax)
-            const lineItemsTotal = lineItems.reduce((s, l) => s + (Number(l.amount) || 0), 0);
-            const taxDiff = Math.max(0, (Number(estimate.quoted_amount) || 0) - lineItemsTotal);
-
             tableRows.push([
                 { content: "Subtotal", styles: { fontStyle: "bold", textColor: C.gray, fontSize: 8, fillColor: [248,249,250] } },
                 { content: money(lineItemsTotal), styles: { halign: "right", fontStyle: "bold", fontSize: 8, fillColor: [248,249,250], textColor: C.dark } },
             ]);
 
-            // Tax row — only shown when contractor's tax_rate produced a difference
-            if (taxDiff > 0.01) {
+            // Tax row — from stored tax metadata
+            if (pdfTaxAmt > 0.01) {
+                const taxLabel = pdfTaxRate > 0 ? `Tax (${pdfTaxRate}%)` : "Tax";
                 tableRows.push([
-                    { content: "Tax", styles: { fontStyle: "normal", textColor: C.gray, fontSize: 8, fillColor: [248,249,250] } },
-                    { content: money(taxDiff), styles: { halign: "right", fontSize: 8, fillColor: [248,249,250], textColor: C.dark } },
+                    { content: taxLabel, styles: { fontStyle: "normal", textColor: C.gray, fontSize: 8, fillColor: [248,249,250] } },
+                    { content: money(pdfTaxAmt), styles: { halign: "right", fontSize: 8, fillColor: [248,249,250], textColor: C.dark } },
                 ]);
             }
 

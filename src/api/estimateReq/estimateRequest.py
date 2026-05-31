@@ -760,23 +760,24 @@ def convert_estimate_to_invoice(estimate_id):
         # BUG 5 FIXED: contractor_req → contractor_rec (typo — variable name mismatch)
         contractor_rec = Contractor.query.get(contractor_id)
         tax_rate   = float(contractor_rec.tax_rate or 0)
+        # To keep it simple and accurate: treat quoted_amount as the pre-tax subtotal.
         subtotal   = float(estimate.quoted_amount)
         tax_amount = round(subtotal * (tax_rate / 100), 2)
         total      = round(subtotal + tax_amount, 2)
 
         invoice = Invoice(
-            contractor_id=contractor_id,
-            customer_id=customer.id,
-            job_id=job.id,
-            invoice_number=next_num,
-            issue_date=datetime.utcnow(),
-            due_date=due_date,
-            subtotal=subtotal,
-            tax=tax_amount,
-            total_amount=total,
-            status=InvoiceStatus.draft,
-            payment_link='',
-            notes=estimate.contractor_notes or '',
+            contractor_id  = contractor_id,
+            customer_id    = customer.id,
+            job_id         = job.id,
+            invoice_number = next_num,
+            issue_date     = datetime.utcnow(),
+            due_date       = due_date,
+            subtotal       = subtotal,
+            tax            = tax_amount,        
+            total_amount   = total,            
+            status         = InvoiceStatus.draft,
+            payment_link   = '',
+            notes          = estimate.contractor_notes or '',
         )
         db.session.add(invoice)
         db.session.flush()
@@ -865,8 +866,17 @@ def update_contractor_rates():
             if field in data and data[field] is not None:
                 setattr(rates, field, float(data[field]))
  
+        if 'tax_rate' in data and data['tax_rate'] is not None:
+            contractor = Contractor.query.get(contractor_id)
+            if contractor:
+                contractor.tax_rate = float(data['tax_rate'])
+ 
         db.session.commit()
-        return jsonify({'msg': 'Rates updated successfully', 'rates': rates.serialize()}), 200
+
+        rates_data = rates.serialize()
+        contractor = Contractor.query.get(contractor_id)
+        rates_data['tax_rate'] = float(contractor.tax_rate or 0)
+        return jsonify({'msg': 'Rates updated successfully', 'rates': rates_data}), 200
  
     except Exception as e:
         db.session.rollback()

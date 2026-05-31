@@ -415,6 +415,7 @@ export default function EstimateDetailPage() {
             quoted_amount: amount,
             contractor_notes: notes,
             price_breakdown_json: breakdownJson,
+            materials_json: estimate.materials_json,
             furniture_rooms: extrasFromModal.furnitureRooms ?? estimate.furniture_rooms ?? 0,
             furniture_heavy: extrasFromModal.furnitureHeavy ?? estimate.furniture_heavy ?? 0,
             moisture_barrier: extrasFromModal.moistureBarrier ?? estimate.moisture_barrier ?? false,
@@ -524,13 +525,17 @@ export default function EstimateDetailPage() {
 
                                         let breakdown = [];
                                         try { if (estimate.price_breakdown_json) breakdown = JSON.parse(estimate.price_breakdown_json); } catch (e) { }
-                                        const laborLines = breakdown.filter(l => l.section !== "Materials");
-                                        const laborCost = laborLines.reduce((s, l) => s + (Number(l.amount) || 0), 0);
-
-                                        // Tax comes from the breakdown lines — no separate meta needed
-                                        // breakdown already includes tax if contractor's tax_rate is set
-                                        const subtotal = (materialsCost + laborCost) || estimate.quoted_amount;
-                                        const taxAmt = Math.max(0, estimate.quoted_amount - subtotal);
+                                        // Read tax from the __tax_meta__ sentinel row stored in price_breakdown_json
+                                        const taxMeta = breakdown.find(l => l.section === "__tax_meta__");
+                                        const storedTaxRate = taxMeta?.taxRate || 0;
+                                        const storedTaxAmt = Number(taxMeta?.amount) || 0;
+                                        // Real lines exclude the meta sentinel
+                                        const realLines = breakdown.filter(l => l.section !== "__tax_meta__");
+                                        const realLaborLines = realLines.filter(l => l.section !== "Materials");
+                                        const laborCost = realLaborLines.reduce((s, l) => s + (Number(l.amount) || 0), 0);
+                                        const subtotal = materialsCost + laborCost;
+                                        const displaySubtotal = subtotal > 0 ? subtotal : (estimate.quoted_amount - storedTaxAmt);
+                                        const taxAmt = storedTaxAmt;
                                         const mDec = v => `$${Number(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
                                         return (
@@ -554,8 +559,8 @@ export default function EstimateDetailPage() {
                                                 </div>
                                                 {materialsCost > 0 && <div className="d-flex justify-content-between px-3 py-2" style={{ fontSize: 13, borderBottom: "1px solid #f1f5f9", background: "#fff8f0" }}><span style={{ color: "#c2410c" }}>🛒 Materials</span><span className="fw-semibold" style={{ color: "#c2410c" }}>{mDec(materialsCost)}</span></div>}
                                                 {laborCost > 0 && <div className="d-flex justify-content-between px-3 py-2" style={{ fontSize: 13, borderBottom: "1px solid #f1f5f9" }}><span className="text-muted">Labor &amp; services</span><span className="fw-semibold">{mDec(laborCost)}</span></div>}
-                                                <div className="d-flex justify-content-between px-3 py-2" style={{ fontSize: 13, borderBottom: "1px solid #dee2e6", background: "#f8f9fa" }}><span className="text-muted">Subtotal</span><span className="fw-semibold">{mDec(subtotal)}</span></div>
-                                                {taxAmt > 0 && <div className="d-flex justify-content-between px-3 py-2" style={{ fontSize: 13, borderBottom: "1px solid #dee2e6", background: "#f8f9fa" }}><span className="text-muted">Tax</span><span className="fw-semibold">{mDec(taxAmt)}</span></div>}
+                                                <div className="d-flex justify-content-between px-3 py-2" style={{ fontSize: 13, borderBottom: "1px solid #dee2e6", background: "#f8f9fa" }}><span className="text-muted">Subtotal</span><span className="fw-semibold">{mDec(displaySubtotal)}</span></div>
+                                                {taxAmt > 0 && <div className="d-flex justify-content-between px-3 py-2" style={{ fontSize: 13, borderBottom: "1px solid #dee2e6", background: "#f8f9fa" }}><span className="text-muted">Tax{storedTaxRate > 0 ? ` (${storedTaxRate}%)` : ""}</span><span className="fw-semibold">{mDec(taxAmt)}</span></div>}
                                                 <div className="d-flex justify-content-between px-3 py-3" style={{ background: "#f0fdf4", borderTop: "2px solid #86efac" }}>
                                                     <span className="fw-bold" style={{ fontSize: 15 }}>Total</span>
                                                     <span className="fw-bold text-success" style={{ fontSize: 17 }}>{mDec(estimate.quoted_amount)}</span>

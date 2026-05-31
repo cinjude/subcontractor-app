@@ -46,6 +46,21 @@ function calculate(estimate, rates, extras, materialsJson = null) {
     const lines = [];
     let total = 0;
 
+    // ── MATERIALS the contractor buys — added FIRST so they appear at top of breakdown
+    // and are included in the total. This is what makes "costs included automatically" true.
+    if (materialsJson) {
+        let mats = [];
+        try { mats = typeof materialsJson === "string" ? JSON.parse(materialsJson) : (Array.isArray(materialsJson) ? materialsJson : []); } catch (e) { }
+        mats.forEach(m => {
+            const rowCost = (parseFloat(m.quantity) || 0) * (parseFloat(m.unit_cost) || 0);
+            if (rowCost > 0) {
+                const label = m.name ? `${m.name} — ${m.quantity} ${m.unit} × $${parseFloat(m.unit_cost || 0).toFixed(2)}` : `Material — ${m.quantity} ${m.unit}`;
+                lines.push({ section: "Materials", label, amount: rowCost });
+                total += rowCost;
+            }
+        });
+    }
+
     const isPainting = ["painting", "both"].includes(estimate.estimate_type);
     const isFlooring = ["flooring", "both"].includes(estimate.estimate_type);
 
@@ -356,10 +371,18 @@ export default function PriceCalculatorModal({ show, estimate, onClose, onSave }
         if (!finalAmount) return;
         setSaving(true);
         try {
+            // Build lines WITH tax metadata appended so it's stored in price_breakdown_json
+            // This allows the detail page and PDF to read actual taxRate/taxAmount from storage
+            const linesWithTax = [
+                ...result.lines,
+                // Sentinel row — not displayed as a line item, just stores tax metadata
+                // section "__tax_meta__" is filtered out from display everywhere
+                { section: "__tax_meta__", label: "__tax__", amount: taxAmount, taxRate, subtotal: subtotalCalc },
+            ];
             await onSave(
                 finalAmount,
                 notes,
-                result.lines,
+                linesWithTax,
                 extras,
                 { taxRate, taxAmount, subtotal: subtotalCalc }
             );
@@ -737,6 +760,22 @@ export default function PriceCalculatorModal({ show, estimate, onClose, onSave }
                                     <SliderRow label="Minimum job fee" field="minimum_job_fee" rates={rates} onChange={updateRate} min={50} max={800} step={25} />
                                     <SliderRow label="Travel / mile" field="travel_fee_per_mile" rates={rates} onChange={updateRate} min={0.5} max={5} step={0.25} />
                                     <SliderRow label="Travel flat fee" field="travel_fee_flat" rates={rates} onChange={updateRate} min={0} max={300} step={10} />
+                                </RateCard>
+
+                                <RateCard title="🧾 Tax rate">
+                                    <div className="d-flex align-items-center gap-3 py-2 border-bottom">
+                                        <span className="text-muted flex-shrink-0" style={{ fontSize: 13, minWidth: 180 }}>Sales tax %</span>
+                                        <input type="range" className="flex-fill" min={0} max={20} step={0.25}
+                                            value={rates.tax_rate || 0}
+                                            onChange={e => updateRate("tax_rate", parseFloat(e.target.value))}
+                                            style={{ accentColor: "#212529" }} />
+                                        <span className="fw-medium flex-shrink-0 font-monospace" style={{ fontSize: 13, minWidth: 52, textAlign: "right" }}>
+                                            {Number(rates.tax_rate || 0).toFixed(2)}%
+                                        </span>
+                                    </div>
+                                    <p className="text-muted mb-0 mt-1 pb-2" style={{ fontSize: 11 }}>
+                                        Applied to the full quote total. Set 0 if you don't charge tax.
+                                    </p>
                                 </RateCard>
 
                                 <button className="btn btn-dark fw-semibold w-100 mb-2" onClick={handleSaveRates} disabled={savingRates}>

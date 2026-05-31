@@ -416,9 +416,11 @@ function MaterialsSection({ materials = [], onChange, estimateType = "painting" 
                                         placeholder="Material name (e.g. Interior paint)"
                                     />
                                     <button type="button"
-                                        className="btn-close flex-shrink-0"
-                                        style={{ fontSize: 10 }}
-                                        onClick={() => removeMaterial(mat.id)} />
+                                        className="btn btn-outline-danger btn-sm flex-shrink-0 d-flex align-items-center gap-1"
+                                        style={{ fontSize: 11, padding: "2px 8px", borderRadius: 6 }}
+                                        onClick={() => removeMaterial(mat.id)}>
+                                        🗑 Remove
+                                    </button>
                                 </div>
 
                                 {/* Category + qty + unit + cost */}
