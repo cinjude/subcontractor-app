@@ -301,7 +301,7 @@ export function buildEstimatePDF(estimate, contractorInfo = {}) {
                         },
                         {
                             content: isNeg
-                                ? `-$${Math.abs(Math.round(amt)).toLocaleString()}`
+                                ? `-$${Number(Math.abs(amt)).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}`
                                 : money(amt),
                             styles: {
                                 halign: "right", fontStyle: "bold", fontSize: 8,

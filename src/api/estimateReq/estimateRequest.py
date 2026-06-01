@@ -881,3 +881,104 @@ def update_contractor_rates():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Failed to update rates: {str(e)}'}), 500
+
+@api.route('/estimates/<int:estimate_id>/send-email', methods=['POST'])
+@jwt_required()
+def send_estimate_email(estimate_id):
+    import base64
+ 
+    try:
+        contractor_id = get_current_contractor_id()
+ 
+        estimate = EstimateRequest.query.filter_by(
+            id=estimate_id, contractor_id=contractor_id
+        ).first()
+        if not estimate:
+            return jsonify({'error': 'Estimate not found'}), 404
+ 
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+ 
+        recipient  = data.get('recipient_email') or estimate.customer_email
+        pdf_base64 = data.get('pdf_base64')
+        filename   = data.get('filename', f'estimate-{estimate_id}.pdf')
+ 
+        if not recipient:
+            return jsonify({'error': 'Recipient email is required'}), 400
+        if not pdf_base64:
+            return jsonify({'error': 'PDF base64 is required'}), 400
+ 
+        pdf_bytes = base64.b64decode(pdf_base64)
+ 
+        contractor = Contractor.query.get(contractor_id)
+        from_email = os.environ.get("MAIL_FROM", "noreply@example.com")
+        biz_name   = (contractor.business_name if contractor else None) or "Your Contractor"
+        subject    = f"{biz_name} – Your Estimate #{estimate_id}"
+ 
+        quoted_block = ""
+        if estimate.quoted_amount:
+            q = f"${float(estimate.quoted_amount):,.2f}"
+            quoted_block = f"""
+            <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;
+                        padding:20px;text-align:center;margin:20px 0;">
+              <p style="margin:0 0 4px;color:#15803d;font-size:12px;font-weight:600;">TOTAL ESTIMATE</p>
+              <p style="margin:0;font-size:32px;font-weight:700;color:#15803d;">{q}</p>
+            </div>"""
+ 
+        type_label = ""
+        if estimate.estimate_type:
+            type_label = (estimate.estimate_type.value
+                          if hasattr(estimate.estimate_type, 'value')
+                          else str(estimate.estimate_type)).capitalize()
+ 
+        html_body = f"""
+        <!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;background:#f5f5f5;margin:0;padding:40px 16px;">
+          <table width="600" style="margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;">
+            <tr><td style="background:#1a1a1a;padding:24px 32px;">
+              <h1 style="margin:0;color:#fff;font-size:20px;">{biz_name}</h1>
+              <p style="margin:4px 0 0;color:#9ca3af;font-size:12px;">{contractor.phone or "" if contractor else ""}</p>
+            </td></tr>
+            <tr><td style="padding:28px 32px;">
+              <p style="font-size:15px;color:#111;">Hi {estimate.customer_name or "there"},</p>
+              <p style="font-size:14px;color:#374151;line-height:1.6;">
+                Please find your <strong>{type_label} estimate</strong> attached.
+                Everything is itemized — no hidden costs.
+              </p>
+              {quoted_block}
+              <p style="font-size:14px;color:#374151;">
+                Questions? Reply to this email or call us directly.
+              </p>
+            </td></tr>
+            <tr><td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:16px 32px;text-align:center;">
+              <p style="margin:0;font-size:11px;color:#9ca3af;">This estimate is valid for 30 days · {biz_name}</p>
+            </td></tr>
+          </table>
+        </body></html>"""
+ 
+        if os.environ.get("SENDGRID_API_KEY"):
+            from sendgrid import SendGridAPIClient
+            from sendgrid.helpers.mail import (
+                Mail, Attachment, FileContent, FileName, FileType, Disposition
+            )
+            msg = Mail(from_email=from_email, to_emails=recipient,
+                       subject=subject, html_content=html_body)
+            msg.attachment = Attachment(
+                FileContent(base64.b64encode(pdf_bytes).decode()),
+                FileName(filename), FileType("application/pdf"), Disposition("attachment")
+            )
+            SendGridAPIClient(os.environ["SENDGRID_API_KEY"]).send(msg)
+        else:
+            from flask_mail import Mail as FlaskMail, Message
+            from flask import current_app
+            mail = FlaskMail(current_app)
+            msg  = Message(subject, sender=from_email, recipients=[recipient])
+            msg.html = html_body
+            msg.attach(filename, "application/pdf", pdf_bytes)
+            mail.send(msg)
+ 
+        # FIX 3: add f prefix so {recipient} is interpolated
+        return jsonify({'msg': f'Estimate sent to {recipient}', 'recipient': recipient})
+ 
+    except Exception as e:
+        return jsonify({"error": f"Failed to send email: {str(e)}"}), 500

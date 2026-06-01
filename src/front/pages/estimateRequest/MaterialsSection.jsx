@@ -61,7 +61,7 @@ function newMaterial(overrides = {}) {
     };
 }
 
-export default function MaterialsSection({ materials = [], onChange, estimateType = "painting" }) {
+function MaterialsSection({ materials = [], onChange, estimateType = "painting" }) {
     const [showPresets, setShowPresets] = useState(false);
 
     const isPainting = ["painting", "both"].includes(estimateType);

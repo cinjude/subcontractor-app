@@ -277,7 +277,7 @@ function BkSection({ label, lines }) {
                 <div key={i} className="d-flex justify-content-between py-1" style={{ fontSize: 13, borderBottom: "1px solid #f1f5f9" }}>
                     <span className={l.warn ? "text-warning fw-medium" : "text-muted"}>{l.warn ? "⚠ " : ""}{l.label}</span>
                     <span className={`fw-medium ${l.amount < 0 ? "text-danger" : "text-dark"}`}>
-                        {l.amount < 0 ? "-" : ""}${Math.abs(Math.round(l.amount)).toLocaleString()}
+                        {l.amount < 0 ? "-" : ""}${Math.abs(Number(l.amount)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                 </div>
             ))}
@@ -394,7 +394,7 @@ export default function PriceCalculatorModal({ show, estimate, onClose, onSave }
 
     if (!show) return null;
 
-    const money = v => `$${Number(Math.round(v)).toLocaleString("en-US")}`;
+    const money = v => `$${Number(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     const moneyDec = v => `$${Number(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     const perSqft = estimate?.computed_sqft > 0 ? displayTotal / estimate.computed_sqft : 0;
     const minRate = isFlooring
@@ -594,7 +594,7 @@ export default function PriceCalculatorModal({ show, estimate, onClose, onSave }
                                                 {materialLines.map((l, i) => (
                                                     <div key={i} className="d-flex justify-content-between px-3 py-2" style={{ fontSize: 13, borderBottom: "1px solid #f1f5f9" }}>
                                                         <span className="text-muted">{l.label}</span>
-                                                        <span className="fw-medium text-danger" style={{ minWidth: 80, textAlign: "right" }}>${Math.round(l.amount).toLocaleString()}</span>
+                                                        <span className="fw-medium text-danger" style={{ minWidth: 80, textAlign: "right" }}>${Number(l.amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                                     </div>
                                                 ))}
                                             </>
@@ -610,7 +610,7 @@ export default function PriceCalculatorModal({ show, estimate, onClose, onSave }
                                                     <div key={i} className="d-flex justify-content-between px-3 py-2" style={{ fontSize: 13, borderBottom: "1px solid #f1f5f9" }}>
                                                         <span className={l.warn ? "text-warning fw-medium" : "text-muted"}>{l.warn ? "⚠ " : ""}{l.label}</span>
                                                         <span className={`fw-medium ${l.amount < 0 ? "text-danger" : "text-dark"}`} style={{ minWidth: 80, textAlign: "right" }}>
-                                                            {l.amount < 0 ? "-" : ""}${Math.abs(Math.round(l.amount)).toLocaleString()}
+                                                            {l.amount < 0 ? "-" : ""}${Math.abs(Number(l.amount)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                         </span>
                                                     </div>
                                                 ))}
@@ -626,7 +626,7 @@ export default function PriceCalculatorModal({ show, estimate, onClose, onSave }
                                                 {prepLines.map((l, i) => (
                                                     <div key={i} className="d-flex justify-content-between px-3 py-2" style={{ fontSize: 13, borderBottom: "1px solid #f1f5f9" }}>
                                                         <span className={l.warn ? "text-warning fw-medium" : "text-muted"}>{l.warn ? "⚠ " : ""}{l.label}</span>
-                                                        <span className="fw-medium text-dark" style={{ minWidth: 80, textAlign: "right" }}>${Math.round(l.amount).toLocaleString()}</span>
+                                                        <span className="fw-medium text-dark" style={{ minWidth: 80, textAlign: "right" }}>${Number(l.amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                                     </div>
                                                 ))}
                                             </>
@@ -641,7 +641,7 @@ export default function PriceCalculatorModal({ show, estimate, onClose, onSave }
                                                 {protectionLines.map((l, i) => (
                                                     <div key={i} className="d-flex justify-content-between px-3 py-2" style={{ fontSize: 13, borderBottom: "1px solid #f1f5f9" }}>
                                                         <span className={l.warn ? "text-warning fw-medium" : "text-muted"}>{l.warn ? "⚠ " : ""}{l.label}</span>
-                                                        <span className="fw-medium text-dark" style={{ minWidth: 80, textAlign: "right" }}>${Math.round(l.amount).toLocaleString()}</span>
+                                                        <span className="fw-medium text-dark" style={{ minWidth: 80, textAlign: "right" }}>${Number(l.amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                                     </div>
                                                 ))}
                                             </>

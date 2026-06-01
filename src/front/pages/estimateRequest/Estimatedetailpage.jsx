@@ -612,7 +612,7 @@ export default function EstimateDetailPage() {
                                                         {ls.map((ln, i) => (
                                                             <div key={i} className="d-flex justify-content-between px-3" style={{ padding: "7px 16px", borderBottom: i < ls.length - 1 ? "1px solid #f1f5f9" : "1px solid #dee2e6", fontSize: 13 }}>
                                                                 <span className={ln.warn ? "text-warning fw-medium" : "text-muted"}>{ln.warn ? "⚠ " : ""}{ln.description || ln.label}</span>
-                                                                <span className={`fw-medium ${ln.amount < 0 ? "text-danger" : "text-dark"}`} style={{ minWidth: 80, textAlign: "right" }}>{ln.amount < 0 ? "-" : ""}${Math.abs(Math.round(ln.amount)).toLocaleString()}</span>
+                                                                <span className={`fw-medium ${ln.amount < 0 ? "text-danger" : "text-dark"}`} style={{ minWidth: 80, textAlign: "right" }}>{ln.amount < 0 ? "-" : ""}${Math.abs(Number(ln.amount)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                                             </div>
                                                         ))}
                                                     </div>);

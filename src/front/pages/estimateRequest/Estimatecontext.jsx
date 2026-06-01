@@ -1,9 +1,4 @@
-// src/pages/Estimates/Estimatecontext.jsx
-//
-// CHANGES FROM YOUR ORIGINAL:
-//   1. Added  convertToInvoice()  — calls the new backend endpoint
-//   2. Added  convertToInvoice  to the context default value and Provider value
-//   Everything else is IDENTICAL to your original file.
+
 
 import { createContext, useContext, useState, useCallback } from "react";
 
@@ -12,19 +7,19 @@ const EstimateContext = createContext({
     stats: null,
     loading: false,
     error: null,
-    fetchEstimates:    async () => {},
-    fetchStats:        async () => {},
-    fetchEstimate:     async () => {},
-    createEstimate:    async () => {},
-    updateEstimate:    async () => {},
-    updateStatus:      async () => {},
-    deleteEstimate:    async () => {},
-    addRoom:           async () => {},
-    deleteRoom:        async () => {},
-    uploadPhoto:       async () => {},
-    deletePhoto:       async () => {},
-    convertToJob:      async () => {},
-    convertToInvoice:  async () => {},   // ← NEW
+    fetchEstimates: async () => { },
+    fetchStats: async () => { },
+    fetchEstimate: async () => { },
+    createEstimate: async () => { },
+    updateEstimate: async () => { },
+    updateStatus: async () => { },
+    deleteEstimate: async () => { },
+    addRoom: async () => { },
+    deleteRoom: async () => { },
+    uploadPhoto: async () => { },
+    deletePhoto: async () => { },
+    convertToJob: async () => { },
+    convertToInvoice: async () => { },   // ← NEW
 });
 
 const BASE = import.meta.env.VITE_BACKEND_URL || "";
@@ -46,9 +41,9 @@ async function apiFetch(path, opts = {}) {
 
 export function EstimateProvider({ children }) {
     const [estimates, setEstimates] = useState([]);
-    const [stats,     setStats]     = useState(null);
-    const [loading,   setLoading]   = useState(false);
-    const [error,     setError]     = useState(null);
+    const [stats, setStats] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
     const fetchEstimates = useCallback(async (filters = {}) => {
         setLoading(true); setError(null);
@@ -131,7 +126,7 @@ export function EstimateProvider({ children }) {
     const uploadPhoto = useCallback(async (estimateId, file, caption = "") => {
         try {
             const token = localStorage.getItem("token");
-            const form  = new FormData();
+            const form = new FormData();
             form.append("file", file);
             form.append("caption", caption);
             const res = await fetch(`${BASE}/api/estimates/${estimateId}/photos`, {

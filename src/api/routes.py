@@ -23,7 +23,6 @@ api = Blueprint('api', __name__)
 from api.customer.customer import * 
 from api.services.service import *
 from api.estimateReq.estimateRequest import *
-from api.estimateReq.sendEmail import *
 CORS(api)
 
 
