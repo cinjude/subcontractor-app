@@ -168,6 +168,8 @@ class Contractor(db.Model):
     subscription_renewal_date: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=True)
     tax_rate: Mapped[Numeric] = mapped_column(Numeric(10, 2), nullable=True)
+    hero_color: Mapped[str] = mapped_column(String(10), nullable=True, default='#1e293b')
+    btn_color: Mapped[str] = mapped_column(String(10), nullable=True, default='#1d6b3e')
     currency: Mapped[str] = mapped_column(String(10), default='USD', nullable=True)
     invoice_prefix: Mapped[str] = mapped_column(String(10), default='INV', nullable=True)
     stripe_account_id: Mapped[str] = mapped_column(String(255), nullable=True)
@@ -682,7 +684,6 @@ class InvoiceItem(db.Model):
     def row_total(cls):
         return func.coalesce(cls.quantity * cls.unit_price, 0)
 
-
 class Payment(db.Model):
     __tablename__ = 'payment'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -709,7 +710,6 @@ class Payment(db.Model):
         db.Index('idx_payment_invoice', 'invoice_id'),
         db.Index('idx_payment_status', 'payment_status'),)
 
-
 class PortfolioProject(db.Model):
     __tablename__ = 'portfolioproject'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -723,7 +723,6 @@ class PortfolioProject(db.Model):
         back_populates='project_provider')
     image: Mapped[list['PortfolioImage']] = relationship(
         back_populates='project')
-
 
 class PortfolioImage(db.Model):
     __tablename__ = 'portfolioimage'

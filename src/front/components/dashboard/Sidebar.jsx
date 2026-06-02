@@ -1,3 +1,6 @@
+// src/components/dashboard/Sidebar.jsx — UPDATED
+// Change: added Portfolio link with BiImages icon
+
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -8,7 +11,7 @@ import {
     BiReceipt,
     BiCreditCard,
     BiCog,
-    BiFolder,
+    BiImages,   // ← Portfolio icon
     BiMenu,
     BiX
 } from "react-icons/bi";
@@ -24,25 +27,19 @@ export const Sidebar = ({ isCollapsed, toggleCollapse, isMobile, isMobileOpen, t
         { name: "Invoices", icon: BiReceipt, path: "/providerdashboard/invoices" },
         { name: "Payments", icon: BiCreditCard, path: "/providerdashboard/payments" },
         { name: "Services", icon: BiCog, path: "/providerdashboard/services" },
-        { name: "Portfolio", icon: BiFolder, path: "/providerdashboard/portfolio" },
-        { name: "Settings", icon: BiCog, path: "/providerdashboard/settings" }
+        { name: "Portfolio", icon: BiImages, path: "/providerdashboard/portfolio" }, // ← NEW
+        { name: "Settings", icon: BiCog, path: "/providerdashboard/settings" },
     ];
 
-    const isActive = (path) => {
-        return location.pathname === path || location.pathname.startsWith(path + "/");
-    };
+    const isActive = (path) =>
+        location.pathname === path || location.pathname.startsWith(path + "/");
 
     return (
         <>
-            {/* Mobile overlay */}
             {isMobile && isMobileOpen && (
-                <div
-                    className="sidebar-overlay d-lg-none"
-                    onClick={toggleMobile}
-                />
+                <div className="sidebar-overlay d-lg-none" onClick={toggleMobile} />
             )}
 
-            {/* Sidebar */}
             <div className={`sidebar d-flex flex-column ${isCollapsed ? 'collapsed' : ''} ${isMobile ? (isMobileOpen ? 'mobile-open' : 'mobile-closed') : ''}`}>
                 {/* Logo/Header */}
                 <div className="sidebar-header d-flex align-items-center justify-content-between p-3 border-bottom">
@@ -58,11 +55,7 @@ export const Sidebar = ({ isCollapsed, toggleCollapse, isMobile, isMobileOpen, t
                         onClick={isMobile ? toggleMobile : toggleCollapse}
                         className="sidebar-toggle btn btn-link text-white"
                     >
-                        {isMobile ? (
-                            <BiX className="sidebar-toggle-icon" />
-                        ) : (
-                            <BiMenu className="sidebar-toggle-icon" />
-                        )}
+                        {isMobile ? <BiX className="sidebar-toggle-icon" /> : <BiMenu className="sidebar-toggle-icon" />}
                     </button>
                 </div>
 
@@ -75,8 +68,7 @@ export const Sidebar = ({ isCollapsed, toggleCollapse, isMobile, isMobileOpen, t
                                 <li key={item.name} className="mb-2">
                                     <Link
                                         to={item.path}
-                                        className={`sidebar-link d-flex align-items-center text-decoration-none ${isActive(item.path) ? 'active' : ''
-                                            }`}
+                                        className={`sidebar-link d-flex align-items-center text-decoration-none ${isActive(item.path) ? 'active' : ''}`}
                                         onClick={isMobile ? toggleMobile : undefined}
                                     >
                                         <Icon className={`sidebar-link-icon ${isActive(item.path) ? 'active' : ''}`} />

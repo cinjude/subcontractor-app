@@ -1,4 +1,5 @@
-// Import necessary components and functions from react-router-dom.
+// router.jsx — COMPLETE UPDATED FILE
+// Changes: added portfolio routes (public + protected) + signup provider route fix
 
 import {
   createBrowserRouter,
@@ -14,11 +15,11 @@ import { Login } from "./pages/Login";
 import { LoginProvider } from "./pages/LoginProvider";
 import { SignUpClient } from "./pages/SignUpClient";
 import { SignUpProvider } from "./pages/SignUpProvider";
-import { ProviderDashboard } from "./pages/dashboardProvider/ProviderDashboard"
-import { DashboardHome } from "./pages/dashboardProvider/DashboardHome"
-import { PrivateProviderRoute } from "./pages/dashboardProvider/PrivateProviderRoute"
-import { JobDetails, JobsPage } from "./pages/jobs"
-import { CustomersPage } from "./pages/customer/CustomersPage"
+import { ProviderDashboard } from "./pages/dashboardProvider/ProviderDashboard";
+import { DashboardHome } from "./pages/dashboardProvider/DashboardHome";
+import { PrivateProviderRoute } from "./pages/dashboardProvider/PrivateProviderRoute";
+import { JobDetails, JobsPage } from "./pages/jobs";
+import { CustomersPage } from "./pages/customer/CustomersPage";
 import CustomerDetails from "./pages/customer/CustomerDetails";
 import ServicesP from "./pages/servicespage/ServicesP";
 import ServicesDetails from "./pages/servicespage/ServicesDetails";
@@ -26,10 +27,12 @@ import EstimatesPage from "./pages/estimateRequest/Estimatespage";
 import Estimatedetailpage from "./pages/estimateRequest/Estimatedetailpage";
 import NewEstimateForm from "./pages/estimateRequest/Newestimateform.JSX";
 import EditEstimatePage from "./pages/estimateRequest/EditEstimatePage";
+import PublicPortfolioPage from "./pages/portfolioPage/PublicPortfolioPage";
+import PortfolioDashboard from "./pages/portfolioPage/PortfolioDashboard";
+import PortfolioEditor from "./pages/portfolioPage/PortfolioEditor";
 
-// Componente temporal para debug — ponlo arriba del router
 const ErrorDebug = () => {
-  const error = useRouteError(); // importa useRouteError de react-router-dom
+  const error = useRouteError();
   return (
     <div style={{ padding: "2rem", background: "red", color: "white" }}>
       <h1>ERROR CAPTURADO:</h1>
@@ -42,6 +45,7 @@ const ErrorDebug = () => {
 export const router = createBrowserRouter(
   createRoutesFromElements(
     <>
+      {/* ── PUBLIC LAYOUT ROUTES ── */}
       <Route path="/" element={<Layout />} errorElement={<h1>Not found!</h1>}>
         <Route index element={<Home />} />
         <Route path="single/:theId" element={<Single />} />
@@ -51,6 +55,11 @@ export const router = createBrowserRouter(
         <Route path="signupclient" element={<SignUpClient />} />
       </Route>
 
+      {/* ── PUBLIC PORTFOLIO PAGE — no login needed ── */}
+      {/* Client visits: /portfolio/avila-pro */}
+      <Route path="/portfolio/:slug" element={<PublicPortfolioPage />} />
+
+      {/* ── PROTECTED DASHBOARD ROUTES ── */}
       <Route
         path="/providerdashboard"
         element={<PrivateProviderRoute><ProviderDashboard /></PrivateProviderRoute>}
@@ -67,10 +76,11 @@ export const router = createBrowserRouter(
         <Route path="estimates/:id" element={<Estimatedetailpage />} />
         <Route path="estimate/new" element={<NewEstimateForm />} />
         <Route path="estimates/:id/edit" element={<EditEstimatePage />} />
+        <Route path="portfolio" element={<PortfolioDashboard />} />
+        <Route path="portfolio/settings" element={<PortfolioEditor />} />
       </Route>
 
       <Route path="/signupprovider" element={<SignUpProvider />} />
     </>
   )
 );
-
