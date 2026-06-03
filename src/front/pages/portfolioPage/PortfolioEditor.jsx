@@ -20,7 +20,7 @@ async function apiFetch(path, opts = {}) {
 
 // ── Live preview hero ─────────────────────────────────────────────────────────
 function HeroPreview({ settings }) {
-    const { hero_color, btn_color, business_name, description, phone, business_email, address, logo_image } = settings;
+    const { hero_color, btn_color, business_name, description, phone, business_email, address, logo_image, cover_image } = settings;
     return (
         <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid #e2e8f0" }}>
             {/* Hero */}
@@ -46,8 +46,16 @@ function HeroPreview({ settings }) {
                     </div>
                 </div>
             </div>
+            {/* Cover image below hero */}
+            {cover_image && (
+                <div style={{ width: "100%", height: 100, overflow: "hidden", position: "relative" }}>
+                    <img src={cover_image} alt="Cover"
+                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, ${hero_color || "#1e293b"} 0%, transparent 40%)` }} />
+                </div>
+            )}
             {/* Footer strip */}
-            <div style={{ background: hero_color || "#1e293b", padding: "8px 16px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+            <div style={{ background: hero_color || "#1e293b", padding: "8px 16px", borderTop: cover_image ? "none" : "1px solid rgba(255,255,255,0.08)" }}>
                 <p style={{ margin: 0, fontSize: 10, color: "rgba(255,255,255,0.35)", textAlign: "center" }}>
                     © {new Date().getFullYear()} {business_name || "Your Business"} · Powered by TradeQuote
                 </p>

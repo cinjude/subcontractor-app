@@ -338,6 +338,8 @@ function hexToLight(hex) {
 // ── MAIN PAGE ─────────────────────────────────────────────────────────────────
 export default function PublicPortfolioPage() {
     const { slug } = useParams();
+
+    // Portfolio is a standalone route — no Layout, Navbar or Footer renders here
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -386,7 +388,7 @@ export default function PublicPortfolioPage() {
     );
 
     return (
-        <>
+        <div style={{ position: "fixed", inset: 0, zIndex: 9999, overflowY: "auto", background: "#fff" }}>
             <style>{`
                 * { box-sizing: border-box; }
                 body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
@@ -450,15 +452,19 @@ export default function PublicPortfolioPage() {
                     </div>
                 </div>
 
-                {/* Cover image strip at bottom of hero */}
-                {contractor.cover_image && (
-                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 80, overflow: "hidden" }}>
-                        <img src={contractor.cover_image} alt="Cover"
-                            style={{ width: "100%", height: "100%", objectFit: "cover", opacity: .25 }} />
-                        <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, ${heroColor}, transparent)` }} />
-                    </div>
-                )}
             </section>
+
+            {/* ── COVER IMAGE — full-width banner below hero ── */}
+            {contractor.cover_image && (
+                <div style={{ width: "100%", height: "clamp(180px, 28vw, 320px)", overflow: "hidden", position: "relative" }}>
+                    <img
+                        src={contractor.cover_image}
+                        alt={`${contractor.business_name} cover`}
+                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    />
+                    <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, ${heroColor} 0%, transparent 35%, transparent 65%, rgba(248,250,252,0.8) 100%)` }} />
+                </div>
+            )}
 
             {/* ── ABOUT ── */}
             {contractor.about && (
@@ -537,6 +543,6 @@ export default function PublicPortfolioPage() {
             {selectedProject && (
                 <ProjectModal project={selectedProject} onClose={() => setSelectedProject(null)} />
             )}
-        </>
+        </div>
     );
 }

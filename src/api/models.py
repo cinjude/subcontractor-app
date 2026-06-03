@@ -159,7 +159,7 @@ class Contractor(db.Model):
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
     business_email: Mapped[str] = mapped_column(String(), nullable=True)
     website_slug: Mapped[str] = mapped_column(
-        String(500), default=False, unique=True, index=True, nullable=True)
+        String(500), default=None, unique=True, index=True, nullable=True)
     about: Mapped[str] = mapped_column(String(), nullable=True)
     payment_link: Mapped[str] = mapped_column(String(500), nullable=True)
     subscription_status: Mapped[SubscriptionStatus] = mapped_column(Enum(

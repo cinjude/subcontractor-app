@@ -1,5 +1,5 @@
-// router.jsx — COMPLETE UPDATED FILE
-// Changes: added portfolio routes (public + protected) + signup provider route fix
+// router.jsx — FINAL FIX
+// /portfolio/:slug is completely isolated — no Layout, no Navbar, no Footer
 
 import {
   createBrowserRouter,
@@ -45,6 +45,9 @@ const ErrorDebug = () => {
 export const router = createBrowserRouter(
   createRoutesFromElements(
     <>
+      {/* ── PUBLIC PORTFOLIO — completely standalone, NO Layout wrapper ── */}
+      <Route path="/portfolio/:slug" element={<PublicPortfolioPage />} />
+
       {/* ── PUBLIC LAYOUT ROUTES ── */}
       <Route path="/" element={<Layout />} errorElement={<h1>Not found!</h1>}>
         <Route index element={<Home />} />
@@ -54,10 +57,6 @@ export const router = createBrowserRouter(
         <Route path="loginprovider" element={<LoginProvider />} />
         <Route path="signupclient" element={<SignUpClient />} />
       </Route>
-
-      {/* ── PUBLIC PORTFOLIO PAGE — no login needed ── */}
-      {/* Client visits: /portfolio/avila-pro */}
-      <Route path="/portfolio/:slug" element={<PublicPortfolioPage />} />
 
       {/* ── PROTECTED DASHBOARD ROUTES ── */}
       <Route
