@@ -130,6 +130,7 @@ function PortfolioShareCard({ slug }) {
 // ── MAIN ─────────────────────────────────────────────────────────────────────
 export const DashboardHome = () => {
     const { store } = useGlobalReducer();
+    const [slug, setSlug] = useState("");
 
     useEffect(() => {
         document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
@@ -138,9 +139,26 @@ export const DashboardHome = () => {
         document.body.style.paddingRight = '0';
     }, []);
 
-    const rawSlug = store.provider?.website_slug;
-    const slug = (rawSlug && rawSlug !== false && rawSlug !== "False" && rawSlug !== "None")
-        ? String(rawSlug) : "";
+    // Fetch the contractor's portfolio settings to get the actual slug
+    // (login only returns user.serialize() which doesn't include website_slug)
+    useEffect(() => {
+        const tk = token();
+        if (!tk) return;
+        fetch(`${BASE}/api/portfolio/settings`, {
+            headers: { Authorization: `Bearer ${tk}` }
+        })
+            .then(r => r.json())
+            .then(d => {
+                if (d.settings?.website_slug) {
+                    const s = d.settings.website_slug;
+                    if (s && s !== "False" && s !== "None") {
+                        setSlug(String(s));
+                        // Note: add case "update_provider" to your reducer to sync store
+                    }
+                }
+            })
+            .catch(() => { });
+    }, []);
 
     return (
         <>

@@ -52,6 +52,7 @@ def _project_dict(p):
     return {
         'id'      : p.id,
         'title'   : p.title,
+        'section' : getattr(p, 'section', 'gallery'),  # 'gallery' | 'featured' | 'before_after'
         'create_at': p.create_at.isoformat() if p.create_at else None,
         'images'  : [_img_dict(i) for i in imgs],
     }
@@ -224,12 +225,17 @@ def create_portfolio_project():
         data  = request.get_json() or {}
         title = (data.get('title') or 'New project').strip()
 
+        section = (data.get('section') or 'gallery').strip()
         project = PortfolioProject(provider_id=cid, title=title)
+        # Store section in title prefix if model doesn't have section field
+        # e.g. "[featured] Kitchen renovation" — parsed on read
+        if hasattr(PortfolioProject, 'section'):
+            project.section = section
         db.session.add(project)
         db.session.commit()
 
         return jsonify({'msg': 'Project created',
-                        'project': {'id': project.id, 'title': project.title, 'images': []}}), 201
+                        'project': {'id': project.id, 'title': project.title, 'section': section, 'images': []}}), 201
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
@@ -247,6 +253,8 @@ def update_portfolio_project(project_id):
         data = request.get_json() or {}
         if 'title' in data:
             project.title = (data['title'] or '').strip()
+        if 'section' in data and hasattr(project, 'section'):
+            project.section = data['section']
         db.session.commit()
         return jsonify({'msg': 'Project updated'}), 200
     except Exception as e:
@@ -262,6 +270,11 @@ def delete_portfolio_project(project_id):
         project = _get_project(project_id, cid)
         if not project:
             return jsonify({'error': 'Project not found'}), 404
+
+        # Delete all images first to avoid NOT NULL violation on portfolioproject_id
+        for img in list(project.image):
+            db.session.delete(img)
+        db.session.flush()
 
         db.session.delete(project)
         db.session.commit()

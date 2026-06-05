@@ -715,14 +715,15 @@ class PortfolioProject(db.Model):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     provider_id: Mapped[int] = mapped_column(
         ForeignKey('contractor.id'), nullable=False)
-    title: Mapped[str] = mapped_column(String())
+    title: Mapped[str] = mapped_column(String(), nullable=True)
+    section: Mapped[str] = mapped_column(String(50), nullable=True, default='gallery')
     create_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now())
 
     provider_project: Mapped['Contractor'] = relationship(
         back_populates='project_provider')
     image: Mapped[list['PortfolioImage']] = relationship(
-        back_populates='project')
+        back_populates='project', cascade='all, delete-orphan')
 
 class PortfolioImage(db.Model):
     __tablename__ = 'portfolioimage'

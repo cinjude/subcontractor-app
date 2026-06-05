@@ -189,9 +189,21 @@ export default function PortfolioEditor() {
     );
 
     return (
-        <div style={{ maxWidth: 960, margin: "0 auto", padding: "24px 16px" }}>
+        <div style={{ maxWidth: 960, margin: "0 auto", padding: "clamp(16px,3vw,24px) clamp(12px,3vw,16px)" }}>
+            <style>{`
+                .pf-editor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+                .pf-editor-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
+                .pf-color-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+                .pf-phone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+                @media (max-width: 700px) {
+                    .pf-editor-grid { grid-template-columns: 1fr; }
+                    .pf-color-grid { grid-template-columns: 1fr; }
+                    .pf-phone-grid { grid-template-columns: 1fr; }
+                    .pf-editor-header { flex-direction: column; align-items: flex-start; }
+                }
+            `}</style>
             {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28, flexWrap: "wrap", gap: 12 }}>
+            <div className="pf-editor-header">
                 <div>
                     <button onClick={() => navigate("/providerdashboard/portfolio")}
                         style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#64748b", padding: 0, marginBottom: 6, display: "flex", alignItems: "center", gap: 4 }}>
@@ -220,7 +232,7 @@ export default function PortfolioEditor() {
                 </div>
             )}
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, alignItems: "start" }}>
+            <div className="pf-editor-grid">
 
                 {/* ── LEFT: Form ── */}
                 <div>
@@ -243,7 +255,7 @@ export default function PortfolioEditor() {
                                 placeholder="Family-owned business with 12+ years of experience…" />
                         </Field>
 
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                        <div className="pf-phone-grid">
                             <Field label="Phone">
                                 <input style={inp} value={settings.phone} onChange={e => set("phone", e.target.value)} placeholder="(305) 555-0142" />
                             </Field>
@@ -278,7 +290,7 @@ export default function PortfolioEditor() {
                         <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: "#1e293b", textTransform: "uppercase", letterSpacing: ".05em" }}>Hero colors</p>
                         <p style={{ margin: "0 0 18px", fontSize: 12, color: "#94a3b8" }}>Pick colors that match your brand — any combination works</p>
 
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                        <div className="pf-color-grid">
                             <Field label="Hero background color" hint="Dark colors work best with any logo">
                                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                                     <input type="color" value={settings.hero_color} onChange={e => set("hero_color", e.target.value)}

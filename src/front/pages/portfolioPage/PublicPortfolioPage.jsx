@@ -1,522 +1,327 @@
-// src/pages/portfolioPage/PublicPortfolioPage.jsx
+// src/pages/portfolioPage/PublicPortfolioPage.jsx — FULLY RESPONSIVE
+
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 
 const BASE = import.meta.env.VITE_BACKEND_URL || "";
 
-function fmtBudget(val) {
-    const map = {
-        under_500: "Under $500", "500_1000": "$500–$1,000",
-        "1000_2500": "$1,000–$2,500", "2500_5000": "$2,500–$5,000",
-        "5000_10000": "$5,000–$10,000", over_10000: "$10,000+",
-    };
-    return map[val] || val;
-}
-
-function hexToLight(hex) {
-    try {
-        const r = parseInt(hex.slice(1, 3), 16);
-        const g = parseInt(hex.slice(3, 5), 16);
-        const b = parseInt(hex.slice(5, 7), 16);
-        return `rgba(${r},${g},${b},0.12)`;
-    } catch { return "rgba(29,107,62,0.12)"; }
-}
-
-// ── Before/After Slider ───────────────────────────────────────────────────────
-function BeforeAfterSlider({ beforeUrl, afterUrl, title }) {
+function BeforeAfterSlider({ beforeUrl, afterUrl }) {
     const [pos, setPos] = useState(50);
     const dragging = useRef(false);
-    const containerRef = useRef();
-    const calcPos = (clientX) => {
-        const rect = containerRef.current.getBoundingClientRect();
-        return Math.max(2, Math.min(98, ((clientX - rect.left) / rect.width) * 100));
-    };
+    const ref = useRef();
+    const calc = (x) => { const r = ref.current.getBoundingClientRect(); return Math.max(2, Math.min(98, ((x - r.left) / r.width) * 100)); };
     return (
-        <div ref={containerRef}
-            onMouseMove={e => { if (dragging.current) setPos(calcPos(e.clientX)); }}
-            onMouseUp={() => { dragging.current = false; }}
-            onMouseLeave={() => { dragging.current = false; }}
-            onTouchMove={e => setPos(calcPos(e.touches[0].clientX))}
-            style={{ position: "relative", width: "100%", aspectRatio: "16/9", overflow: "hidden", borderRadius: 2, cursor: "ew-resize", userSelect: "none", touchAction: "none", background: "#111" }}>
+        <div ref={ref} onMouseMove={e => { if (dragging.current) setPos(calc(e.clientX)); }} onMouseUp={() => { dragging.current = false; }} onMouseLeave={() => { dragging.current = false; }} onTouchMove={e => { e.preventDefault(); setPos(calc(e.touches[0].clientX)); }}
+            style={{ position: "relative", width: "100%", aspectRatio: "4/3", overflow: "hidden", borderRadius: 6, cursor: "ew-resize", userSelect: "none", touchAction: "none", background: "#e2e8f0" }}>
             <img src={afterUrl} alt="after" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-            <div style={{ position: "absolute", inset: 0, width: `${pos}%`, overflow: "hidden" }}>
-                <img src={beforeUrl} alt="before" style={{ position: "absolute", top: 0, left: 0, height: "100%", width: `${10000 / pos}%`, maxWidth: "none", objectFit: "cover" }} />
-            </div>
-            <span style={{ position: "absolute", top: 16, left: 16, background: "rgba(0,0,0,0.7)", color: "#fff", fontSize: 9, fontWeight: 800, padding: "4px 12px", borderRadius: 0, letterSpacing: ".15em", textTransform: "uppercase" }}>Before</span>
-            <span style={{ position: "absolute", top: 16, right: 16, background: "rgba(255,255,255,0.15)", backdropFilter: "blur(4px)", color: "#fff", fontSize: 9, fontWeight: 800, padding: "4px 12px", borderRadius: 0, letterSpacing: ".15em", textTransform: "uppercase", border: "1px solid rgba(255,255,255,0.3)" }}>After</span>
-            <div onMouseDown={() => { dragging.current = true; }} onTouchStart={() => { dragging.current = true; }}
-                style={{ position: "absolute", top: 0, bottom: 0, left: `${pos}%`, transform: "translateX(-50%)", width: 2, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "ew-resize" }}>
-                <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "#111", boxShadow: "0 4px 20px rgba(0,0,0,0.4)", flexShrink: 0, fontWeight: 900 }}>⇔</div>
+            <div style={{ position: "absolute", inset: 0, width: `${pos}%`, overflow: "hidden" }}><img src={beforeUrl} alt="before" style={{ position: "absolute", top: 0, left: 0, height: "100%", width: `${10000 / pos}%`, maxWidth: "none", objectFit: "cover" }} /></div>
+            <span style={{ position: "absolute", bottom: 8, left: 8, background: "rgba(0,0,0,0.65)", color: "#fff", fontSize: 9, fontWeight: 800, padding: "3px 8px", borderRadius: 3, letterSpacing: ".1em", textTransform: "uppercase" }}>Before</span>
+            <span style={{ position: "absolute", bottom: 8, right: 8, background: "rgba(0,0,0,0.65)", color: "#fff", fontSize: 9, fontWeight: 800, padding: "3px 8px", borderRadius: 3, letterSpacing: ".1em", textTransform: "uppercase" }}>After</span>
+            <div onMouseDown={() => { dragging.current = true; }} onTouchStart={() => { dragging.current = true; }} style={{ position: "absolute", top: 0, bottom: 0, left: `${pos}%`, transform: "translateX(-50%)", width: 2, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "ew-resize" }}>
+                <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#374151", boxShadow: "0 2px 10px rgba(0,0,0,0.3)", flexShrink: 0 }}>⇔</div>
             </div>
         </div>
     );
 }
 
-// ── Project Card ──────────────────────────────────────────────────────────────
-function ProjectCard({ project, onClick, btnColor }) {
-    const cover = project.images.find(i => i.is_cover) || project.images[0];
-    const hasBefore = project.images.some(i => i.photo_type === "before");
-    const hasAfter = project.images.some(i => i.photo_type === "after");
-    const [hovered, setHovered] = useState(false);
-    return (
-        <div onClick={() => onClick(project)} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
-            style={{ position: "relative", overflow: "hidden", cursor: "pointer", background: "#0a0a0a", transition: "transform .3s", transform: hovered ? "scale(1.02)" : "scale(1)" }}>
-            <div style={{ aspectRatio: "4/3", overflow: "hidden", position: "relative" }}>
-                {cover
-                    ? <img src={cover.image_url} alt={project.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "transform .5s", transform: hovered ? "scale(1.08)" : "scale(1)", filter: hovered ? "brightness(0.5)" : "brightness(0.75)" }} />
-                    : <div style={{ width: "100%", height: "100%", background: "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 48 }}>🏠</div>
-                }
-                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%)" }} />
-                {hasBefore && hasAfter && (
-                    <span style={{ position: "absolute", top: 12, left: 12, background: "rgba(255,255,255,0.1)", backdropFilter: "blur(8px)", color: "#fff", fontSize: 8, fontWeight: 800, padding: "4px 10px", letterSpacing: ".15em", textTransform: "uppercase", border: "1px solid rgba(255,255,255,0.2)" }}>✦ BEFORE / AFTER</span>
-                )}
-                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "20px 18px" }}>
-                    <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: "#fff", letterSpacing: "-.01em" }}>{project.title}</p>
-                    <p style={{ margin: "4px 0 0", fontSize: 11, color: "rgba(255,255,255,0.5)", letterSpacing: ".05em", textTransform: "uppercase" }}>
-                        {project.images.length} photo{project.images.length !== 1 ? "s" : ""}
-                        {hasBefore && hasAfter ? " · Before & After" : ""}
-                    </p>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// ── Modal ─────────────────────────────────────────────────────────────────────
 function ProjectModal({ project, onClose }) {
-    const beforeImg = project.images.find(i => i.photo_type === "before");
-    const afterImg = project.images.find(i => i.photo_type === "after");
-    const generalImgs = project.images.filter(i => i.photo_type === "general");
-    const [sel, setSel] = useState(null);
-    useEffect(() => {
-        document.body.style.overflow = "hidden";
-        return () => { document.body.style.overflow = ""; };
-    }, []);
+    const before = project.images.find(i => i.photo_type === "before");
+    const after = project.images.find(i => i.photo_type === "after");
+    const general = project.images.filter(i => i.photo_type === "general");
+    const [zoom, setZoom] = useState(null);
+    useEffect(() => { document.body.style.overflow = "hidden"; return () => { document.body.style.overflow = ""; }; }, []);
     return (
         <div style={{ position: "fixed", inset: 0, zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-            <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.92)", backdropFilter: "blur(8px)" }} />
-            <div style={{ position: "relative", zIndex: 1, background: "#0f0f0f", borderRadius: 0, width: "100%", maxWidth: 720, maxHeight: "90vh", overflow: "auto", padding: "36px 32px", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
-                    <div>
-                        <p style={{ margin: "0 0 4px", fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.3)", letterSpacing: ".15em", textTransform: "uppercase" }}>Project</p>
-                        <h2 style={{ margin: 0, fontSize: 24, fontWeight: 900, color: "#fff", letterSpacing: "-.02em" }}>{project.title}</h2>
-                    </div>
-                    <button onClick={onClose} style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", color: "#fff", width: 36, height: 36, cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>×</button>
+            <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }} />
+            <div style={{ position: "relative", zIndex: 1, background: "#fff", borderRadius: 12, width: "100%", maxWidth: 700, maxHeight: "90vh", overflow: "auto", padding: "clamp(16px,4vw,28px)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                    <h2 style={{ margin: 0, fontSize: "clamp(16px,4vw,20px)", fontWeight: 800, color: "#1e293b" }}>{project.title}</h2>
+                    <button onClick={onClose} style={{ background: "#f1f5f9", border: "none", borderRadius: "50%", width: 34, height: 34, fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
                 </div>
-                {beforeImg && afterImg && (
-                    <div style={{ marginBottom: 24 }}>
-                        <p style={{ margin: "0 0 12px", fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: ".15em" }}>← Drag to compare →</p>
-                        <BeforeAfterSlider beforeUrl={beforeImg.image_url} afterUrl={afterImg.image_url} title={project.title} />
-                    </div>
-                )}
-                {beforeImg && !afterImg && (
-                    <div style={{ marginBottom: 20 }}>
-                        <p style={{ margin: "0 0 8px", fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: ".12em" }}>Before</p>
-                        <img src={beforeImg.image_url} alt="Before" onClick={() => setSel(beforeImg.image_url)} style={{ width: "100%", maxHeight: 360, objectFit: "cover", cursor: "zoom-in", display: "block" }} />
-                    </div>
-                )}
-                {afterImg && !beforeImg && (
-                    <div style={{ marginBottom: 20 }}>
-                        <p style={{ margin: "0 0 8px", fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: ".12em" }}>After</p>
-                        <img src={afterImg.image_url} alt="After" onClick={() => setSel(afterImg.image_url)} style={{ width: "100%", maxHeight: 360, objectFit: "cover", cursor: "zoom-in", display: "block" }} />
-                    </div>
-                )}
-                {generalImgs.length > 0 && (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 4 }}>
-                        {generalImgs.map(img => (
-                            <img key={img.id} src={img.image_url} alt="" onClick={() => setSel(img.image_url)}
-                                style={{ width: "100%", aspectRatio: "1", objectFit: "cover", cursor: "zoom-in", display: "block" }} />
-                        ))}
-                    </div>
-                )}
+                {before && after && <div style={{ marginBottom: 14 }}><BeforeAfterSlider beforeUrl={before.image_url} afterUrl={after.image_url} /></div>}
+                {before && !after && <img src={before.image_url} alt="Before" style={{ width: "100%", borderRadius: 8, maxHeight: 300, objectFit: "cover", display: "block", marginBottom: 10 }} />}
+                {after && !before && <img src={after.image_url} alt="After" style={{ width: "100%", borderRadius: 8, maxHeight: 300, objectFit: "cover", display: "block", marginBottom: 10 }} />}
+                {general.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(110px,1fr))", gap: 8 }}>{general.map(img => <img key={img.id} src={img.image_url} alt="" onClick={() => setZoom(img.image_url)} style={{ width: "100%", aspectRatio: "1", objectFit: "cover", borderRadius: 6, cursor: "zoom-in", display: "block" }} />)}</div>}
             </div>
-            {sel && (
-                <div onClick={() => setSel(null)} style={{ position: "fixed", inset: 0, zIndex: 20000, background: "rgba(0,0,0,0.96)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "zoom-out" }}>
-                    <img src={sel} alt="" style={{ maxWidth: "90vw", maxHeight: "90vh", objectFit: "contain" }} />
-                </div>
-            )}
+            {zoom && <div onClick={() => setZoom(null)} style={{ position: "fixed", inset: 0, zIndex: 20000, background: "rgba(0,0,0,0.95)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "zoom-out", padding: 16 }}><img src={zoom} alt="" style={{ maxWidth: "90vw", maxHeight: "90vh", objectFit: "contain", borderRadius: 8 }} /></div>}
         </div>
     );
 }
 
-// ── Estimate Form ─────────────────────────────────────────────────────────────
-function EstimateRequestForm({ slug, contractorName, btnColor }) {
-    const [form, setForm] = useState({
-        customer_name: "", customer_email: "", customer_phone: "",
-        customer_address: "", estimate_type: "painting", budget_range: "", description: "",
-    });
-    const [submitting, setSubmitting] = useState(false);
-    const [submitted, setSubmitted] = useState(false);
-    const [error, setError] = useState("");
+function EstimateForm({ slug, contractorName, accent }) {
+    const [form, setForm] = useState({ customer_name: "", customer_email: "", customer_phone: "", customer_address: "", description: "" });
+    const [state, setState] = useState("idle"); // idle | loading | done | error
+    const [errMsg, setErrMsg] = useState("");
     const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-
-    const handleSubmit = async (e) => {
-        e.preventDefault(); setSubmitting(true); setError("");
+    const submit = async (e) => {
+        e.preventDefault(); setState("loading");
         try {
-            const res = await fetch(`${BASE}/api/portfolio/${slug}/request-estimate`, {
-                method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "Failed to submit");
-            setSubmitted(true);
-        } catch (err) { setError(err.message); } finally { setSubmitting(false); }
+            const r = await fetch(`${BASE}/api/portfolio/${slug}/request-estimate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, estimate_type: "painting" }) });
+            const d = await r.json();
+            if (!r.ok) throw new Error(d.error || "Failed");
+            setState("done");
+        } catch (err) { setErrMsg(err.message); setState("error"); }
     };
-
-    if (submitted) return (
-        <div style={{ textAlign: "center", padding: "60px 24px" }}>
-            <div style={{ fontSize: 56, marginBottom: 20 }}>✓</div>
-            <h3 style={{ margin: "0 0 10px", fontSize: 24, fontWeight: 900, color: "#fff", letterSpacing: "-.02em" }}>Request sent.</h3>
-            <p style={{ margin: 0, color: "rgba(255,255,255,0.5)", fontSize: 14 }}>{contractorName} will be in touch shortly.</p>
-        </div>
-    );
-
-    const inp = { width: "100%", padding: "14px 16px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 0, fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box", color: "#fff", transition: "border-color .15s" };
-    const lbl = { fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.4)", letterSpacing: ".15em", textTransform: "uppercase", marginBottom: 8, display: "block" };
-    const onFocus = e => e.target.style.borderColor = btnColor;
-    const onBlur = e => e.target.style.borderColor = "rgba(255,255,255,0.12)";
-
+    if (state === "done") return <div style={{ textAlign: "center", padding: "32px 0", color: "#fff" }}><div style={{ fontSize: 48, marginBottom: 12 }}>✅</div><h3 style={{ margin: "0 0 6px", fontSize: 20, fontWeight: 800 }}>Request sent!</h3><p style={{ opacity: .7, margin: 0 }}>{contractorName} will contact you shortly.</p></div>;
+    const inp = { width: "100%", padding: "12px 14px", background: "#fff", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box", color: "#111" };
     return (
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                <div><label style={lbl}>Full name *</label>
-                    <input style={inp} required placeholder="John Smith" value={form.customer_name} onChange={e => set("customer_name", e.target.value)} onFocus={onFocus} onBlur={onBlur} /></div>
-                <div><label style={lbl}>Phone *</label>
-                    <input style={inp} type="tel" required placeholder="(555) 000-0000" value={form.customer_phone} onChange={e => set("customer_phone", e.target.value)} onFocus={onFocus} onBlur={onBlur} /></div>
+        <form onSubmit={submit}>
+            <div className="pf-form2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+                <input style={inp} required placeholder="Full Name" value={form.customer_name} onChange={e => set("customer_name", e.target.value)} />
+                <input style={inp} type="email" required placeholder="Email Address" value={form.customer_email} onChange={e => set("customer_email", e.target.value)} />
             </div>
-            <div><label style={lbl}>Email *</label>
-                <input style={inp} type="email" required placeholder="john@email.com" value={form.customer_email} onChange={e => set("customer_email", e.target.value)} onFocus={onFocus} onBlur={onBlur} /></div>
-            <div><label style={lbl}>Job address</label>
-                <input style={inp} placeholder="123 Main St" value={form.customer_address} onChange={e => set("customer_address", e.target.value)} onFocus={onFocus} onBlur={onBlur} /></div>
-            <div>
-                <label style={lbl}>Type of work *</label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-                    {[{ value: "painting", label: "🎨 Painting" }, { value: "flooring", label: "🪵 Flooring" }, { value: "both", label: "Both" }].map(o => (
-                        <button key={o.value} type="button" onClick={() => set("estimate_type", o.value)} style={{
-                            padding: "12px 8px", fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all .15s",
-                            border: `1px solid ${form.estimate_type === o.value ? btnColor : "rgba(255,255,255,0.12)"}`,
-                            background: form.estimate_type === o.value ? hexToLight(btnColor) : "transparent",
-                            color: form.estimate_type === o.value ? btnColor : "rgba(255,255,255,0.5)",
-                        }}>{o.label}</button>
-                    ))}
-                </div>
+            <div className="pf-form2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+                <input style={inp} type="tel" required placeholder="Phone Number" value={form.customer_phone} onChange={e => set("customer_phone", e.target.value)} />
+                <input style={inp} placeholder="Project Address" value={form.customer_address} onChange={e => set("customer_address", e.target.value)} />
             </div>
-            <div><label style={lbl}>Budget range</label>
-                <select style={{ ...inp, appearance: "none" }} value={form.budget_range} onChange={e => set("budget_range", e.target.value)} onFocus={onFocus} onBlur={onBlur}>
-                    <option value="" style={{ background: "#111" }}>Select a range (optional)</option>
-                    {["under_500", "500_1000", "1000_2500", "2500_5000", "5000_10000", "over_10000"].map(v => (
-                        <option key={v} value={v} style={{ background: "#111" }}>{fmtBudget(v)}</option>
-                    ))}
-                </select></div>
-            <div><label style={lbl}>Tell us about your project</label>
-                <textarea style={{ ...inp, minHeight: 100, resize: "vertical" }}
-                    placeholder="Describe the rooms, current condition, special requests…"
-                    value={form.description} onChange={e => set("description", e.target.value)} onFocus={onFocus} onBlur={onBlur} /></div>
-            {error && <p style={{ color: "#f87171", fontSize: 13, margin: 0 }}>⚠ {error}</p>}
-            <button type="submit" disabled={submitting} style={{
-                padding: "16px", background: submitting ? "rgba(255,255,255,0.1)" : btnColor,
-                color: "#fff", border: "none", fontSize: 13, fontWeight: 800, cursor: submitting ? "default" : "pointer",
-                letterSpacing: ".1em", textTransform: "uppercase", transition: "opacity .15s",
-                opacity: submitting ? 0.6 : 1,
-            }}>
-                {submitting ? "Sending…" : "→ Request free estimate"}
+            <textarea style={{ ...inp, minHeight: 80, resize: "vertical", marginBottom: 12 }} placeholder="Tell us about your project…" value={form.description} onChange={e => set("description", e.target.value)} />
+            {state === "error" && <p style={{ color: "#fca5a5", fontSize: 13, margin: "0 0 10px" }}>⚠ {errMsg}</p>}
+            <button type="submit" disabled={state === "loading"} style={{ width: "100%", padding: "14px", background: state === "loading" ? "#94a3b8" : accent, color: "#fff", border: "none", borderRadius: 6, fontSize: 14, fontWeight: 800, cursor: state === "loading" ? "default" : "pointer", letterSpacing: ".06em", textTransform: "uppercase", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                {state === "loading" ? "Sending…" : <>SEND REQUEST <span style={{ fontSize: 16 }}>→</span></>}
             </button>
         </form>
     );
 }
 
-// ── MAIN ─────────────────────────────────────────────────────────────────────
+function GalleryCard({ project, onClick }) {
+    const cover = project.images.find(i => i.is_cover) || project.images[0];
+    const [hov, setHov] = useState(false);
+    return (
+        <div onClick={onClick} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} style={{ cursor: "pointer", borderRadius: 8, overflow: "hidden", background: "#fff", boxShadow: hov ? "0 8px 24px rgba(0,0,0,0.13)" : "0 2px 8px rgba(0,0,0,0.07)", transition: "all .2s", transform: hov ? "translateY(-2px)" : "none" }}>
+            <div style={{ aspectRatio: "4/3", overflow: "hidden", background: "#f1f5f9" }}>
+                {cover ? <img src={cover.image_url} alt={project.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "transform .3s", transform: hov ? "scale(1.05)" : "scale(1)" }} /> : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36 }}>🏠</div>}
+            </div>
+            <div style={{ padding: "10px 12px" }}>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: "#1e293b" }}>{project.title}</p>
+                <p style={{ margin: "2px 0 0", fontSize: 11, color: "#94a3b8" }}>{project.images.length} photo{project.images.length !== 1 ? "s" : ""}</p>
+            </div>
+        </div>
+    );
+}
+
 export default function PublicPortfolioPage() {
     const { slug } = useParams();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const [selectedProject, setSelectedProject] = useState(null);
-    const [scrolled, setScrolled] = useState(false);
+    const [modal, setModal] = useState(null);
+    const [menuOpen, setMenu] = useState(false);
     const formRef = useRef();
 
     useEffect(() => {
-        fetch(`${BASE}/api/portfolio/${slug}`)
-            .then(r => r.json())
-            .then(d => { if (d.error) throw new Error(d.error); setData(d); })
-            .catch(err => setError(err.message))
-            .finally(() => setLoading(false));
+        fetch(`${BASE}/api/portfolio/${slug}`).then(r => r.json()).then(d => { if (d.error) throw new Error(d.error); setData(d); }).catch(err => setError(err.message)).finally(() => setLoading(false));
     }, [slug]);
 
-    useEffect(() => {
-        const el = document.getElementById("pf-scroll");
-        if (!el) return;
-        const handler = () => setScrolled(el.scrollTop > 60);
-        el.addEventListener("scroll", handler);
-        return () => el.removeEventListener("scroll", handler);
-    }, [data]);
+    const scrollToForm = () => { setMenu(false); formRef.current?.scrollIntoView({ behavior: "smooth" }); };
 
-    const scrollToForm = () => formRef.current?.scrollIntoView({ behavior: "smooth" });
-
-    if (loading) return (
-        <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#050505", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ textAlign: "center" }}>
-                <div style={{ width: 40, height: 40, border: "2px solid rgba(255,255,255,0.1)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 20px" }} />
-                <p style={{ color: "rgba(255,255,255,0.3)", margin: 0, fontSize: 11, letterSpacing: ".15em", textTransform: "uppercase" }}>Loading</p>
-            </div>
-            <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-        </div>
-    );
-
-    if (error) return (
-        <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#050505", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ textAlign: "center" }}>
-                <p style={{ margin: "0 0 8px", fontSize: 11, color: "rgba(255,255,255,0.3)", letterSpacing: ".15em", textTransform: "uppercase" }}>404</p>
-                <h2 style={{ margin: "0 0 12px", color: "#fff", fontWeight: 900, fontSize: 28 }}>Portfolio not found</h2>
-                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>This portfolio link may be incorrect.</p>
-            </div>
-        </div>
-    );
+    if (loading) return <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center" }}><div style={{ textAlign: "center" }}><div style={{ width: 36, height: 36, border: "3px solid #e2e8f0", borderTopColor: "#1e3a5f", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 14px" }} /><p style={{ color: "#64748b", margin: 0, fontSize: 13 }}>Loading…</p></div><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style></div>;
+    if (error) return <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center" }}><div style={{ textAlign: "center" }}><div style={{ fontSize: 52, marginBottom: 14 }}>🏗️</div><h2 style={{ margin: "0 0 8px", color: "#1e293b" }}>Portfolio not found</h2><p style={{ color: "#64748b" }}>This link may be incorrect.</p></div></div>;
 
     const { contractor, projects } = data;
-    const heroColor = contractor.hero_color || "#0a0a0a";
-    const btnColor = contractor.btn_color || "#1d6b3e";
+    const navy = contractor.hero_color || "#1e3a5f";
+    const accent = contractor.btn_color || "#2563eb";
 
-    const beforeAfterProjects = projects.filter(p =>
-        p.images.some(i => i.photo_type === "before") &&
-        p.images.some(i => i.photo_type === "after")
-    );
+    // Partition projects by section — strict, no fallback
+    const getSection = (p) => p.section || "gallery";
+    const baProjects = projects.filter(p => p.images.some(i => i.photo_type === "before") && p.images.some(i => i.photo_type === "after"));
+    const featuredProjects = projects.filter(p => getSection(p) === "featured" && p.images.length > 0);
+    const galleryProjects = projects.filter(p => getSection(p) === "gallery" && p.images.length > 0);
+
+    // Featured: ONLY explicitly marked as featured — no fallback to gallery
+    const featProj = featuredProjects.length > 0 ? featuredProjects[0] : null;
+    // Show max 3 images in the mosaic, rest hidden (visible in modal)
+    const featImgs = featProj ? featProj.images.filter(i => i.photo_type === "general" || i.is_cover).slice(0, 3) : [];
 
     return (
-        <div id="pf-scroll" style={{ position: "fixed", inset: 0, zIndex: 9999, overflowY: "auto", background: "#050505", fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 9999, overflowY: "auto", background: "#fff", fontFamily: "'Helvetica Neue',Helvetica,Arial,sans-serif", color: "#111" }}>
             <style>{`
-                * { box-sizing: border-box; }
-                body { margin: 0; }
-                @keyframes spin { to { transform: rotate(360deg); } }
-                @keyframes fadeUp { from { opacity:0; transform:translateY(32px); } to { opacity:1; transform:none; } }
-                @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
-                ::placeholder { color: rgba(255,255,255,0.2) !important; }
-                option { background: #111 !important; }
-                ::-webkit-scrollbar { width: 4px; }
-                ::-webkit-scrollbar-track { background: transparent; }
-                ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); }
+                *{box-sizing:border-box;}body{margin:0;}
+                @keyframes spin{to{transform:rotate(360deg)}}
+                @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+                @keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+                .pf-nav-d{display:flex;align-items:center;gap:20px;}
+                .pf-hbg{display:none!important;}
+                .pf-mob{display:none;}
+                .pf-hero{position:relative;min-height:520px;display:flex;align-items:flex-end;}
+                .pf-hc{position:relative;z-index:2;padding:clamp(40px,6vw,80px) clamp(20px,5vw,72px);max-width:580px;animation:fadeUp .7s ease both;}
+                .pf-sec{padding:clamp(36px,6vw,72px) clamp(20px,5vw,72px);}
+                .pf-max{max-width:1100px;margin:0 auto;}
+                .pf-ba{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+                .pf-feat{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;}
+                .pf-fp{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:8px;height:360px;}
+                .pf-gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;}
+                .pf-cta{display:grid;grid-template-columns:auto 1fr;gap:56px;align-items:start;}
+                .pf-form2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+                .pf-fi{display:flex;align-items:center;gap:10;flex-shrink:0;}
+                @media(max-width:860px){
+                    .pf-nav-d{display:none!important;}
+                    .pf-hbg{display:flex!important;}
+                    .pf-mob{display:flex;flex-direction:column;position:absolute;top:60px;left:0;right:0;background:var(--pf-n);z-index:300;border-top:1px solid rgba(255,255,255,0.1);animation:slideDown .2s ease;}
+                    .pf-ba{grid-template-columns:1fr 1fr;}
+                    .pf-feat{grid-template-columns:1fr;gap:28px;}
+                    .pf-fp{height:240px;}
+                    .pf-gal{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));}
+                    .pf-cta{grid-template-columns:1fr;gap:32px;}
+                    .pf-hero{min-height:400px;}
+                }
+                @media(max-width:560px){
+                    .pf-ba{grid-template-columns:1fr;}
+                    .pf-fp{grid-template-columns:1fr;grid-template-rows:auto;height:auto;}
+                    .pf-fp>div{grid-row:auto!important;grid-column:auto!important;aspect-ratio:4/3;height:auto;}
+                    .pf-gal{grid-template-columns:repeat(2,1fr);gap:10px;}
+                    .pf-form2{grid-template-columns:1fr!important;}
+                    .pf-hero{min-height:320px;}
+                    .pf-fi-inner{flex-direction:column;text-align:center;gap:10px;}
+                }
             `}</style>
 
-            {/* ── TOPBAR ── */}
-            <header style={{
-                position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-                padding: "0 40px", height: 64,
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                background: scrolled ? "rgba(5,5,5,0.95)" : "transparent",
-                backdropFilter: scrolled ? "blur(12px)" : "none",
-                borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "none",
-                transition: "all .3s",
-            }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                    {contractor.logo_image && (
-                        <img src={contractor.logo_image} alt="logo"
-                            style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", border: "1px solid rgba(255,255,255,0.15)" }} />
-                    )}
-                    <span style={{ color: "#fff", fontWeight: 900, fontSize: 14, letterSpacing: ".06em", textTransform: "uppercase" }}>
-                        {contractor.business_name}
-                    </span>
+            {/* NAV */}
+            <nav style={{ "--pf-n": navy, background: navy, height: 60, padding: "0 clamp(16px,4vw,48px)", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 200, gap: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                    {contractor.logo_image ? <img src={contractor.logo_image} alt="logo" style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(255,255,255,0.2)" }} /> : <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🏠</div>}
+                    <div><p style={{ margin: 0, fontWeight: 800, fontSize: 13, color: "#fff", textTransform: "uppercase", letterSpacing: ".05em", lineHeight: 1.2 }}>{contractor.business_name}</p>{contractor.description && <p style={{ margin: 0, fontSize: 9, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: ".1em" }}>{contractor.description}</p>}</div>
                 </div>
-                <button onClick={scrollToForm} style={{
-                    background: btnColor, color: "#fff", border: "none",
-                    padding: "10px 24px", fontSize: 11, fontWeight: 800,
-                    cursor: "pointer", letterSpacing: ".12em", textTransform: "uppercase",
-                }}>
-                    Free estimate
-                </button>
-            </header>
-
-            {/* ── HERO — full screen with cover as background ── */}
-            <section style={{ position: "relative", height: "100vh", minHeight: 600, overflow: "hidden", background: heroColor }}>
-                {/* Cover image as hero background */}
-                {contractor.cover_image && (
-                    <img src={contractor.cover_image} alt="cover"
-                        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block", opacity: 0.45, animation: "fadeIn 1.2s ease both" }} />
-                )}
-
-                {/* Dark overlay gradient */}
-                <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to right, ${heroColor} 0%, ${heroColor}cc 40%, transparent 100%), linear-gradient(to top, ${heroColor} 0%, transparent 50%)` }} />
-
-                {/* Noise texture overlay */}
-                <div style={{
-                    position: "absolute", inset: 0, opacity: .03,
-                    backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")"
-                }} />
-
-                {/* Content */}
-                <div style={{ position: "relative", zIndex: 2, height: "100%", display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: "0 48px 80px", maxWidth: 900 }}>
-                    <div style={{ animation: "fadeUp .8s ease both" }}>
-                        {/* Label */}
-                        <p style={{ margin: "0 0 24px", fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.35)", letterSpacing: ".2em", textTransform: "uppercase" }}>
-                            Professional Contractor
-                        </p>
-
-                        {/* Business name — huge */}
-                        <h1 style={{ margin: "0 0 20px", fontSize: "clamp(48px, 8vw, 96px)", fontWeight: 900, color: "#fff", lineHeight: .95, letterSpacing: "-.04em", textTransform: "uppercase" }}>
-                            {contractor.business_name}
-                        </h1>
-
-                        {/* Tagline */}
-                        {contractor.description && (
-                            <p style={{ margin: "0 0 40px", fontSize: "clamp(14px, 1.8vw, 18px)", color: "rgba(255,255,255,0.55)", maxWidth: 480, lineHeight: 1.7, fontWeight: 400 }}>
-                                {contractor.description}
-                            </p>
-                        )}
-
-                        {/* Contact row */}
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 24, marginBottom: 48 }}>
-                            {contractor.phone && (
-                                <a href={`tel:${contractor.phone}`} style={{ display: "flex", alignItems: "center", gap: 8, color: "rgba(255,255,255,0.6)", fontSize: 13, textDecoration: "none" }}>
-                                    <span style={{ fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)" }}>Phone</span>
-                                    <span>{contractor.phone}</span>
-                                </a>
-                            )}
-                            {contractor.business_email && (
-                                <a href={`mailto:${contractor.business_email}`} style={{ display: "flex", alignItems: "center", gap: 8, color: "rgba(255,255,255,0.6)", fontSize: 13, textDecoration: "none" }}>
-                                    <span style={{ fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)" }}>Email</span>
-                                    <span>{contractor.business_email}</span>
-                                </a>
-                            )}
-                            {contractor.address && (
-                                <span style={{ display: "flex", alignItems: "center", gap: 8, color: "rgba(255,255,255,0.6)", fontSize: 13 }}>
-                                    <span style={{ fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)" }}>Location</span>
-                                    <span>{contractor.address}</span>
-                                </span>
-                            )}
-                        </div>
-
-                        {/* CTAs */}
-                        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                            <button onClick={scrollToForm} style={{
-                                background: btnColor, color: "#fff", border: "none",
-                                padding: "16px 36px", fontSize: 12, fontWeight: 800,
-                                cursor: "pointer", letterSpacing: ".12em", textTransform: "uppercase",
-                            }}>
-                                → Get a free estimate
-                            </button>
-                            {projects.length > 0 && (
-                                <button onClick={() => document.getElementById("gallery")?.scrollIntoView({ behavior: "smooth" })}
-                                    style={{ background: "transparent", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.2)", padding: "16px 36px", fontSize: 12, fontWeight: 800, cursor: "pointer", letterSpacing: ".12em", textTransform: "uppercase" }}>
-                                    View work
-                                </button>
-                            )}
-                        </div>
+                <div className="pf-nav-d">
+                    {["Home", "About", "Services", "Projects", "Reviews", "Contact"].map(item => (
+                        <a key={item} href={`#${item.toLowerCase()}`} onClick={item === "Contact" ? e => { e.preventDefault(); scrollToForm(); } : undefined} style={{ color: "rgba(255,255,255,0.8)", fontSize: 12, textDecoration: "none", fontWeight: 600, letterSpacing: ".03em", whiteSpace: "nowrap" }}>{item}</a>
+                    ))}
+                    <button onClick={scrollToForm} style={{ background: accent, color: "#fff", border: "none", padding: "9px 18px", borderRadius: 4, fontSize: 11, fontWeight: 800, cursor: "pointer", letterSpacing: ".08em", textTransform: "uppercase", whiteSpace: "nowrap" }}>Request Estimate</button>
+                </div>
+                <button className="pf-hbg" onClick={() => setMenu(v => !v)} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 38, height: 38, borderRadius: 6, fontSize: 18, cursor: "pointer", alignItems: "center", justifyContent: "center" }}>{menuOpen ? "✕" : "☰"}</button>
+                {menuOpen && (
+                    <div className="pf-mob">
+                        {["Home", "About", "Projects", "Contact"].map(item => (
+                            <a key={item} href={`#${item.toLowerCase()}`} onClick={e => { if (item === "Contact") { e.preventDefault(); scrollToForm(); } else setMenu(false); }} style={{ color: "rgba(255,255,255,0.85)", fontSize: 15, fontWeight: 600, padding: "14px 24px", borderBottom: "1px solid rgba(255,255,255,0.07)", textDecoration: "none" }}>{item}</a>
+                        ))}
+                        <div style={{ padding: "14px 24px" }}><button onClick={scrollToForm} style={{ width: "100%", background: accent, color: "#fff", border: "none", padding: "12px", borderRadius: 6, fontSize: 14, fontWeight: 800, cursor: "pointer", textTransform: "uppercase" }}>Request Estimate</button></div>
                     </div>
-                </div>
+                )}
+            </nav>
 
-                {/* Scroll indicator */}
-                <div style={{ position: "absolute", bottom: 32, right: 48, zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 9, letterSpacing: ".2em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", writingMode: "vertical-rl" }}>Scroll</span>
-                    <div style={{ width: 1, height: 60, background: "linear-gradient(to bottom, rgba(255,255,255,0.3), transparent)" }} />
+            {/* HERO */}
+            <section id="home" className="pf-hero" style={{ background: navy }}>
+                {contractor.cover_image && (<><img src={contractor.cover_image} alt="hero" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block" }} /><div style={{ position: "absolute", inset: 0, background: `linear-gradient(to right,${navy}ee 0%,${navy}99 50%,${navy}44 100%),linear-gradient(to top,${navy}cc 0%,transparent 60%)` }} /></>)}
+                <div className="pf-hc">
+                    {contractor.logo_image && (<div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}><img src={contractor.logo_image} alt="logo" style={{ width: 52, height: 52, borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(255,255,255,0.25)" }} /><div><p style={{ margin: 0, fontWeight: 900, fontSize: 16, color: "#fff", textTransform: "uppercase", letterSpacing: ".04em" }}>{contractor.business_name}</p>{contractor.description && <p style={{ margin: 0, fontSize: 10, color: "rgba(255,255,255,0.55)", textTransform: "uppercase", letterSpacing: ".1em" }}>{contractor.description}</p>}</div></div>)}
+                    <h1 style={{ margin: "0 0 16px", fontSize: "clamp(28px,5.5vw,56px)", fontWeight: 900, color: "#fff", lineHeight: 1.05, letterSpacing: "-.02em", textTransform: "uppercase" }}>We bring<br />color to life.</h1>
+                    <p style={{ margin: "0 0 28px", fontSize: "clamp(13px,1.8vw,16px)", color: "rgba(255,255,255,0.7)", lineHeight: 1.7, maxWidth: 380 }}>{contractor.about ? contractor.about.slice(0, 140) + (contractor.about.length > 140 ? "…" : "") : "Professional contractor services for beautiful results that last."}</p>
+                    <button onClick={scrollToForm} style={{ background: accent, color: "#fff", border: "none", padding: "13px clamp(20px,3vw,28px)", borderRadius: 4, fontSize: 12, fontWeight: 800, cursor: "pointer", letterSpacing: ".08em", textTransform: "uppercase", display: "inline-flex", alignItems: "center", gap: 8 }}>REQUEST ESTIMATE <span style={{ fontSize: 14 }}>→</span></button>
                 </div>
             </section>
 
-            {/* ── ABOUT ── */}
+            {/* TRUST */}
+            <div style={{ background: "#f8fafc", borderTop: "1px solid #e2e8f0", borderBottom: "1px solid #e2e8f0", padding: "16px clamp(16px,5vw,60px)" }}>
+                <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", justifyContent: "center", gap: "clamp(20px,5vw,56px)", flexWrap: "wrap" }}>
+                    {["🆓 Free Estimates", "⭐ Quality Work", "🛡️ Fully Insured", "✅ Satisfaction Guaranteed"].map(t => <span key={t} style={{ fontSize: "clamp(11px,1.5vw,13px)", fontWeight: 700, color: "#374151" }}>{t}</span>)}
+                </div>
+            </div>
+
+            {/* ABOUT */}
             {contractor.about && (
-                <section style={{ background: "#0a0a0a", padding: "120px 48px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                    <div style={{ maxWidth: 960, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 2fr", gap: 80, alignItems: "start" }}>
-                        <div>
-                            <p style={{ margin: "0 0 16px", fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.25)", letterSpacing: ".2em", textTransform: "uppercase" }}>01 — About</p>
-                            <div style={{ width: 40, height: 1, background: "rgba(255,255,255,0.2)" }} />
-                        </div>
-                        <div>
-                            <p style={{ margin: 0, fontSize: "clamp(16px, 2vw, 22px)", color: "rgba(255,255,255,0.75)", lineHeight: 1.85, fontWeight: 300 }}>{contractor.about}</p>
-                        </div>
+                <section id="about" className="pf-sec" style={{ background: "#fff", borderBottom: "1px solid #e2e8f0" }}>
+                    <div className="pf-max" style={{ textAlign: "center", maxWidth: 760 }}>
+                        <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".15em", color: accent }}>About Us</p>
+                        <h2 style={{ margin: "0 0 16px", fontSize: "clamp(20px,3vw,30px)", fontWeight: 900, color: "#1e293b" }}>{contractor.business_name}</h2>
+                        <p style={{ margin: 0, fontSize: "clamp(14px,1.8vw,17px)", color: "#374151", lineHeight: 1.85 }}>{contractor.about}</p>
                     </div>
                 </section>
             )}
 
-            {/* ── BEFORE / AFTER ── */}
-            {beforeAfterProjects.length > 0 && (
-                <section style={{ background: "#050505", padding: "120px 48px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                    <div style={{ maxWidth: 960, margin: "0 auto" }}>
-                        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 60, flexWrap: "wrap", gap: 20 }}>
-                            <div>
-                                <p style={{ margin: "0 0 12px", fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.25)", letterSpacing: ".2em", textTransform: "uppercase" }}>02 — Transformations</p>
-                                <h2 style={{ margin: 0, fontSize: "clamp(28px, 4vw, 52px)", fontWeight: 900, color: "#fff", letterSpacing: "-.03em", textTransform: "uppercase" }}>Before & After</h2>
-                            </div>
-                            <p style={{ margin: 0, color: "rgba(255,255,255,0.3)", fontSize: 12, maxWidth: 260, lineHeight: 1.7 }}>Drag the handle to compare before and after each project.</p>
+            {/* BEFORE & AFTER */}
+            {baProjects.length > 0 && (
+                <section className="pf-sec" style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+                    <div className="pf-max">
+                        <div style={{ textAlign: "center", marginBottom: "clamp(24px,4vw,48px)" }}>
+                            <h2 style={{ margin: "0 0 8px", fontSize: "clamp(20px,3vw,28px)", fontWeight: 900, color: "#1e293b", textTransform: "uppercase", letterSpacing: "-.01em" }}>Before & After</h2>
+                            <p style={{ margin: 0, color: "#64748b", fontSize: 14 }}>See the difference a fresh coat of paint can make.</p>
                         </div>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(420px, 1fr))", gap: 4 }}>
-                            {beforeAfterProjects.slice(0, 4).map(project => {
-                                const before = project.images.find(i => i.photo_type === "before");
-                                const after = project.images.find(i => i.photo_type === "after");
-                                return (
-                                    <div key={project.id}>
-                                        <BeforeAfterSlider beforeUrl={before.image_url} afterUrl={after.image_url} title={project.title} />
-                                        <p style={{ margin: "12px 0 0", fontWeight: 700, color: "rgba(255,255,255,0.6)", fontSize: 12, letterSpacing: ".05em", textTransform: "uppercase" }}>{project.title}</p>
-                                    </div>
-                                );
+                        <div className="pf-ba">
+                            {baProjects.slice(0, 3).map(p => {
+                                const b = p.images.find(i => i.photo_type === "before"); const a = p.images.find(i => i.photo_type === "after");
+                                return <div key={p.id}><BeforeAfterSlider beforeUrl={b.image_url} afterUrl={a.image_url} /><p style={{ margin: "8px 0 0", fontWeight: 700, color: "#1e293b", fontSize: 12, textAlign: "center" }}>{p.title}</p></div>;
                             })}
                         </div>
                     </div>
                 </section>
             )}
 
-            {/* ── GALLERY ── */}
-            {projects.length > 0 && (
-                <section id="gallery" style={{ background: "#0a0a0a", padding: "120px 48px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                    <div style={{ maxWidth: 960, margin: "0 auto" }}>
-                        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 60, flexWrap: "wrap", gap: 20 }}>
+            {/* FULL PROJECT (featured section) */}
+            {featProj && featImgs.length > 0 && (
+                <section className="pf-sec" style={{ background: "#fff", borderBottom: "1px solid #e2e8f0" }}>
+                    <div className="pf-max">
+                        <div className="pf-feat">
                             <div>
-                                <p style={{ margin: "0 0 12px", fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.25)", letterSpacing: ".2em", textTransform: "uppercase" }}>03 — Portfolio</p>
-                                <h2 style={{ margin: 0, fontSize: "clamp(28px, 4vw, 52px)", fontWeight: 900, color: "#fff", letterSpacing: "-.03em", textTransform: "uppercase" }}>Our Work</h2>
+                                <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".15em", color: accent }}>Full Project</p>
+                                <h2 style={{ margin: "0 0 14px", fontSize: "clamp(20px,3vw,32px)", fontWeight: 900, color: "#1e293b" }}>{featProj.title}</h2>
+                                <p style={{ margin: "0 0 24px", color: "#64748b", fontSize: "clamp(13px,1.6vw,15px)", lineHeight: 1.8 }}>From preparation to the final coat, we take pride in every detail. Check out this complete exterior painting project.</p>
+                                <button onClick={() => setModal(featProj)} style={{ background: "transparent", color: navy, border: `2px solid ${navy}`, padding: "11px 24px", borderRadius: 4, fontSize: 12, fontWeight: 800, cursor: "pointer", letterSpacing: ".08em", textTransform: "uppercase", display: "inline-flex", alignItems: "center", gap: 8 }}>VIEW PROJECT →</button>
                             </div>
-                            <p style={{ margin: 0, color: "rgba(255,255,255,0.3)", fontSize: 12, maxWidth: 260, lineHeight: 1.7 }}>Click any project to view full photos.</p>
-                        </div>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 4 }}>
-                            {projects.map(project => (
-                                <ProjectCard key={project.id} project={project} onClick={setSelectedProject} btnColor={btnColor} />
-                            ))}
+                            {/* Max 3 images: 1 large left + 2 stacked right */}
+                            <div className="pf-fp">
+                                {featImgs.slice(0, 3).map((img, idx) => (
+                                    <div key={img.id} style={{ overflow: "hidden", borderRadius: 6, gridRow: idx === 0 ? "1/3" : "auto", gridColumn: idx === 0 ? "1" : "2", minHeight: 80 }}>
+                                        <img src={img.image_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "transform .3s" }} onMouseEnter={e => e.target.style.transform = "scale(1.05)"} onMouseLeave={e => e.target.style.transform = "scale(1)"} />
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </section>
             )}
 
-            {/* ── ESTIMATE FORM ── */}
-            <section ref={formRef} style={{ background: "#050505", padding: "120px 48px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                <div style={{ maxWidth: 960, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "start" }}>
-                    {/* Left */}
-                    <div>
-                        <p style={{ margin: "0 0 12px", fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.25)", letterSpacing: ".2em", textTransform: "uppercase" }}>04 — Contact</p>
-                        <h2 style={{ margin: "0 0 24px", fontSize: "clamp(28px, 4vw, 52px)", fontWeight: 900, color: "#fff", letterSpacing: "-.03em", textTransform: "uppercase", lineHeight: .95 }}>
-                            Request<br />an estimate
-                        </h2>
-                        <p style={{ margin: "0 0 48px", color: "rgba(255,255,255,0.4)", fontSize: 14, lineHeight: 1.8, maxWidth: 320 }}>
-                            Tell us about your project and {contractor.business_name} will get back to you with a detailed, transparent quote.
-                        </p>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                            {contractor.phone && (
-                                <div>
-                                    <p style={{ margin: "0 0 4px", fontSize: 9, letterSpacing: ".15em", color: "rgba(255,255,255,0.25)", textTransform: "uppercase" }}>Phone</p>
-                                    <a href={`tel:${contractor.phone}`} style={{ color: "#fff", textDecoration: "none", fontSize: 16, fontWeight: 700 }}>{contractor.phone}</a>
-                                </div>
-                            )}
-                            {contractor.business_email && (
-                                <div>
-                                    <p style={{ margin: "0 0 4px", fontSize: 9, letterSpacing: ".15em", color: "rgba(255,255,255,0.25)", textTransform: "uppercase" }}>Email</p>
-                                    <a href={`mailto:${contractor.business_email}`} style={{ color: "#fff", textDecoration: "none", fontSize: 15 }}>{contractor.business_email}</a>
-                                </div>
-                            )}
+            {/* OUR WORK / GALLERY */}
+            {galleryProjects.length > 0 && (
+                <section id="projects" className="pf-sec" style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+                    <div className="pf-max">
+                        <div style={{ textAlign: "center", marginBottom: "clamp(24px,4vw,44px)" }}>
+                            <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".15em", color: accent }}>Our Work</p>
+                            <h2 style={{ margin: 0, fontSize: "clamp(20px,3vw,28px)", fontWeight: 900, color: "#1e293b" }}>Project Gallery</h2>
+                        </div>
+                        <div className="pf-gal">
+                            {galleryProjects.map(p => <GalleryCard key={p.id} project={p} onClick={() => setModal(p)} />)}
                         </div>
                     </div>
-                    {/* Right — Form */}
-                    <div>
-                        <EstimateRequestForm slug={slug} contractorName={contractor.business_name} btnColor={btnColor} />
+                </section>
+            )}
+
+            {/* REQUEST ESTIMATE */}
+            <section ref={formRef} id="contact" className="pf-sec" style={{ background: navy }}>
+                <div className="pf-max">
+                    <div className="pf-cta">
+                        <div style={{ minWidth: 200 }}>
+                            <div style={{ width: 48, height: 48, background: "rgba(255,255,255,0.1)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, marginBottom: 20 }}>📋</div>
+                            <h2 style={{ margin: "0 0 12px", fontSize: "clamp(22px,3vw,36px)", fontWeight: 900, color: "#fff", lineHeight: 1.05, textTransform: "uppercase" }}>Request<br />an Estimate</h2>
+                            <p style={{ margin: "0 0 24px", color: "rgba(255,255,255,0.6)", fontSize: "clamp(12px,1.4vw,14px)", lineHeight: 1.75 }}>Fill out the form and we'll get back to you within 24 hours with a free, no-obligation estimate.</p>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
+                                {["🆓 Free Estimates", "⭐ Quality Work", "✅ Satisfaction Guaranteed"].map(t => <span key={t} style={{ fontSize: "clamp(11px,1.3vw,13px)", color: "rgba(255,255,255,0.65)", fontWeight: 600 }}>{t}</span>)}
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                                {contractor.phone && <a href={`tel:${contractor.phone}`} style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, textDecoration: "none" }}>📞 {contractor.phone}</a>}
+                                {contractor.business_email && <a href={`mailto:${contractor.business_email}`} style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, textDecoration: "none" }}>✉️ {contractor.business_email}</a>}
+                                {contractor.address && <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 14 }}>📍 {contractor.address}</span>}
+                            </div>
+                        </div>
+                        <div><EstimateForm slug={slug} contractorName={contractor.business_name} accent={accent} /></div>
                     </div>
                 </div>
             </section>
 
-            {/* ── FOOTER ── */}
-            <footer style={{ background: "#0a0a0a", padding: "32px 48px", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    {contractor.logo_image && <img src={contractor.logo_image} alt="logo" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }} />}
-                    <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase" }}>{contractor.business_name}</span>
+            {/* FOOTER */}
+            <footer style={{ background: "#0f172a", padding: "18px clamp(16px,4vw,60px)" }}>
+                <div className="pf-fi-inner" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {contractor.logo_image && <img src={contractor.logo_image} alt="logo" style={{ width: 26, height: 26, borderRadius: "50%", objectFit: "cover" }} />}
+                        <span style={{ color: "rgba(255,255,255,0.45)", fontSize: 12, fontWeight: 700 }}>{contractor.business_name}</span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: 10, color: "rgba(255,255,255,0.25)", textAlign: "center" }}>© {new Date().getFullYear()} {contractor.business_name}. All rights reserved. · Powered by TradeQuote</p>
+                    <div style={{ display: "flex", gap: 12 }}>
+                        {contractor.phone && <a href={`tel:${contractor.phone}`} style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, textDecoration: "none" }}>📞</a>}
+                        {contractor.business_email && <a href={`mailto:${contractor.business_email}`} style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, textDecoration: "none" }}>✉️</a>}
+                    </div>
                 </div>
-                <p style={{ margin: 0, fontSize: 11, color: "rgba(255,255,255,0.2)", letterSpacing: ".06em" }}>
-                    © {new Date().getFullYear()} · Powered by TradeQuote
-                </p>
             </footer>
 
-            {selectedProject && <ProjectModal project={selectedProject} onClose={() => setSelectedProject(null)} />}
+            {modal && <ProjectModal project={modal} onClose={() => setModal(null)} />}
         </div>
     );
 }
