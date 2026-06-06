@@ -32,6 +32,7 @@ export default function storeReducer(store, action = {}) {
         provider,
         token,
       };
+      
     case "logout":
       localStorage.removeItem("token");
       return {
@@ -39,6 +40,15 @@ export default function storeReducer(store, action = {}) {
         provider: null,
         token: null,
       };
+
+      case "update_provider":
+    return {
+        ...store,
+        provider: {
+            ...store.provider,
+            ...action.payload,
+        }
+    };
 
     case "set-customers":
       return {

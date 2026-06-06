@@ -10,6 +10,7 @@ export const Navbar = () => {
 	const { store, dispatch } = useGlobalReducer()
 	const navigate = useNavigate()
 	const location = useLocation();
+	if (location.pathname === "/") return null;
 
 	console.log('este es store.provider del store:', store.provider)
 
