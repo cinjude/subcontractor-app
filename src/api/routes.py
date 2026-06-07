@@ -24,7 +24,11 @@ from api.customer.customer import *
 from api.services.service import *
 from api.estimateReq.estimateRequest import *
 from api.portfolioProject.portfolio import *
-CORS(api)
+CORS(api, origins=[
+    "http://localhost:3000",
+    "https://subcontractor-app.vercel.app",  
+    "https://*.vercel.app",
+])
 
 
 @api.route('/hello', methods=['POST', 'GET'])

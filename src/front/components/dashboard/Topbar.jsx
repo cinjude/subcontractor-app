@@ -196,6 +196,9 @@ export const Topbar = ({ isMobile }) => {
                                         <Link to="/providerdashboard/portfolio" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
                                             <BiImages className="profile-menu-icon" /> Portfolio
                                         </Link>
+                                        <Link to="/providerdashboard/payment-methods" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
+                                            <BiCreditCard className="profile-menu-icon" /> Payment Methods
+                                        </Link>
                                         <Link to="/providerdashboard/settings" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
                                             <BiCog className="profile-menu-icon" /> Settings
                                         </Link>
@@ -223,6 +226,7 @@ export const Topbar = ({ isMobile }) => {
                         <div className="mobile-menu-inner">
                             {[
                                 { name: "Portfolio", icon: BiImages, path: "/providerdashboard/portfolio" },
+                                { name: "Payment Methods", icon: BiCreditCard, path: "/providerdashboard/payment-methods" },
                                 { name: "Settings", icon: BiCog, path: "/providerdashboard/settings" },
                             ].map(item => {
                                 const Icon = item.icon;

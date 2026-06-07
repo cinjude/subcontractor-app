@@ -29,6 +29,7 @@ export const Sidebar = ({ isCollapsed, toggleCollapse, isMobile, isMobileOpen, t
         { name: "Services", icon: BiCog, path: "/providerdashboard/services" },
         { name: "Portfolio", icon: BiImages, path: "/providerdashboard/portfolio" }, // ← NEW
         { name: "Settings", icon: BiCog, path: "/providerdashboard/settings" },
+        { name: "Payment Methods", icon: BiCreditCard, path: "/providerdashboard/payment-methods" },
     ];
 
     const isActive = (path) =>

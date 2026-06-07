@@ -22,8 +22,8 @@ diagrams = "*"
 sqlalchemy-schemadisplay = "*"
 flask = "*"
 sendgrid = "*"
-flask-migrate = "*"
 flask-bcrypt = "*"
+flask-migrate = "*"
 
 [requires]
 python_version = "3.12"

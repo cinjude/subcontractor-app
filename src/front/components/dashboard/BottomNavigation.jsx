@@ -7,7 +7,8 @@ import {
     BiFile,
     BiBriefcase,
     BiGroup,
-    BiImages,   // ← Portfolio icon
+    BiImages,
+    BiCog,
 } from "react-icons/bi";
 
 export const BottomNavigation = () => {
@@ -17,9 +18,10 @@ export const BottomNavigation = () => {
     const menuItems = [
         { name: "Home", icon: BiGridAlt, path: "/providerdashboard" },
         { name: "Estimates", icon: BiFile, path: "/providerdashboard/estimates" },
+        { name: "Services", icon: BiCog, path: "/providerdashboard/services" },
         { name: "Jobs", icon: BiBriefcase, path: "/providerdashboard/jobs" },
         { name: "Clients", icon: BiGroup, path: "/providerdashboard/customers" },
-        { name: "Portfolio", icon: BiImages, path: "/providerdashboard/portfolio" }, // ← NEW
+        { name: "Portfolio", icon: BiImages, path: "/providerdashboard/portfolio" },
     ];
 
     const isActive = (path) =>

@@ -30,6 +30,8 @@ import EditEstimatePage from "./pages/estimateRequest/EditEstimatePage";
 import PublicPortfolioPage from "./pages/portfolioPage/PublicPortfolioPage";
 import PortfolioDashboard from "./pages/portfolioPage/PortfolioDashboard";
 import PortfolioEditor from "./pages/portfolioPage/PortfolioEditor";
+import Settings from "./components/Settings/Settings";
+import PaymentMethods from "./pages/payment/PaymentMethods";
 
 const ErrorDebug = () => {
   const error = useRouteError();
@@ -77,6 +79,8 @@ export const router = createBrowserRouter(
         <Route path="estimates/:id/edit" element={<EditEstimatePage />} />
         <Route path="portfolio" element={<PortfolioDashboard />} />
         <Route path="portfolio/settings" element={<PortfolioEditor />} />
+        <Route path="settings" element={<Settings />} />
+        <Route path="payment-methods" element={<PaymentMethods />} />
       </Route>
 
       <Route path="/signupprovider" element={<SignUpProvider />} />
