@@ -8,7 +8,16 @@ export default defineConfig({
     },
     build: {
         outDir: 'dist',
-        chunkSizeWarningLimit: 2000
-    },
-    logLevel: 'info'
+        chunkSizeWarningLimit: 2000,
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+                    'bootstrap': ['bootstrap'],
+                    'pdf': ['jspdf', 'jspdf-autotable'],
+                    'charts': ['html2canvas'],
+                }
+            }
+        }
+    }
 })
