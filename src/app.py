@@ -30,7 +30,7 @@ static_file_dir = os.path.join(os.path.dirname(
 app = Flask(__name__)
 CORS(app, origins=[
     "http://localhost:3000",
-    "https://subcontractor-app.vercel.app",  
+    "https://subcontractor-app-mocha.vercel.app",
     "https://*.vercel.app",
 ])
 bcrypt = Bcrypt(app)
