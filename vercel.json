@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://subcontractor-api-hvst.onrender.com/api/$1" },
+    { "source": "/((?!assets/).*)", "destination": "/index.html" }
+  ]
+}
