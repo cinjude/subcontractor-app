@@ -1,3 +1,6 @@
 ﻿src/requirements.txt
-src/*.py
-src/api/src/migrations/
+src/app.py
+src/wsgi.py
+src/api/
+src/migrations/
+src/__pycache__/
