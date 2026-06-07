@@ -1,0 +1,25 @@
+﻿node.exe : [33mThe CJS build of Vite's Node API is deprecated. See 
+https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([33mThe CJS bu...e details.[39m:String) [], RemoteExce 
+   ption
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+[32mΓ£ô[39m 1380 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[32mindex.html                             [39m[1m[2m    1.30 kB[22m[1m[22m[2m Γöé gzip:   0.77 kB[22m
+[2mdist/[22m[32massets/rigo-baby-Dupqafir.jpg          [39m[1m[2m   31.33 kB[22m[1m[22m
+[2mdist/[22m[32massets/env-file-DWrE5-hH.png           [39m[1m[2m   81.44 kB[22m[1m[22m
+[2mdist/[22m[32massets/bootstrap-icons-mSm7cUeB.woff2  [39m[1m[2m  134.04 kB[22m[1m[22m
+[2mdist/[22m[32massets/bootstrap-icons-BeopsB42.woff   [39m[1m[2m  180.29 kB[22m[1m[22m
+[2mdist/[22m[35massets/index-DBLxu5j5.css              [39m[1m[2m  132.88 kB[22m[1m[22m[2m Γöé gzip:  23.87 kB[22m
+[2mdist/[22m[36massets/purify.es-V6uLfjnH.js           [39m[1m[2m   26.92 kB[22m[1m[22m[2m Γöé gzip:  10.17 kB[22m
+[2mdist/[22m[36massets/index.es-DhUvzsR7.js            [39m[1m[2m  150.69 kB[22m[1m[22m[2m Γöé gzip:  51.55 kB[22m
+[2mdist/[22m[36massets/html2canvas.esm-CBrSDip1.js     [39m[1m[2m  201.42 kB[22m[1m[22m[2m Γöé gzip:  48.03 kB[22m
+[2mdist/[22m[36massets/index-DIwTXHDR.js               [39m[1m[2m1,270.18 kB[22m[1m[22m[2m Γöé gzip: 368.28 kB[22m
+[32mΓ£ô built in 14.20s[39m

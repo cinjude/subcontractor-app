@@ -25,7 +25,7 @@ import ServicesP from "./pages/servicespage/ServicesP";
 import ServicesDetails from "./pages/servicespage/ServicesDetails";
 import EstimatesPage from "./pages/estimateRequest/Estimatespage";
 import Estimatedetailpage from "./pages/estimateRequest/Estimatedetailpage";
-import NewEstimateForm from "./pages/estimateRequest/Newestimateform.JSX";
+import NewEstimateForm from "./pages/estimateRequest/Newestimateform";
 import EditEstimatePage from "./pages/estimateRequest/EditEstimatePage";
 import PublicPortfolioPage from "./pages/portfolioPage/PublicPortfolioPage";
 import PortfolioDashboard from "./pages/portfolioPage/PortfolioDashboard";
