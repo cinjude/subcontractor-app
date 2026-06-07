@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import useGlobalReducer from "../../hooks/useGlobalReducer";
 import { Link } from "react-router-dom";
-import "./customerDetails.css";
+import "./CustomerDetails.css";
 import { format, parseISO } from "date-fns";
 import { enGB } from "date-fns/locale";
 import customerService from "./customerService";
