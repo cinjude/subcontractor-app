@@ -654,9 +654,38 @@ class Invoice(db.Model):
         db.Index('idx_invoice_dates', 'issue_date', 'due_date'),
         db.UniqueConstraint('contractor_id', 'invoice_number', name='uq_invoice_per_contractor'),)
 
-    def __repr__(self):
-        return f'<Invoice {self.invoice_number}>'
-
+    def serialize(self):
+        c  = self.invoice_contractor
+        cu = self.invoice_customer
+        return {
+            "id":               self.id,
+            "invoice_number":   self.invoice_number,
+            "contractor_id":    self.contractor_id,
+            "contractor_name":  (c.business_name or c.user.name) if c else "",
+            "contractor_email": (c.business_email or (c.user.email if c.user else "")) if c else "",
+            "contractor_phone": (c.phone or "") if c else "",
+            "contractor_address": (c.address or "") if c else "",
+            "customer_id":      self.customer_id,
+            "customer_name":    cu.name  if cu else "",
+            "customer_email":   cu.email if cu else "",
+            "customer_address": f"{cu.address}, {cu.city}, {cu.state}" if cu else "",
+            "job_id":           self.job_id,
+            "subtotal":         float(self.subtotal or 0),
+            "tax":              float(self.tax or 0),
+            "total_amount":     float(self.total_amount or 0),
+            "status":           self.status.value if isinstance(self.status, InvoiceStatus) else self.status,
+            "issue_date":       self.issue_date.isoformat() if self.issue_date else None,
+            "due_date":         self.due_date.isoformat()   if self.due_date   else None,
+            "paid_at":          self.paid_at.isoformat()    if self.paid_at    else None,
+            "sent_at":          self.sent_at.isoformat()    if self.sent_at    else None,
+            "notes":            self.notes or "",
+            "payment_link":     self.payment_link or "",
+            "stripe_payment_intent_id": self.stripe_payment_intent_id,
+            "stripe_payment_link_id":   self.stripe_payment_link_id,
+            "create_at":        self.create_at.isoformat()  if self.create_at  else None,
+            "updated_at":       self.updated_at.isoformat() if self.updated_at else None,
+            "invoice_items":    [it.serialize() for it in self.invoice_items],
+        }
 
 class InvoiceItem(db.Model):
     __tablename__ = 'invoiceItem'
@@ -683,6 +712,18 @@ class InvoiceItem(db.Model):
     @row_total.expression
     def row_total(cls):
         return func.coalesce(cls.quantity * cls.unit_price, 0)
+
+    def serialize(self):
+        return {
+            "id":          self.id,
+            "invoice_id":  self.invoice_id,
+            "description": self.description,
+            "quantity":    self.quantity,
+            "unit_price":  float(self.unit_price) if self.unit_price else 0.0,
+            "row_total":   float(self.row_total)  if self.row_total  else 0.0,
+            "create_at":   self.create_at.isoformat()  if self.create_at  else None,
+            "updated_at":  self.updated_at.isoformat() if self.updated_at else None,
+        }
 
 class Payment(db.Model):
     __tablename__ = 'payment'

@@ -24,6 +24,7 @@ from api.customer.customer import *
 from api.services.service import *
 from api.estimateReq.estimateRequest import *
 from api.portfolioProject.portfolio import *
+from api.invoice.invoice import *
 
 CORS(api, origins=[
     "http://localhost:3000",
