@@ -1,7 +1,7 @@
 // src/front/pages/invoices/components/InvoiceCard.jsx
 
 import { Link } from "react-router-dom";
-import InvoiceStatusBadge from "./Invoicestatusbadge";
+import InvoiceStatusBadge from "./InvoiceStatusBadge";
 
 export default function InvoiceCard({ invoice, onDelete, onSend }) {
     const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
