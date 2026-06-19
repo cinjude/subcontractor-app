@@ -1,6 +1,7 @@
 import cloudinary
 import cloudinary.uploader
 import os
+import json
 from flask import request, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -765,19 +766,36 @@ def convert_estimate_to_invoice(estimate_id):
         tax_amount = round(subtotal * (tax_rate / 100), 2)
         total      = round(subtotal + tax_amount, 2)
 
+        rooms_snapshot = [r.serialize() for r in estimate.rooms] if estimate.rooms else []
+ 
         invoice = Invoice(
-            contractor_id  = contractor_id,
-            customer_id    = customer.id,
-            job_id         = job.id,
-            invoice_number = next_num,
-            issue_date     = datetime.utcnow(),
-            due_date       = due_date,
-            subtotal       = subtotal,
-            tax            = tax_amount,        
-            total_amount   = total,            
-            status         = InvoiceStatus.draft,
-            payment_link   = '',
-            notes          = estimate.contractor_notes or '',
+            contractor_id         = contractor_id,
+            customer_id            = customer.id,
+            job_id                 = job.id,
+            invoice_number         = next_num,
+            issue_date              = datetime.utcnow(),
+            due_date                = due_date,
+            subtotal                = subtotal,
+            tax                     = tax_amount,
+            total_amount            = total,
+            status                  = InvoiceStatus.draft,
+            payment_link            = '',
+            notes                   = estimate.contractor_notes or '',
+            estimate_type           = type_label,
+            materials_json          = estimate.materials_json,
+            price_breakdown_json    = estimate.price_breakdown_json,
+            rooms_json              = json.dumps(rooms_snapshot) if rooms_snapshot else None,
+            extras_json             = json.dumps({
+                "furniture_rooms":    estimate.furniture_rooms or 0,
+                "furniture_heavy":    estimate.furniture_heavy or 0,
+                "moisture_barrier":   estimate.moisture_barrier or False,
+                "floor_leveling":     estimate.floor_leveling or False,
+                "floor_leveling_mode":estimate.floor_leveling_mode or "sqft",
+                "floor_leveling_bags":estimate.floor_leveling_bags or 1,
+                "heavy_demo":         estimate.heavy_demo or False,
+                "travel_miles":       estimate.travel_miles or 0,
+                "use_flat_travel":    estimate.use_flat_travel or False,
+            }),
         )
         db.session.add(invoice)
         db.session.flush()

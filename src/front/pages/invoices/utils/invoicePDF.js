@@ -1,18 +1,13 @@
 // src/front/pages/invoices/utils/invoicePDF.js
-// Professional PDF report using jsPDF + jspdf-autotable
+// Professional MULTI-INVOICE REPORT PDF — used by InvoicesPage.jsx "Download PDF report" button
+// Exports: generateInvoiceReportPDF({ invoices, stats, filters })
+// This is DIFFERENT from useInvoicePDF.js (which builds a single invoice document)
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 const fmtMoney = v => `$${Number(v || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
 const fmtDate  = d => d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
-
-const STATUS_COLORS = {
-    paid:    [22, 163, 74],
-    sent:    [37, 99, 235],
-    overdue: [220, 38, 38],
-    draft:   [100, 116, 139],
-};
 
 export async function generateInvoiceReportPDF({ invoices = [], stats = null, filters = {} }) {
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -44,16 +39,12 @@ export async function generateInvoiceReportPDF({ invoices = [], stats = null, fi
     });
 
     // ── PAGE 1: Cover / Summary ───────────────────────────────────────────────
-
-    // Dark header band
     doc.setFillColor(15, 35, 64);
     doc.rect(0, 0, pageW, 52, "F");
 
-    // Accent stripe
     doc.setFillColor(22, 163, 74);
     doc.rect(0, 52, pageW, 3, "F");
 
-    // Logo area (circle)
     doc.setFillColor(255, 255, 255, 0.1);
     doc.setDrawColor(255, 255, 255);
     doc.setLineWidth(0.4);
@@ -63,7 +54,6 @@ export async function generateInvoiceReportPDF({ invoices = [], stats = null, fi
     doc.setFont("helvetica", "bold");
     doc.text("TQ", margin + 7, 27.5);
 
-    // Title
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(20);
@@ -90,26 +80,21 @@ export async function generateInvoiceReportPDF({ invoices = [], stats = null, fi
 
     boxes.forEach((b, i) => {
         const x = margin + i * (boxW + 4);
-        // Card background
         doc.setFillColor(...b.color);
         doc.setDrawColor(220, 230, 240);
         doc.setLineWidth(0.3);
         doc.roundedRect(x, y, boxW, 36, 3, 3, "FD");
-        // Top accent
         doc.setFillColor(...b.accent);
         doc.roundedRect(x, y, boxW, 4, 3, 3, "F");
         doc.rect(x, y + 1, boxW, 3, "F");
-        // Label
         doc.setTextColor(...b.accent);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(6.5);
         doc.text(b.label, x + 4, y + 12);
-        // Amount
         doc.setTextColor(15, 35, 64);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(10);
         doc.text(b.value, x + 4, y + 22);
-        // Count
         doc.setTextColor(100, 116, 139);
         doc.setFont("helvetica", "normal");
         doc.setFontSize(7);
@@ -188,7 +173,6 @@ export async function generateInvoiceReportPDF({ invoices = [], stats = null, fi
     // ── PAGE 2+: Invoice list ─────────────────────────────────────────────────
     doc.addPage();
 
-    // Page 2 header
     doc.setFillColor(15, 35, 64);
     doc.rect(0, 0, pageW, 20, "F");
     doc.setFillColor(22, 163, 74);
@@ -202,13 +186,12 @@ export async function generateInvoiceReportPDF({ invoices = [], stats = null, fi
     doc.setTextColor(180, 200, 220);
     doc.text(`${invoices.length} invoices · ${periodLabel()}`, pageW - margin, 13, { align: "right" });
 
-    // Build table rows
     const rows = invoices.map(inv => [
         `#${inv.invoice_number}`,
         inv.customer_name || "—",
         fmtDate(inv.issue_date),
         fmtDate(inv.due_date),
-        inv.status.toUpperCase(),
+        (inv.status || "draft").toUpperCase(),
         fmtMoney(inv.total_amount),
     ]);
 
@@ -245,13 +228,11 @@ export async function generateInvoiceReportPDF({ invoices = [], stats = null, fi
                     d.cell.styles.fontStyle  = "bold";
                 }
             }
-            // Highlight overdue rows
             if (d.section === "body" && d.row.raw[4] === "OVERDUE") {
                 d.cell.styles.textColor = d.column.index === 4 ? [220, 38, 38] : d.cell.styles.textColor;
             }
         },
         willDrawCell: (d) => {
-            // Paid amount in green
             if (d.section === "body" && d.column.index === 5 && d.row.raw[4] === "PAID") {
                 d.cell.styles.textColor = [22, 163, 74];
             }

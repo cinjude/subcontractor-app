@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { DashboardLayout } from "../../components/dashboard/DashboardLayout";
 import { Outlet } from "react-router-dom";
 import useGlobalReducer from "../../hooks/useGlobalReducer";
-import { EstimateProvider } from "../estimateRequest/Estimatecontext.jsx"; // ← AGREGA
+import { EstimateProvider } from "../estimateRequest/Estimatecontext.jsx";
+import { InvoiceProvider } from "../invoices/InvoiceContext.jsx";
 
 export const ProviderDashboard = () => {
 
@@ -19,7 +20,9 @@ export const ProviderDashboard = () => {
     return (
         <DashboardLayout>
             <EstimateProvider>
-                <Outlet />
+                <InvoiceProvider>
+                    <Outlet />
+                </InvoiceProvider>
             </EstimateProvider>
         </DashboardLayout>
     );

@@ -682,6 +682,11 @@ class Invoice(db.Model):
             "payment_link":     self.payment_link or "",
             "stripe_payment_intent_id": self.stripe_payment_intent_id,
             "stripe_payment_link_id":   self.stripe_payment_link_id,
+            "estimate_type":         self.estimate_type,
+            "materials_json":        self.materials_json,
+            "price_breakdown_json":  self.price_breakdown_json,
+            "rooms_json":            self.rooms_json,
+            "extras_json":           self.extras_json,
             "create_at":        self.create_at.isoformat()  if self.create_at  else None,
             "updated_at":       self.updated_at.isoformat() if self.updated_at else None,
             "invoice_items":    [it.serialize() for it in self.invoice_items],
@@ -697,7 +702,7 @@ class InvoiceItem(db.Model):
     unit_price: Mapped[Numeric] = mapped_column(Numeric(10, 2), nullable=False)
     # amount: Mapped[Numeric] = mapped_column(Numeric(10, 2), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), onupdate=func.now())
+        DateTime(timezone=True), onupdate=func.now(), nullable=True)
     create_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now())
     

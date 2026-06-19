@@ -35,6 +35,7 @@ import PaymentMethods from "./pages/payment/PaymentMethods";
 import InvoicesPage from "./pages/invoices/InvoicesPage";
 import InvoiceDetailPage from "./pages/invoices/InvoiceDetailPage";
 import CreateInvoicePage from "./pages/invoices/CreateInvoicePage";
+import EditInvoicePage from "./pages/invoices/EditInvoicePage";
 
 const ErrorDebug = () => {
   const error = useRouteError();
@@ -87,6 +88,7 @@ export const router = createBrowserRouter(
         <Route path="invoices" element={<InvoicesPage />} />
         <Route path="invoices/:id" element={<InvoiceDetailPage />} />
         <Route path="invoices/new" element={<CreateInvoicePage />} />
+        <Route path="invoices/:id/edit" element={<EditInvoicePage />} />
       </Route>
 
       <Route path="/signupprovider" element={<SignUpProvider />} />
