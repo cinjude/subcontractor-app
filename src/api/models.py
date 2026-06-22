@@ -615,6 +615,11 @@ class Invoice(db.Model):
         Enum(InvoiceStatus), nullable=False)
     payment_link: Mapped[str] = mapped_column(String(500), nullable=False)
     notes: Mapped[str] = mapped_column(String(500), nullable=False)
+    estimate_type: Mapped[str] = mapped_column(String(20), nullable=True)
+    materials_json: Mapped[str] = mapped_column(Text(), nullable=True)
+    price_breakdown_json: Mapped[str] = mapped_column(Text(), nullable=True)
+    rooms_json: Mapped[str] = mapped_column(Text(), nullable=True)
+    extras_json: Mapped[str] = mapped_column(Text(), nullable=True)
     paid_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=True)
     sent_at: Mapped[datetime] = mapped_column(

@@ -237,6 +237,18 @@ export default function CreateInvoicePage() {
         }
     };
 
+    useEffect(() => {
+        fetch(`${BASE}/api/customers`, { headers: authH() })
+            .then(r => r.json())
+            .then(d => setCustomers(Array.isArray(d) ? d : (Array.isArray(d?.customers) ? d.customers : [])))
+            .catch(() => setCustomers([]));
+
+        fetch(`${BASE}/api/jobs`, { headers: authH() })
+            .then(r => r.json())
+            .then(d => setJobs(Array.isArray(d) ? d : (Array.isArray(d?.jobs) ? d.jobs : [])))
+            .catch(() => setJobs([]));
+    }, []);
+
     const RevRow = ({ label, value }) => value ? (
         <div className="d-flex justify-content-between border-bottom py-2">
             <span className="text-muted" style={{ fontSize: 13 }}>{label}</span>

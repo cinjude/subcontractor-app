@@ -8,8 +8,6 @@ import Swal from 'sweetalert2'
 const getInitials = (name = "") =>
     name.split(" ").slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
 
-
-
 const CustomerPageList = ({ onReady, onEdit }) => {
 
     const navigate = useNavigate()
@@ -113,6 +111,7 @@ const CustomerPageList = ({ onReady, onEdit }) => {
         });
     };
 
+    console.log(customers)
     const EmptyState = () => (
         <div className="cpl-empty">
             <div className="cpl-empty-icon">👤</div>
