@@ -1,0 +1,136 @@
+/* src/pages/dashboardProvider/DashboardHome.css
+   Custom styles that Bootstrap utilities can't express directly.
+   Everything expressible with Bootstrap classes (spacing, flex, borders,
+   text utilities) stays inline as className — only true custom values
+   (gradients, brand colors, hover states) live here. */
+
+/* ── Portfolio share card ─────────────────────────────────────────────── */
+.portfolio-card {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+}
+
+.portfolio-card .btn-portfolio-cta {
+    background: #16a34a;
+    color: #fff;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    border: none;
+}
+
+.portfolio-card .btn-portfolio-cta:hover {
+    background: #15803d;
+    color: #fff;
+}
+
+.portfolio-card-ghost-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.portfolio-card-ghost-btn:hover {
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+}
+
+.portfolio-link-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 10px;
+    padding: 10px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.portfolio-link-text {
+    flex: 1;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    font-family: monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.portfolio-copy-btn {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    padding: 5px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: background .2s;
+}
+
+.portfolio-copy-btn.copied {
+    background: #16a34a;
+}
+
+/* Share buttons — brand colors */
+.share-btn {
+    border: none;
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.share-btn-whatsapp { background: #25D366; }
+.share-btn-facebook { background: #1877F2; }
+.share-btn-twitter  { background: #1DA1F2; }
+.share-btn-email    { background: #374151; }
+.share-btn-sms      { background: #7C3AED; }
+
+/* ── Stat cards ───────────────────────────────────────────────────────── */
+.stat-card-icon {
+    font-size: 18px;
+}
+
+.stat-card-value {
+    font-size: 24px;
+}
+
+/* ── Activity feed ────────────────────────────────────────────────────── */
+.activity-row {
+    cursor: pointer;
+}
+
+.activity-icon-bubble {
+    width: 32px;
+    height: 32px;
+    font-size: 15px;
+}
+
+.activity-icon-bubble.bubble-invoice  { background: rgba(3, 105, 161, 0.1);  }
+.activity-icon-bubble.bubble-estimate { background: rgba(124, 58, 237, 0.1); }
+.activity-icon-bubble.bubble-job      { background: rgba(21, 128, 61, 0.1); }
+
+.activity-feed-scroll {
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+/* ── Chart card ───────────────────────────────────────────────────────── */
+.chart-empty-state {
+    height: 220px;
+}

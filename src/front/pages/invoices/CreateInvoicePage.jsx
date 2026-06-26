@@ -1,7 +1,4 @@
-// src/front/pages/invoices/CreateInvoicePage.jsx
-// Full detailed invoice builder — mirrors NewEstimateForm.jsx exactly.
-// Reuses Chips/Toggle/Counter/RoomMaterialSelector/MaterialsSection from
-// InvoiceBuilderShared.jsx, and your existing PriceCalculatorModal for pricing.
+
 
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -50,7 +47,6 @@ export default function CreateInvoicePage() {
         door_count: 0, window_count: 0, client_provides_paint: false,
         desired_colors: "", repairs_needed: false, repairs_detail: "",
 
-        // flooring
         flooring_material: "", flooring_current: "", include_removal: false,
         subfloor_condition: "unknown", flooring_pattern: "straight",
         include_baseboards: false, transition_strips: 0,
@@ -59,7 +55,6 @@ export default function CreateInvoicePage() {
 
         materials: [],
 
-        // extras
         furniture_rooms: 0, furniture_heavy: 0,
         moisture_barrier: false, floor_leveling: false,
         floor_leveling_mode: "sqft", floor_leveling_bags: 1,
@@ -75,7 +70,6 @@ export default function CreateInvoicePage() {
     const isPainting = form.estimate_type === "painting" || form.estimate_type === "both";
     const isFlooring = form.estimate_type === "flooring" || form.estimate_type === "both";
 
-    // ── Load customers & jobs ────────────────────────────────────────────────
     useEffect(() => {
         fetch(`${BASE}/api/customers`, { headers: authH() }).then(r => r.json()).then(d => setCustomers(d.customers || d || [])).catch(() => { });
         fetch(`${BASE}/api/jobs`, { headers: authH() }).then(r => r.json()).then(d => setJobs(d.jobs || [])).catch(() => { });
@@ -355,7 +349,6 @@ export default function CreateInvoicePage() {
                 </div>
             )}
 
-            {/* ── STEP 3 — Details ── */}
             {step === 3 && (
                 <div>
                     {isPainting && (
@@ -429,12 +422,10 @@ export default function CreateInvoicePage() {
                 </div>
             )}
 
-            {/* ── STEP 4 — Materials ── */}
             {step === 4 && (
                 <MaterialsSection materials={form.materials} onChange={mats => set("materials", mats)} estimateType={form.estimate_type} />
             )}
 
-            {/* ── STEP 5 — Extras ── */}
             {step === 5 && (
                 <div>
                     <h6 className="fw-semibold mb-1">Job extras</h6>
@@ -477,7 +468,6 @@ export default function CreateInvoicePage() {
                 </div>
             )}
 
-            {/* ── STEP 6 — Pricing (reuses PriceCalculatorModal) ── */}
             {step === 6 && (
                 <div>
                     <h6 className="fw-semibold mb-1">Set the price</h6>
@@ -496,7 +486,6 @@ export default function CreateInvoicePage() {
                 </div>
             )}
 
-            {/* ── STEP 7 — Review ── */}
             {step === 7 && (
                 <div>
                     <h6 className="fw-semibold mb-1">Review before creating</h6>
@@ -567,7 +556,6 @@ export default function CreateInvoicePage() {
                 </div>
             )}
 
-            {/* ── STICKY NAV ── */}
             <div className="sticky-bottom bg-white border-top py-3 mt-4 d-flex gap-2">
                 {step > 0 && <button type="button" onClick={back} className="btn btn-outline-secondary px-4">← Back</button>}
                 {step < STEPS.length - 1 ? (
