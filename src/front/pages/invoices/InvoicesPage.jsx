@@ -1,11 +1,9 @@
-// src/front/pages/invoices/InvoicesPage.jsx
-// FINAL VERSION — uses InvoiceContext (useInvoice), Bootstrap-only, matches EstimatesPage style
-// Includes PDF export button wired to utils/invoicePDF.js
 
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useInvoice } from "./InvoiceContext";
 import { generateInvoiceReportPDF } from "./utils/invoicePDF";
+import StatCard from "./StatCard";
 
 const STATUS_CFG = {
     draft: { cls: "text-bg-secondary", label: "Draft", icon: "📝" },
@@ -20,22 +18,6 @@ const YEARS = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
 const money = v => `$${Number(v || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
 const fmtDate = d => d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
-
-function StatCard({ label, value, icon, accent }) {
-    return (
-        <div className="col-6 col-md-3">
-            <div className="card border h-100">
-                <div className="card-body py-3 px-3">
-                    <div className="d-flex justify-content-between align-items-start mb-1">
-                        <span className="text-muted text-uppercase fw-semibold" style={{ fontSize: 11, letterSpacing: ".05em" }}>{label}</span>
-                        <span>{icon}</span>
-                    </div>
-                    <p className={`fw-bold mb-0 ${accent || "text-dark"}`} style={{ fontSize: 22 }}>{value}</p>
-                </div>
-            </div>
-        </div>
-    );
-}
 
 export default function InvoicesPage() {
     const navigate = useNavigate();
@@ -113,7 +95,6 @@ export default function InvoicesPage() {
                 </div>
             )}
 
-            {/* Search + filters */}
             <div className="row g-2 mb-3">
                 <div className="col-12 col-md-4">
                     <input className="form-control" placeholder="🔍 Search by invoice # or client…"
@@ -142,7 +123,6 @@ export default function InvoicesPage() {
                 </div>
             </div>
 
-            {/* Status tabs */}
             <ul className="nav nav-pills mb-4 flex-wrap gap-2">
                 {["all", "draft", "sent", "paid", "overdue"].map(s => (
                     <li className="nav-item" key={s}>
@@ -157,14 +137,12 @@ export default function InvoicesPage() {
                 ))}
             </ul>
 
-            {/* Loading */}
             {loading && (
                 <div className="d-flex justify-content-center py-5">
                     <div className="spinner-border text-secondary" role="status" />
                 </div>
             )}
 
-            {/* Empty */}
             {!loading && invoices.length === 0 && (
                 <div className="text-center py-5">
                     <div style={{ fontSize: 48 }} className="mb-2">🧾</div>
@@ -175,7 +153,6 @@ export default function InvoicesPage() {
                 </div>
             )}
 
-            {/* Card grid */}
             {!loading && invoices.length > 0 && (
                 <div className="row g-3">
                     {invoices.map(inv => {

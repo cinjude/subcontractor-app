@@ -1,13 +1,3 @@
-// src/front/pages/invoices/InvoiceContext.jsx
-// Matches your real backend routes exactly:
-//   GET    /invoices              (list + filters)
-//   GET    /invoices/stats
-//   GET    /invoices/<id>
-//   POST   /invoices              (create — NOT /invoices/create)
-//   PUT    /invoices/<id>
-//   PATCH  /invoices/<id>/status
-//   DELETE /invoices/<id>
-//   POST   /invoices/<id>/send    (NOT /send-email)
 
 import { createContext, useContext, useState, useCallback } from "react";
 
@@ -78,7 +68,6 @@ export function InvoiceProvider({ children }) {
         catch (e) { setError(e.message); throw e; }
     }, []);
 
-    // POST /invoices (not /invoices/create)
     const createInvoice = useCallback(async (payload) => {
         setLoading(true); setError(null);
         try {
@@ -118,7 +107,6 @@ export function InvoiceProvider({ children }) {
         } catch (e) { setError(e.message); throw e; }
     }, []);
 
-    // POST /invoices/<id>/send (not /send-email)
     const sendEmail = useCallback(async (id) => {
         try {
             const data = await apiFetch(`/invoices/${id}/send`, { method: "POST" });
