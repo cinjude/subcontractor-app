@@ -1,9 +1,3 @@
-// src/pages/Estimates/EstimateDetailPage.jsx
-// FINAL VERSION — all three files wired together
-// Only changes from previous version:
-//   1. Destructures convertToInvoice from useEstimate()
-//   2. handleConvertConfirm invoice path calls convertToInvoice() for real
-//   3. navigate paths use your actual route structure
 
 import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";

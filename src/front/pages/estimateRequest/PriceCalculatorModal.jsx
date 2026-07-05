@@ -1,11 +1,3 @@
-// src/pages/Estimates/PriceCalculatorModal.jsx — VERSION 4
-// FIXES:
-//   1. Modal backdrop closes properly — style tag moved outside modal wrapper
-//   2. Tabs work correctly — modal-dialog-scrollable added so content scrolls inside
-//   3. All rates visible in My rates tab for painting jobs
-//   4. Calculator pre-fills from stored estimate extras
-//   5. Furniture moving shown for all job types
-
 import { useEffect, useState, useCallback } from "react";
 
 const DEFAULTS = {

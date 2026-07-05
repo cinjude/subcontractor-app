@@ -57,7 +57,7 @@ export default function InvoiceDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { fetchInvoice, updateStatus, deleteInvoice, sendEmail } = useInvoice();
-    const { downloadPDF, previewPDF } = useInvoicePDF();   // ← CHANGE 2: hook added
+    const { downloadPDF, previewPDF } = useInvoicePDF();
 
     const [invoice, setInvoice] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -90,8 +90,6 @@ export default function InvoiceDetailPage() {
         await deleteInvoice(id);
         navigate("/providerdashboard/invoices");
     };
-
-    // ← CHANGE 3: handlePrint removed (no longer used anywhere below)
 
     if (loading) return (
         <div className="d-flex align-items-center justify-content-center" style={{ minHeight: 300 }}>

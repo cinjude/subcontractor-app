@@ -378,7 +378,12 @@ export function MaterialsSection({ materials = [], onChange, estimateType = "pai
                                     <input className="form-control form-control-sm fw-semibold border-0 bg-transparent shadow-none flex-fill"
                                         style={{ outline: "none", fontSize: 14 }} value={mat.name}
                                         onChange={e => updateMaterial(mat.id, "name", e.target.value)} placeholder="Material name" />
-                                    <button type="button" className="btn-close flex-shrink-0" onClick={() => removeMaterial(mat.id)} />
+                                    <button type="button"
+                                        className="btn btn-outline-danger btn-sm flex-shrink-0 d-flex align-items-center gap-1"
+                                        style={{ fontSize: 11, padding: "2px 8px", borderRadius: 6 }}
+                                        onClick={() => removeMaterial(mat.id)}>
+                                        🗑 Remove
+                                    </button>
                                 </div>
                                 <div className="row g-2">
                                     <div className="col-12 col-sm-3">

@@ -69,7 +69,6 @@ export default function InvoicesPage() {
     return (
         <div className="container-fluid py-3 py-lg-4 px-3 px-lg-4" style={{ maxWidth: 1100, margin: "0 auto" }}>
 
-            {/* Header */}
             <div className="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
                 <div>
                     <h5 className="fw-bold mb-0">🧾 Invoices</h5>
@@ -85,7 +84,6 @@ export default function InvoicesPage() {
                 </div>
             </div>
 
-            {/* Stats */}
             {stats && (
                 <div className="row g-2 g-md-3 mb-4">
                     <StatCard label="Paid" value={money(stats.total_paid)} icon="✅" accent="text-success" />

@@ -56,10 +56,6 @@ def _apply_sort(q, sort_by):
     }
     return q.order_by(sorts.get(sort_by, Invoice.create_at.desc()))
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# GET ALL
-# ─────────────────────────────────────────────────────────────────────────────
 @api.route('/invoices', methods=['GET'])
 @jwt_required()
 def get_invoices():
@@ -105,10 +101,6 @@ def get_invoices():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# STATS
-# ─────────────────────────────────────────────────────────────────────────────
 @api.route('/invoices/stats', methods=['GET'])
 @jwt_required()
 def get_invoice_stats():
@@ -146,9 +138,6 @@ def get_invoice_stats():
         return jsonify({'error': str(e)}), 500
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# GET ONE
-# ─────────────────────────────────────────────────────────────────────────────
 @api.route('/invoices/<int:invoice_id>', methods=['GET'])
 @jwt_required()
 def get_invoice(invoice_id):
