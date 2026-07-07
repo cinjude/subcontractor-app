@@ -228,8 +228,6 @@ function ConvertModal({ show, type, estimate, onClose, onConfirm }) {
     );
 }
 
-// QuoteModal replaced by PriceCalculatorModal (imported above)
-
 function SendEmailModal({ show, estimate, contractorInfo, onClose }) {
     const { sendByEmail } = useEstimatePDF();
     const [email, setEmail] = useState(estimate.customer_email || "");

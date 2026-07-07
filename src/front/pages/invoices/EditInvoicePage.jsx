@@ -73,7 +73,6 @@ export default function EditInvoicePage() {
                 const mats = safeParse(inv.materials_json, []);
                 const breakdown = safeParse(inv.price_breakdown_json, []);
 
-                // Rebuild room_materials map from description prefix if present
                 let roomMats = {};
                 if (inv.notes?.includes("Materials:")) {
                     const matLine = inv.notes.split("\n").find(l => l.startsWith("Materials:"));

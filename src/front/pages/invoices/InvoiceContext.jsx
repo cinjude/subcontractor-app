@@ -107,9 +107,12 @@ export function InvoiceProvider({ children }) {
         } catch (e) { setError(e.message); throw e; }
     }, []);
 
-    const sendEmail = useCallback(async (id) => {
+    const sendEmail = useCallback(async (id, recipientEmail = null) => {
         try {
-            const data = await apiFetch(`/invoices/${id}/send`, { method: "POST" });
+            const data = await apiFetch(`/invoices/${id}/send`, {
+                method: "POST",
+                body = JSON.stringify(recipientEmail ? { recipient_email: recipientEmail } : {})
+            });
             setInvoices(prev => prev.map(i => i.id === id ? data.invoice : i));
             return data;
         } catch (e) { setError(e.message); throw e; }

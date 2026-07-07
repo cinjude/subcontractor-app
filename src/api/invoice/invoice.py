@@ -255,9 +255,6 @@ def create_invoice():
         return jsonify({'error': str(e)}), 500
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# UPDATE — supports replacing breakdown fields + line items
-# ─────────────────────────────────────────────────────────────────────────────
 @api.route('/invoices/<int:invoice_id>', methods=['PUT'])
 @jwt_required()
 def update_invoice(invoice_id):
@@ -308,10 +305,6 @@ def update_invoice(invoice_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# STATUS PATCH
-# ─────────────────────────────────────────────────────────────────────────────
 @api.route('/invoices/<int:invoice_id>/status', methods=['PATCH'])
 @jwt_required()
 def update_invoice_status(invoice_id):
@@ -347,9 +340,6 @@ def update_invoice_status(invoice_id):
         return jsonify({'error': str(e)}), 500
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# DELETE
-# ─────────────────────────────────────────────────────────────────────────────
 @api.route('/invoices/<int:invoice_id>', methods=['DELETE'])
 @jwt_required()
 def delete_invoice(invoice_id):
@@ -371,9 +361,6 @@ def delete_invoice(invoice_id):
         return jsonify({'error': str(e)}), 500
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# SEND EMAIL
-# ─────────────────────────────────────────────────────────────────────────────
 @api.route('/invoices/<int:invoice_id>/send', methods=['POST'])
 @jwt_required()
 def send_invoice_email(invoice_id):
@@ -387,8 +374,12 @@ def send_invoice_email(invoice_id):
         contractor = inv.invoice_contractor
         if not customer:
             return jsonify({'error': 'Customer not found'}), 404
-        if not customer.email:
-            return jsonify({'error': 'Customer has no email on file'}), 400
+
+        data = request.get_json(silent=True) or {}
+        recipient_email = data.get('recipient_email') or customer.email
+
+        if not recipient_email:
+            return jsonify({'error': 'No recipient email available'}), 400
 
         rows = "".join([
             f"<tr><td style='padding:8px 12px;border-bottom:1px solid #f1f5f9'>{it.description}</td>"
@@ -432,7 +423,7 @@ def send_invoice_email(invoice_id):
             sg = SendGridAPIClient(os.getenv('SENDGRID_API_KEY'))
             sg.send(Mail(
                 from_email   = os.getenv('MAIL_FROM'),
-                to_emails    = customer.email,
+                to_emails    = recipient_email,
                 subject      = f"Invoice #{inv.invoice_number} – ${float(inv.total_amount):.2f} due from {biz_name}",
                 html_content = html,
             ))
@@ -440,7 +431,7 @@ def send_invoice_email(invoice_id):
             from flask_mail import Mail as FlaskMail, Message
             from flask import current_app
             mail = FlaskMail(current_app)
-            msg = Message(f"Invoice #{inv.invoice_number}", sender=os.getenv('MAIL_FROM'), recipients=[customer.email])
+            msg = Message(f"Invoice #{inv.invoice_number}", sender=os.getenv('MAIL_FROM'), recipients=[recipient_email])
             msg.html = html
             mail.send(msg)
 
