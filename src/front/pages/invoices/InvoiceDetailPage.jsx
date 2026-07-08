@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useInvoice } from "./InvoiceContext";
 import { useInvoicePDF } from "./utils/useInvoicePDF.js";
+import SendEmailModal from "./SendEmailModal.jsx";
 
 const money = v => v != null ? `$${Number(v).toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "—";
 
@@ -63,6 +64,7 @@ export default function InvoiceDetailPage() {
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
     const [updatingStatus, setUpdatingStatus] = useState(false);
+    const [showEmailModal, setShowEmailModal] = useState(false)
 
     const load = () => fetchInvoice(id)
         .then(data => setInvoice(data.invoice ?? data))
@@ -162,7 +164,7 @@ export default function InvoiceDetailPage() {
                     <button className="btn btn-outline-secondary btn-sm" onClick={() => downloadPDF(invoice)}>⬇ Download PDF</button>
                     <button className="btn btn-outline-secondary btn-sm" onClick={() => navigate(`/providerdashboard/invoices/${id}/edit`)}>✏️ Edit invoice</button>
                     {invoice.status !== "paid" && (
-                        <button className="btn btn-dark btn-sm fw-semibold" onClick={handleSend} disabled={sending}>
+                        <button className="btn btn-dark btn-sm fw-semibold" onClick={() => setShowEmailModal(true)} disabled={sending}>
                             {sending ? <><span className="spinner-border spinner-border-sm me-2" />Sending…</> : "✉️ Send to client"}
                         </button>
                     )}
@@ -370,12 +372,11 @@ export default function InvoiceDetailPage() {
                             <div className="card-body d-grid gap-2 py-3 px-3">
 
                                 {invoice.status !== "paid" && (
-                                    <button className="btn btn-dark fw-semibold py-2" onClick={handleSend} disabled={sending}>
+                                    <button className="btn btn-dark fw-semibold py-2" onClick={() => setShowEmailModal(true)} disabled={sending}>
                                         {sending ? <><span className="spinner-border spinner-border-sm me-2" />Sending…</> : "✉️ Send to client"}
                                     </button>
                                 )}
 
-                                {/* ← CHANGE 5: sidebar Print button replaced with Preview + Download */}
                                 <button className="btn btn-outline-secondary" onClick={() => previewPDF(invoice)}>👁 Preview PDF</button>
                                 <button className="btn btn-outline-secondary" onClick={() => downloadPDF(invoice)}>⬇ Download PDF</button>
                                 <button className="btn btn-outline-secondary" onClick={() => navigate(`/providerdashboard/invoices/${id}/edit`)}>✏️ Edit invoice</button>
@@ -405,14 +406,12 @@ export default function InvoiceDetailPage() {
                 </div>
             </div>
 
-            {/* Mobile sticky bottom bar */}
             <div className="d-md-none no-print">
                 <div className="fixed-bottom bg-white border-top px-3 py-2 d-flex gap-2">
-                    {/* ← CHANGE 6: mobile Print button replaced with Download */}
                     <button className="btn btn-outline-secondary btn-sm flex-fill" onClick={() => downloadPDF(invoice)}>⬇ PDF</button>
                     <button className="btn btn-outline-secondary btn-sm flex-fill" onClick={() => navigate(`/providerdashboard/invoices/${id}/edit`)}>✏️ Edit</button>
                     {invoice.status !== "paid" ? (
-                        <button className="btn btn-dark btn-sm flex-fill fw-semibold" onClick={handleSend} disabled={sending}>✉️ Send</button>
+                        <button className="btn btn-dark btn-sm flex-fill fw-semibold" onClick={() => setShowEmailModal(true)}>✉️ Send</button>
                     ) : (
                         <span className="btn btn-success btn-sm flex-fill fw-semibold disabled">✅ Paid</span>
                     )}
@@ -425,6 +424,12 @@ export default function InvoiceDetailPage() {
                 </div>
                 <div style={{ height: 64 }} />
             </div>
+            <SendEmailModal
+                show={showEmailModal}
+                invoice={invoice}
+                onClose={() => setShowEmailModal(false)}
+                onSent={load}
+            />
         </div>
     );
 }

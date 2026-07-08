@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useInvoice } from "./InvoiceContext";
 import { generateInvoiceReportPDF } from "./utils/invoicePDF";
 import StatCard from "./StatCard";
+import SendEmailModal from "./SendEmailModal";
 
 const STATUS_CFG = {
     draft: { cls: "text-bg-secondary", label: "Draft", icon: "📝" },
@@ -29,6 +30,8 @@ export default function InvoicesPage() {
     const [month, setMonth] = useState("all");
     const [sort, setSort] = useState("newest");
     const [exporting, setExporting] = useState(false);
+    const [showEmailModal, setShowEmailModal] = useState(false)
+    const [selectedInvoice, setSelectedInvoice] = useState(null)
 
     const load = useCallback(() => {
         const filters = { status, search, year, month, sort, per_page: 100 };
@@ -182,7 +185,11 @@ export default function InvoicesPage() {
                                         <div className="d-flex gap-2">
                                             {inv.status !== "paid" && (
                                                 <button className="btn btn-sm btn-outline-primary flex-fill"
-                                                    onClick={(e) => handleSend(inv.id, e)}>
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedInvoice(inv)
+                                                        setShowEmailModal(true)
+                                                    }}>
                                                     ✉️ Send
                                                 </button>
                                             )}
@@ -198,6 +205,17 @@ export default function InvoicesPage() {
                     })}
                 </div>
             )}
+            {
+                selectedInvoice && (
+                    <
+                        SendEmailModal
+                        show={showEmailModal}
+                        invoice={selectedInvoice}
+                        onClose={() => { setShowEmailModal(false); setSelectedInvoice(null); }}
+                        onSent={load}
+                    />
+                )}
+
         </div>
     );
 }

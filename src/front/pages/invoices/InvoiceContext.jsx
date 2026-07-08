@@ -111,7 +111,7 @@ export function InvoiceProvider({ children }) {
         try {
             const data = await apiFetch(`/invoices/${id}/send`, {
                 method: "POST",
-                body = JSON.stringify(recipientEmail ? { recipient_email: recipientEmail } : {})
+                body: JSON.stringify(recipientEmail ? { recipient_email: recipientEmail } : {}),
             });
             setInvoices(prev => prev.map(i => i.id === id ? data.invoice : i));
             return data;
