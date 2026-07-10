@@ -364,6 +364,7 @@ def delete_invoice(invoice_id):
 @api.route('/invoices/<int:invoice_id>/send', methods=['POST'])
 @jwt_required()
 def send_invoice_email(invoice_id):
+    import base64
     try:
         contractor_id = get_current_contractor_id()
         inv = Invoice.query.filter_by(id=invoice_id, contractor_id=contractor_id).first()
@@ -377,73 +378,79 @@ def send_invoice_email(invoice_id):
 
         data = request.get_json(silent=True) or {}
         recipient_email = data.get('recipient_email') or customer.email
+        pdf_base64      = data.get('pdf_base64')
+        filename        = data.get('filename', f'invoice-{inv.invoice_number}.pdf')
 
         if not recipient_email:
             return jsonify({'error': 'No recipient email available'}), 400
+        if not pdf_base64:
+            return jsonify({'error': 'PDF is required'}), 400
 
-        rows = "".join([
-            f"<tr><td style='padding:8px 12px;border-bottom:1px solid #f1f5f9'>{it.description}</td>"
-            f"<td style='padding:8px 12px;text-align:center;border-bottom:1px solid #f1f5f9'>{it.quantity}</td>"
-            f"<td style='padding:8px 12px;text-align:right;border-bottom:1px solid #f1f5f9'>${float(it.unit_price):.2f}</td>"
-            f"<td style='padding:8px 12px;text-align:right;border-bottom:1px solid #f1f5f9;font-weight:700'>${float(it.row_total):.2f}</td></tr>"
-            for it in inv.invoice_items
-        ])
+        pdf_bytes = base64.b64decode(pdf_base64)
 
-        biz_name = (contractor.business_name or (contractor.user.name if contractor.user else "")) if contractor else "Your Contractor"
+        biz_name  = (contractor.business_name or "") if contractor else "Your Contractor"
+        from_email = os.environ.get("MAIL_FROM", "noreply@example.com")
+        subject    = f"Invoice #{inv.invoice_number} — ${float(inv.total_amount):,.2f} due from {biz_name}"
+
         html = f"""
-        <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;background:#fff;">
-          <div style="background:#0f2340;padding:28px 28px 20px;border-radius:12px 12px 0 0">
-            <h1 style="color:#fff;margin:0;font-size:22px">Invoice #{inv.invoice_number}</h1>
-            <p style="color:#94a3b8;margin:6px 0 0;font-size:13px">from {biz_name}</p>
-          </div>
-          <div style="padding:28px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px">
-            <p style="color:#374151;font-size:14px">Hi {customer.name},</p>
-            <p style="color:#64748b;font-size:13px">Please find your invoice details below. Payment is due by <strong>{inv.due_date.strftime('%B %d, %Y') if inv.due_date else 'upon receipt'}</strong>.</p>
-            <table style="width:100%;border-collapse:collapse;margin:20px 0;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
-              <thead><tr style="background:#f8fafc">
-                <th style="padding:10px 12px;text-align:left;font-size:11px;color:#94a3b8;text-transform:uppercase">Description</th>
-                <th style="padding:10px 12px;text-align:center;font-size:11px;color:#94a3b8;text-transform:uppercase">Qty</th>
-                <th style="padding:10px 12px;text-align:right;font-size:11px;color:#94a3b8;text-transform:uppercase">Price</th>
-                <th style="padding:10px 12px;text-align:right;font-size:11px;color:#94a3b8;text-transform:uppercase">Total</th>
-              </tr></thead>
-              <tbody>{rows}</tbody>
-            </table>
-            <div style="text-align:right;padding:12px 0;border-top:2px solid #1e293b">
-              <span style="font-size:11px;color:#94a3b8;text-transform:uppercase;margin-right:16px">Total Due</span>
-              <span style="font-size:22px;font-weight:900;color:#1e293b">${float(inv.total_amount):.2f}</span>
-            </div>
-            {f'<p style="margin-top:16px;padding:12px;background:#f8fafc;border-radius:8px;color:#64748b;font-size:13px"><strong>Notes:</strong> {inv.notes}</p>' if inv.notes else ''}
-            <p style="margin-top:20px;color:#94a3b8;font-size:12px;text-align:center">
-              Questions? Contact us at {(contractor.business_email or (contractor.user.email if contractor.user else '')) if contractor else ''}
-            </p>
-          </div>
-        </div>"""
+        <!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;background:#f5f5f5;margin:0;padding:40px 16px;">
+          <table width="600" style="margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;">
+            <tr><td style="background:#1a1a1a;padding:24px 32px;">
+              <h1 style="margin:0;color:#fff;font-size:20px;">{biz_name}</h1>
+            </td></tr>
+            <tr><td style="padding:28px 32px;">
+              <p style="font-size:15px;color:#111;">Hi {customer.name or 'there'},</p>
+              <p style="font-size:14px;color:#374151;line-height:1.6;">
+                Please find your invoice attached as a PDF. Payment is due by
+                <strong>{inv.due_date.strftime('%B %d, %Y') if inv.due_date else 'upon receipt'}</strong>.
+              </p>
+              <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:20px;text-align:center;margin:20px 0;">
+                <p style="margin:0 0 4px;color:#15803d;font-size:12px;font-weight:600;">TOTAL DUE</p>
+                <p style="margin:0;font-size:32px;font-weight:700;color:#15803d;">${float(inv.total_amount):,.2f}</p>
+              </div>
+              {f'<p style="padding:12px;background:#f8fafc;border-radius:8px;color:#64748b;font-size:13px;"><strong>Notes:</strong> {inv.notes}</p>' if inv.notes else ''}
+              <p style="font-size:13px;color:#64748b;">Questions? Reply to this email or call us directly.</p>
+            </td></tr>
+            <tr><td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:16px 32px;text-align:center;">
+              <p style="margin:0;font-size:11px;color:#9ca3af;">{biz_name} · Invoice #{inv.invoice_number}</p>
+            </td></tr>
+          </table>
+        </body></html>"""
 
         if os.environ.get("SENDGRID_API_KEY"):
-            sg = SendGridAPIClient(os.getenv('SENDGRID_API_KEY'))
-            sg.send(Mail(
-                from_email   = os.getenv('MAIL_FROM'),
-                to_emails    = recipient_email,
-                subject      = f"Invoice #{inv.invoice_number} – ${float(inv.total_amount):.2f} due from {biz_name}",
-                html_content = html,
-            ))
+            from sendgrid import SendGridAPIClient
+            from sendgrid.helpers.mail import (
+                Mail, Attachment, FileContent, FileName, FileType, Disposition
+            )
+            msg = Mail(
+                from_email=from_email,
+                to_emails=recipient_email,
+                subject=subject,
+                html_content=html
+            )
+            msg.attachment = Attachment(
+                FileContent(base64.b64encode(pdf_bytes).decode()),
+                FileName(filename),
+                FileType("application/pdf"),
+                Disposition("attachment")
+            )
+            SendGridAPIClient(os.environ["SENDGRID_API_KEY"]).send(msg)
         else:
             from flask_mail import Mail as FlaskMail, Message
             from flask import current_app
             mail = FlaskMail(current_app)
-            msg = Message(f"Invoice #{inv.invoice_number}", sender=os.getenv('MAIL_FROM'), recipients=[recipient_email])
+            msg  = Message(subject, sender=from_email, recipients=[recipient_email])
             msg.html = html
+            msg.attach(filename, "application/pdf", pdf_bytes)
             mail.send(msg)
 
         inv.status = InvoiceStatus.sent
         if not inv.sent_at:
             inv.sent_at = datetime.utcnow()
         db.session.commit()
-        return jsonify({'msg': 'Invoice sent', 'invoice': inv.serialize()}), 200
 
-    except APIException as e:
-        db.session.rollback()
-        return jsonify({'error': _api_exc_message(e)}), e.status_code
+        return jsonify({'msg': f'Invoice sent to {recipient_email}', 'invoice': inv.serialize()}), 200
+
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'Failed to send invoice: {str(e)}'}), 500

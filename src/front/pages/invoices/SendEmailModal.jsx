@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useInvoice } from "./InvoiceContext"
+import { buildInvoicePDF } from "./utils/useInvoicePDF.js"
 
 
 
@@ -7,7 +8,6 @@ const money = v => v != null ? `$${Number(v).toLocaleString("en-US", { minimumFr
 
 export default function SendEmailModal({ show, invoice, onClose, onSent }) {
 
-    const { sendEmail } = useInvoice();
     const [email, setEmail] = useState(invoice.customer_email || "");
     const [sending, setSending] = useState(false);
     const [sent, setSent] = useState(false)
@@ -16,7 +16,26 @@ export default function SendEmailModal({ show, invoice, onClose, onSent }) {
         if (!email) return;
         setSending(true);
         try {
-            await sendEmail(invoice.id, email);
+            const doc = buildInvoicePDF(invoice)
+            const base64 = doc.output('datauristring').split(',')[1];
+
+            const token = localStorage.getItem('token');
+            const BASE = import.meta.env.VITE_BACKEND_URL || '';
+            const res = await fetch(`${BASE}/api/invoices/${invoice.id}/send`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    recipient_email: email,
+                    pdf_base64: base64,
+                    filename: `invoice-${invoice.invoice_number}.pdf`
+                }),
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failled to send.')
             setSent(true);
             onSent();
         } catch (e) {
