@@ -103,5 +103,4 @@ export default function SendEmailModal({ show, invoice, onClose, onSent }) {
                 </div>
             </div>
         </>
-    )
-}
+    )}

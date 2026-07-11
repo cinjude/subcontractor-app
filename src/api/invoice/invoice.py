@@ -409,7 +409,8 @@ def send_invoice_email(invoice_id):
                 <p style="margin:0;font-size:32px;font-weight:700;color:#15803d;">${float(inv.total_amount):,.2f}</p>
               </div>
               {f'<p style="padding:12px;background:#f8fafc;border-radius:8px;color:#64748b;font-size:13px;"><strong>Notes:</strong> {inv.notes}</p>' if inv.notes else ''}
-              <p style="font-size:13px;color:#64748b;">Questions? Reply to this email or call us directly.</p>
+                <p style="font-size:13px;color:#64748b;">Check below you will find the pdf attachemant with all the details about your invoice</p>
+                <p style="font-size:13px;color:#64748b;">Questions? Reply to this email or call us directly.</p>
             </td></tr>
             <tr><td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:16px 32px;text-align:center;">
               <p style="margin:0;font-size:11px;color:#9ca3af;">{biz_name} · Invoice #{inv.invoice_number}</p>
