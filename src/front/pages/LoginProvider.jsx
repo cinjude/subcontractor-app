@@ -59,6 +59,7 @@ export const LoginProvider = () => {
                 localStorage.setItem('name', data.provider.name)
                 localStorage.setItem('provider', JSON.stringify(enrichedProvider))
                 localStorage.setItem('token', data.token)
+                localStorage.setItem('refreshToken', data.refresh_token)
 
                 dispatch({
                     type: 'login-provider',

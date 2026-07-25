@@ -1,7 +1,3 @@
-// src/front/pages/invoices/utils/useInvoicePDF.js
-// Single-invoice professional PDF — mirrors Useestimatepdf.js (buildEstimatePDF)
-// Renders: header, client/business info, rooms, paint/flooring specs,
-// materials to purchase, full price breakdown, total, notes.
 
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -41,7 +37,6 @@ export function buildInvoicePDF(invoice, contractorInfo = {}) {
     breakdown       = breakdown.filter(l => l.section !== "__tax_meta__");
     const hasDetailed = breakdown.length > 0;
 
-    // ── HEADER ────────────────────────────────────────────────────────────
     doc.setFillColor(...C.dark);
     doc.rect(0, 0, PW, 68, "F");
 
@@ -59,7 +54,6 @@ export function buildInvoicePDF(invoice, contractorInfo = {}) {
     doc.text(`#${invoice.invoice_number}`, PW - 97.5, 48, { align: "center" });
     y = 78;
 
-    // ── DATES + CLIENT ────────────────────────────────────────────────────
     const issueDate = invoice.issue_date
         ? new Date(invoice.issue_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
     const dueDate = invoice.due_date
@@ -90,7 +84,6 @@ export function buildInvoicePDF(invoice, contractorInfo = {}) {
     ln(ML, y, MR, y);
     y += 10;
 
-    // ── TYPE + SQ FT ──────────────────────────────────────────────────────
     if (invoice.estimate_type) {
         const typeLabel = invoice.estimate_type === "painting" ? "Painting Invoice"
             : invoice.estimate_type === "flooring" ? "Flooring Invoice"
@@ -105,7 +98,6 @@ export function buildInvoicePDF(invoice, contractorInfo = {}) {
         y += 12;
     }
 
-    // ── ROOMS ─────────────────────────────────────────────────────────────
     if (rooms.length > 0) {
         const roomRows = rooms.map(r => [r.name, r.floor_sqft > 0 ? `${Number(r.floor_sqft).toFixed(0)} sq ft` : "—"]);
         autoTable(doc, {
@@ -120,7 +112,6 @@ export function buildInvoicePDF(invoice, contractorInfo = {}) {
         y = doc.lastAutoTable.finalY + 8;
     }
 
-    // ── MATERIALS TABLE ───────────────────────────────────────────────────
     if (mats.length > 0) {
         const totalMatCost = mats.reduce((s, m) => s + (parseFloat(m.quantity) || 0) * (parseFloat(m.unit_cost) || 0), 0);
         sf(7, "bold", [180, 83, 9]);
@@ -146,7 +137,6 @@ export function buildInvoicePDF(invoice, contractorInfo = {}) {
         y = doc.lastAutoTable.finalY + 10;
     }
 
-    // ── PRICE BREAKDOWN (or fallback simple line items) ──────────────────
     if (hasDetailed) {
         const getDesc = item => item.description || item.label || "";
         const getSection = item => item.section || "Installation";
@@ -229,7 +219,6 @@ export function buildInvoicePDF(invoice, contractorInfo = {}) {
         y = doc.lastAutoTable.finalY + 8;
     }
 
-    // ── NOTES ─────────────────────────────────────────────────────────────
     if (invoice.notes) {
         const cleanNotes = invoice.notes.split("\n").filter(l => !l.startsWith("Materials:")).join("\n").trim();
         if (cleanNotes) {
@@ -242,7 +231,6 @@ export function buildInvoicePDF(invoice, contractorInfo = {}) {
         }
     }
 
-    // ── FOOTER ────────────────────────────────────────────────────────────
     const totalPages = doc.getNumberOfPages();
     for (let p = 1; p <= totalPages; p++) {
         doc.setPage(p);

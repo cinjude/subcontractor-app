@@ -1,8 +1,3 @@
-// src/front/pages/invoices/EditInvoicePage.jsx
-// Mirrors EditEstimatePage.jsx — loads an existing invoice's stored
-// rooms_json / materials_json / price_breakdown_json / extras_json,
-// lets the contractor adjust everything, then re-saves via updateInvoice().
-
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useInvoice } from "./InvoiceContext";

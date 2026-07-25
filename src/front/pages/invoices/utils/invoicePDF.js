@@ -1,7 +1,3 @@
-// src/front/pages/invoices/utils/invoicePDF.js
-// Professional MULTI-INVOICE REPORT PDF — used by InvoicesPage.jsx "Download PDF report" button
-// Exports: generateInvoiceReportPDF({ invoices, stats, filters })
-// This is DIFFERENT from useInvoicePDF.js (which builds a single invoice document)
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -38,7 +34,6 @@ export async function generateInvoiceReportPDF({ invoices = [], stats = null, fi
         weekday: "long", year: "numeric", month: "long", day: "numeric"
     });
 
-    // ── PAGE 1: Cover / Summary ───────────────────────────────────────────────
     doc.setFillColor(15, 35, 64);
     doc.rect(0, 0, pageW, 52, "F");
 
@@ -68,7 +63,6 @@ export async function generateInvoiceReportPDF({ invoices = [], stats = null, fi
         doc.text(`Filter: ${filters.status.toUpperCase()}`, margin + 26, 44);
     }
 
-    // ── Summary boxes (4 cards) ──────────────────────────────────────────────
     let y = 66;
     const boxW = (pageW - margin * 2 - 12) / 4;
     const boxes = [
@@ -103,7 +97,6 @@ export async function generateInvoiceReportPDF({ invoices = [], stats = null, fi
 
     y += 46;
 
-    // ── Grand total row ──────────────────────────────────────────────────────
     doc.setFillColor(15, 35, 64);
     doc.roundedRect(margin, y, pageW - margin * 2, 22, 3, 3, "F");
     doc.setTextColor(255, 255, 255);

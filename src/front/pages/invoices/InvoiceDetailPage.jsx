@@ -153,13 +153,11 @@ export default function InvoiceDetailPage() {
         <div className="container-fluid py-3 py-lg-4 px-3 px-lg-5" style={{ maxWidth: 960, margin: "0 auto" }}>
             <style>{`@media print { .no-print { display: none !important; } }`}</style>
 
-            {/* Top bar */}
             <div className="no-print d-flex align-items-center justify-content-between mb-4">
                 <button className="btn btn-outline-secondary btn-sm" onClick={() => navigate("/providerdashboard/invoices")}>
                     ← Invoices
                 </button>
                 <div className="d-none d-md-flex gap-2 align-items-center">
-                    {/* ← CHANGE 4: Print/PDF button replaced with Preview + Download */}
                     <button className="btn btn-outline-secondary btn-sm" onClick={() => previewPDF(invoice)}>👁 Preview PDF</button>
                     <button className="btn btn-outline-secondary btn-sm" onClick={() => downloadPDF(invoice)}>⬇ Download PDF</button>
                     <button className="btn btn-outline-secondary btn-sm" onClick={() => navigate(`/providerdashboard/invoices/${id}/edit`)}>✏️ Edit invoice</button>

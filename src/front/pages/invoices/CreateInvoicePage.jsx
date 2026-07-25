@@ -40,7 +40,6 @@ export default function CreateInvoicePage() {
         estimate_type: "painting", // painting | flooring | both
         rooms: [{ name: "Living Room", length_ft: "", width_ft: "", height_ft: "" }],
 
-        // paint
         paint_surface_condition: "", paint_coats: "2",
         paint_type: "interior_standard", paint_finish: "eggshell",
         include_ceiling: false, include_trim: false, include_doors: false,
@@ -52,7 +51,7 @@ export default function CreateInvoicePage() {
         include_baseboards: false, transition_strips: 0,
         include_stairs: false, stair_count: 0,
         room_materials: {},
-
+    
         materials: [],
 
         furniture_rooms: 0, furniture_heavy: 0,
@@ -61,7 +60,6 @@ export default function CreateInvoicePage() {
         heavy_demo: false, travel_miles: 0, use_flat_travel: false,
     });
 
-    // ── Pricing — populated after the PriceCalculatorModal is used ─────────
     const [quotedAmount, setQuotedAmount] = useState(null);
     const [priceLines, setPriceLines] = useState([]);
     const [priceNotes, setPriceNotes] = useState("");
@@ -83,7 +81,6 @@ export default function CreateInvoicePage() {
             .catch(() => { });
     }, [jobIdParam]);
 
-    // ── Room helpers ─────────────────────────────────────────────────────────
     const updateRoom = (i, k, v) => setForm(f => { const r = [...f.rooms]; r[i] = { ...r[i], [k]: v }; return { ...f, rooms: r }; });
     const addRoom = () => setForm(f => ({ ...f, rooms: [...f.rooms, { name: `Room ${f.rooms.length + 1}`, length_ft: "", width_ft: "", height_ft: "" }] }));
     const removeRoom = i => setForm(f => ({ ...f, rooms: f.rooms.filter((_, idx) => idx !== i) }));
@@ -97,7 +94,6 @@ export default function CreateInvoicePage() {
     }, 0);
     const materialsCost = form.materials.reduce((s, m) => s + (parseFloat(m.quantity) || 0) * (parseFloat(m.unit_cost) || 0), 0);
 
-    // Build a fake "estimate" object so we can reuse PriceCalculatorModal as-is
     const pseudoEstimate = {
         id: "new",
         customer_name: customers.find(c => c.id === Number(form.customer_id))?.name || "Client",
@@ -137,7 +133,6 @@ export default function CreateInvoicePage() {
         contractor_notes: priceNotes,
     };
 
-    // PriceCalculatorModal calls onSave(amount, notes, lines, extras, pricingMeta)
     const handlePriceSave = async (amount, notes, lines) => {
         setQuotedAmount(amount);
         setPriceNotes(notes);
@@ -145,7 +140,6 @@ export default function CreateInvoicePage() {
         setShowCalculator(false);
     };
 
-    // ── Validation per step ──────────────────────────────────────────────────
     const validate = () => {
         const e = {};
         if (step === 0) {
@@ -175,7 +169,6 @@ export default function CreateInvoicePage() {
     };
     const back = () => { setStep(s => s - 1); window.scrollTo(0, 0); };
 
-    // ── Submit ───────────────────────────────────────────────────────────────
     const handleSubmit = async () => {
         if (!validate()) return;
         setSaving(true);
@@ -197,7 +190,7 @@ export default function CreateInvoicePage() {
                 notes: notesParts.join("\n"),
                 estimate_type: form.estimate_type,
                 subtotal: subtotal,
-                apply_tax: false, // tax already included in calculator total if contractor set tax_rate there
+                apply_tax: false, 
                 total_amount: subtotal,
                 materials_json: form.materials.length > 0 ? JSON.stringify(form.materials.map(({ id: _id, ...rest }) => rest)) : null,
                 price_breakdown_json: priceLines.length > 0 ? JSON.stringify(priceLines) : null,
@@ -237,6 +230,7 @@ export default function CreateInvoicePage() {
             .then(d => setCustomers(Array.isArray(d) ? d : (Array.isArray(d?.customers) ? d.customers : [])))
             .catch(() => setCustomers([]));
 
+            
         fetch(`${BASE}/api/jobs`, { headers: authH() })
             .then(r => r.json())
             .then(d => setJobs(Array.isArray(d) ? d : (Array.isArray(d?.jobs) ? d.jobs : [])))

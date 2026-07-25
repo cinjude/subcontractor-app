@@ -1,11 +1,6 @@
-// src/front/pages/invoices/InvoiceBuilderShared.jsx
-// Shared components reused EXACTLY from your estimate system —
-// Chips, Toggle, Counter, RoomMaterialSelector, MaterialsSection.
-// Import these into CreateInvoicePage.jsx and EditInvoicePage.jsx.
 
 import { useState } from "react";
 
-/* ─── Chip selector ──────────────────────────────────────────────────────── */
 export function Chips({ options, value, onChange, cols = 2 }) {
     return (
         <div className={`row g-2 row-cols-${cols} row-cols-md-${Math.min(cols + 1, 4)}`}>

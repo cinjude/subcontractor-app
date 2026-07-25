@@ -17,8 +17,10 @@ from flask_cors import CORS
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import jwt_required
+from flask_jwt_extended import refresh_token
 from flask_jwt_extended import JWTManager
 from flask_bcrypt import Bcrypt
+from datetime import timedelta
 
 
 
@@ -38,6 +40,7 @@ bcrypt = Bcrypt(app)
 
 app.url_map.strict_slashes = False
 app.config["JWT_SECRET_KEY"] = os.getenv('SUPER_SECRET_TOKEN')
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=30)
 jwt = JWTManager(app)
 
 import cloudinary
@@ -148,9 +151,11 @@ def login_stylist():
         return jsonify({'msg': 'email or password is incorect'}), 400
 
     access_token = create_access_token(identity=str(user.id))
+    refresh_token = create_refresh_token(identity=str(user.id))
     return jsonify({
         'msg': 'login successfully',
         'token': access_token,
+        'refresh_token': refresh_token
         'name': user.name,
         'provider': user.serialize()}), 200
 
@@ -205,6 +210,18 @@ def login_client():
                     'token': access_token,
                     'client_data': user_client_login.serialize()
                     }), 200
+
+@app.route('/api/token/refresh', methods=['POST'])
+@jwt_required(refresh=True)
+def refresh():
+
+    identity = get_jwt_identity()
+
+    new_access = create_refresh_token(identity=identity)
+
+    return jsonify({
+        'token': new_access
+    }), 200
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
