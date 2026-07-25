@@ -155,7 +155,7 @@ def login_stylist():
     return jsonify({
         'msg': 'login successfully',
         'token': access_token,
-        'refresh_token': refresh_token
+        'refresh_token': refresh_token,
         'name': user.name,
         'provider': user.serialize()}), 200
 
