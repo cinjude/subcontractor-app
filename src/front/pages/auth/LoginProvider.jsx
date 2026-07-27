@@ -1,5 +1,5 @@
 import { useState } from "react"
-import useGlobalReducer from "../hooks/useGlobalReducer.jsx";
+import useGlobalReducer from "../../hooks/useGlobalReducer.jsx";
 import { Navigate, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
