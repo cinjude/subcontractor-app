@@ -14,11 +14,13 @@ from api.admin import setup_admin
 from api.commands import setup_commands
 
 from flask_cors import CORS
-from flask_jwt_extended import create_access_token
-from flask_jwt_extended import get_jwt_identity
-from flask_jwt_extended import jwt_required
-from flask_jwt_extended import refresh_token
-from flask_jwt_extended import JWTManager
+from flask_jwt_extended import (
+    create_access_token,
+    create_refresh_token,   
+    get_jwt_identity,
+    jwt_required,
+    JWTManager,
+)
 from flask_bcrypt import Bcrypt
 from datetime import timedelta
 
@@ -41,6 +43,7 @@ bcrypt = Bcrypt(app)
 app.url_map.strict_slashes = False
 app.config["JWT_SECRET_KEY"] = os.getenv('SUPER_SECRET_TOKEN')
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=30)
+app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=7) 
 jwt = JWTManager(app)
 
 import cloudinary
@@ -217,7 +220,7 @@ def refresh():
 
     identity = get_jwt_identity()
 
-    new_access = create_refresh_token(identity=identity)
+    new_access = create_access_token(identity=identity)
 
     return jsonify({
         'token': new_access

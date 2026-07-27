@@ -1,4 +1,4 @@
-// src/front/pages/SignUpProvider.jsx
+// src/front/pages/auth/SignUpProvider.jsx
 // PATCHED — cleans up any Bootstrap modal state left over from the home page
 
 import { useState, useEffect } from "react";

@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LoginProvider } from "../pages/LoginProvider";
+import { LoginProvider } from "../pages/auth/LoginProvider";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser } from "@fortawesome/free-regular-svg-icons";
 import { useEffect } from "react";

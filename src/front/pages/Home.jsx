@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer.jsx";
-import { LoginProvider } from "./LoginProvider";
+import { LoginProvider } from "./auth/LoginProvider";
 import './home.css';
 
 export const Home = () => {

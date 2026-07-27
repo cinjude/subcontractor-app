@@ -15,6 +15,7 @@ export const initialStore = () => {
   return {
     provider: getProvider(),
      token: localStorage.getItem("token") || null,
+     refreshToken: localStorage.getItem("refreshToken" || null),
      customers:[],
      services:[],
      servicesStats:null,
@@ -28,23 +29,35 @@ export default function storeReducer(store, action = {}) {
   switch (action.type) {
     
     case "login-provider":
-      const { provider, token } = action.payload;
+      const { provider, token, refreshToken } = action.payload;
       localStorage.setItem("token", token); 
+      if(refreshToken) localStorage.setItem("refreshToken", refreshToken)
       return {
         ...store,
         provider,
         token,
+        refreshToken: refreshToken || store.refreshToken
       };
+
+    case "refresh-token":
+      localStorage.setItem("token", action.payload);
+      return{
+        ...store,
+        token: action.payload
+      };      
 
     case "logout":
       localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("provider");
       return {
         ...store,
         provider: null,
         token: null,
+        refreshToken: null
       };
 
-      case "update_provider":
+    case "update_provider":
     return {
         ...store,
         provider: {
