@@ -100,8 +100,6 @@ export default function storeReducer(store, action = {}) {
 
     case "delete-invoice":
       return{ ...store, invoices: store.invoices.filter( i => i.id !== action.payload ) };
-
-
       
     default:
       throw Error("Unknown action.");
