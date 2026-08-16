@@ -18,6 +18,7 @@ import { SignUpProvider } from "./pages/auth/SignUpProvider";
 import { ProviderDashboard } from "./pages/dashboardProvider/ProviderDashboard";
 import { DashboardHome } from "./pages/dashboardProvider/DashboardHome";
 import { PrivateProviderRoute } from "./pages/dashboardProvider/PrivateProviderRoute";
+import SessionGuard from "./pages/auth/SessionGuard";
 import { JobDetails, JobsPage } from "./pages/jobs";
 import { CustomersPage } from "./pages/customer/CustomersPage";
 import CustomerDetails from "./pages/customer/CustomerDetails";
@@ -67,7 +68,7 @@ export const router = createBrowserRouter(
       {/* ── PROTECTED DASHBOARD ROUTES ── */}
       <Route
         path="/providerdashboard"
-        element={<PrivateProviderRoute><ProviderDashboard /></PrivateProviderRoute>}
+        element={<PrivateProviderRoute><SessionGuard><ProviderDashboard /></SessionGuard></PrivateProviderRoute>}
         errorElement={<ErrorDebug />}
       >
         <Route index element={<DashboardHome />} />

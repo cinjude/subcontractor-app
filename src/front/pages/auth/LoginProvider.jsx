@@ -65,7 +65,8 @@ export const LoginProvider = () => {
                     type: 'login-provider',
                     payload: {
                         provider: enrichedProvider,
-                        token: data.token
+                        token: data.token,
+                        refreshToken: data.refresh_token
                     }
                 })
 
